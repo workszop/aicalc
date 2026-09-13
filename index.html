@@ -578,8 +578,6 @@ Anthropic Claude Opus 5,5,25,1000000,frontier,Sprawdzono 2026-09-13. USD/1M toke
 Anthropic Claude Fable 5.1,10,50,1000000,frontier,Sprawdzono 2026-09-13. USD/1M tokenów tekstowych. API bez cache i Batch. Bez opłat za narzędzia. Klasa umowna do ćwiczenia. Standard w Claude API z globalnym routingiem. ID: claude-fable-5-1. Bez dopłaty za długi kontekst. Źródła: https://platform.claude.com/docs/en/about-claude/pricing https://platform.claude.com/docs/en/models/overview
 DeepSeek V4.1 Flash,0.3,1.2,1000000,mini,Sprawdzono 2026-09-13. USD/1M tokenów tekstowych. API bez cache i Batch. Bez opłat za narzędzia. Klasa umowna do ćwiczenia. Bezpośrednie API. ID: deepseek-flash. Ceny PEAK: pon.-pt. 01:00-04:00 i 06:00-10:00 UTC. Poza tymi godzinami: 0.15/0.60 USD (wejście/wyjście). Oba tryby myślenia. Źródło: https://api-docs.deepseek.com/quick_start/pricing/
 DeepSeek V4 Pro 0813,1.32,3.96,1000000,frontier,Sprawdzono 2026-09-13. USD/1M tokenów tekstowych. API bez cache i Batch. Bez opłat za narzędzia. Klasa umowna do ćwiczenia. Bezpośrednie API. ID: deepseek-v4-pro. Ceny PEAK: pon.-pt. 01:00-04:00 i 06:00-10:00 UTC. Poza tymi godzinami: 0.66/1.98 USD (wejście/wyjście). Oba tryby myślenia. Źródło: https://api-docs.deepseek.com/quick_start/pricing/
-Alibaba Qwen3.7 Plus (2026-05-26),0.4,1.6,1000000,standard,Sprawdzono 2026-09-13. USD/1M tokenów tekstowych. API bez cache i Batch. Bez opłat za narzędzia. Klasa umowna do ćwiczenia. Model Studio: Singapur / International. ID: qwen3.7-plus-2026-05-26. Wejście do 256K. Powyżej 256K: 1.20/4.80 USD (wejście/wyjście). Oba tryby myślenia. Cena wersji datowanej bez promocji aliasu. Źródła: https://www.alibabacloud.com/help/en/model-studio/model-pricing https://www.alibabacloud.com/help/en/model-studio/qwen3-7-plus
-Z.ai GLM-5.3,1.4,4.4,1000000,frontier,Sprawdzono 2026-09-13. USD/1M tokenów tekstowych. API bez cache i Batch. Bez opłat za narzędzia. Klasa umowna do ćwiczenia. Z.ai API rozliczane za tokeny. ID: glm-5.3. Nie abonament GLM Coding Plan. Rozumowanie zawsze włączone. Źródła: https://docs.z.ai/guides/overview/pricing https://docs.z.ai/guides/llm/glm-5.3
 </script>
 <script>
 // ─── Constants ───
@@ -592,7 +590,6 @@ const HOURS_MONTH = 730;
 const TOK_PER_WORD = {
   openai:    { pl: 2.32, en: 1.37, label: 'OpenAI o200k' },
   deepseek:  { pl: 2.41, en: 1.38, label: 'DeepSeek V3' },
-  glm:       { pl: 2.41, en: 1.39, label: 'GLM' },
   qwen:      { pl: 2.61, en: 1.46, label: 'Qwen3' },
   claude:    { pl: 2.32, en: 1.37, label: 'Claude (Haiku 4.5)' },
   claudeNew: { pl: 3.02, en: 1.78, label: 'Claude 4.7+ (+30%)' },
@@ -600,16 +597,16 @@ const TOK_PER_WORD = {
 const BASE_FAMILY = 'openai';      // workload tokens are entered as OpenAI o200k tokens of Polish text
 const SELF_HOSTED_FAMILY = 'qwen';
 const EN_WORD_FACTOR = 502 / 443;  // the same text in English has 13% more words
-const THINKING_INPUT = { 'qwen3.7-plus': { pin: 1.6, tierPin: 4.8 } };
+const THINKING_INPUT = {}; // model id prefix -> { pin, tierPin } when thinking changes the input price
 const PRESETS = {
-  S1: { users: 30, reqPerDay: 15 },
-  S2: { users: 200, reqPerDay: 20 },
-  S3: { users: 8, reqPerDay: 5 },
+  S1: { users: 20, reqPerDay: 20 },
+  S2: { users: 100, reqPerDay: 20 },
+  S3: { users: 300, reqPerDay: 20 },
 };
 const PRESET_FIELDS = Object.keys(PRESETS.S1);
 const DEFAULTS = {
   ...PRESETS.S1, chunks: 5, chunkTok: 2000, promptTok: 500, outTok: 500, docLang: 'pl', workDays: 250, workHours: 8,
-  model: 'OpenAI GPT-5.6 Luna', fx: 3.73, offPeak: false, thinking: false, thinkMult: 3,
+  model: 'OpenAI GPT-5.6 Terra', fx: 3.73, offPeak: false, thinking: false, thinkMult: 3,
   cloudGpu: '1× NVIDIA H100 80GB', cloudPrice: 10000, cloudMode: '247', cloudPrefill: 10000, cloudDecode: 1500,
   ownGpu: '1× RTX PRO 6000 96GB', ownCapex: 250000, ownAmort: 36, ownOps: 1000, ownPower: 900, kwh: 1.0, ownPrefill: 10000, ownDecode: 1500,
   peak: 2, horizon: 36,
@@ -622,7 +619,6 @@ const SOURCES = {
   openai: 'https://developers.openai.com/api/docs/pricing',
   anthropic: 'https://platform.claude.com/docs/en/about-claude/pricing',
   deepseek: 'https://api-docs.deepseek.com/quick_start/pricing/',
-  alibaba: 'https://www.alibabacloud.com/help/en/model-studio/model-pricing',
   nbp: 'https://www.bankier.pl/waluty/kursy-walut/nbp',
   h100: 'https://getdeploying.com/gpus/nvidia-h100',
   pro6000: 'https://www.tomshardware.com/pc-components/gpus/nvidia-doubles-rtx-pro-6000-blackwells-msrp-to-a-staggering-usd16-000-96gb-card-started-pre-orders-below-usd8-000-last-year',
@@ -640,7 +636,7 @@ const T = {
     assumpBtn: 'Założenia i źródła', assumpTitle: 'Założenia kalkulatora', close: 'Zamknij',
     assumpLead: 'Liczby sprawdzone 13.09.2026. Wartości „obecnie” pochodzą z pól kalkulatora. Koszty netto, bez VAT.',
     thAssump: 'Założenie', thValue: 'Wartość', thSource: 'Uzasadnienie i źródło',
-    secWorkload: 'Obciążenie', presetS1: 'S1 Handlowcy · 30', presetS2: 'S2 Cała firma · 200', presetS3: 'S3 Przetargi · 8',
+    secWorkload: 'Obciążenie', presetS1: 'Handlowcy · 20', presetS2: 'Kilka działów · 100', presetS3: 'Firma · 300',
     users: 'Użytkownicy', reqPerDay: 'Zapytań / osobę / dzień', chunks: 'Fragmenty RAG', chunkTok: 'Tokeny / fragment',
     promptTok: 'Instrukcje + pytanie (tok.)', outTok: 'Odpowiedź (tok.)',
     docLang: 'Język treści', langPl: 'Polski', langEn: 'Angielski',
@@ -676,7 +672,7 @@ const T = {
     assumpBtn: 'Assumptions and sources', assumpTitle: 'Calculator assumptions', close: 'Close',
     assumpLead: 'Figures checked on 13 Sep 2026. “Currently” values come from the calculator fields. Net costs, excluding VAT.',
     thAssump: 'Assumption', thValue: 'Value', thSource: 'Rationale and source',
-    secWorkload: 'Workload', presetS1: 'S1 Sales · 30', presetS2: 'S2 Whole company · 200', presetS3: 'S3 Tenders · 8',
+    secWorkload: 'Workload', presetS1: 'Sales · 20', presetS2: 'Several departments · 100', presetS3: 'Company · 300',
     users: 'Users', reqPerDay: 'Requests / person / day', chunks: 'RAG chunks', chunkTok: 'Tokens / chunk',
     promptTok: 'Instructions + question (tok.)', outTok: 'Answer (tok.)',
     docLang: 'Content language', langPl: 'Polish', langEn: 'English',
@@ -785,7 +781,6 @@ function familyOf(id, name) {
   if (s.includes('claude')) return 'claude';
   if (s.includes('deepseek')) return 'deepseek';
   if (s.includes('qwen')) return 'qwen';
-  if (s.includes('glm')) return 'glm';
   return 'openai';
 }
 function modelsFromCsv(text) {
@@ -1076,13 +1071,13 @@ function buildAssumptions() {
       [P('Claude', 'Claude'), P('Sonnet 5 / Opus 5 / Fable +30%', 'Sonnet 5 / Opus 5 / Fable +30%'),
         P('Tokenizer Claude nie jest publiczny. Anthropic podaje ok. 30% więcej tokenów w modelach 4.7+. Szacunek.', 'The Claude tokenizer is not public. Anthropic states about 30% more tokens in 4.7+ models. An estimate.'), 'anthropic'],
       [P('Tokeny myślenia', 'Thinking tokens'), now((s.thinking ? P('włączone', 'on') : P('wyłączone', 'off')) + ' · ×' + fmtNum(s.thinkMult, 1)),
-        P('Płatne jak wyjście. GLM-5.3 myśli zawsze. Qwen3.7 Plus z myśleniem ma wejście 1,60 USD.', 'Billed as output. GLM-5.3 always thinks. Qwen3.7 Plus thinking input is 1.60 USD.'), 'alibaba'],
+        P('Tokeny rozumowania są płatne jak wyjście i nie są widoczne w odpowiedzi.', 'Reasoning tokens are billed as output and are not visible in the answer.')],
     ]},
     { title: P('API', 'API'), rows: [
       [P('Cennik', 'Price list'), `${state.models.length} ` + P('modeli', 'models'),
         P('Stawki standardowe bez cache i Batch, sprawdzone 13.09.2026. Batch obniża koszt o 50%, cache wejścia o 75–90% (przy RAG te same fragmenty wracają często).', 'Standard rates without cache or Batch, checked 13 Sep 2026. Batch halves the cost, input caching cuts 75–90% (RAG often reuses the same chunks).'), 'openai'],
       [P('Kurs USD/PLN', 'USD/PLN rate'), now(fmtNum(s.fx, 2)), P('Kurs średni NBP z 11.09.2026: 3,7267.', 'NBP mid rate on 11 Sep 2026: 3.7267.'), 'nbp'],
-      [P('Długi kontekst', 'Long context'), 'OpenAI > 272K · Qwen > 256K', P('Powyżej progu droższa stawka dla całego żądania.', 'Above the threshold the whole request uses a higher rate.')],
+      [P('Długi kontekst', 'Long context'), 'OpenAI > 272K', P('Powyżej progu droższa stawka dla całego żądania.', 'Above the threshold the whole request uses a higher rate.')],
       [P('DeepSeek', 'DeepSeek'), P('szczyt pon.–pt. 01–04 i 06–10 UTC', 'peak Mon–Fri 01–04 and 06–10 UTC'), P('Poza szczytem połowa ceny.', 'Half price off-peak.'), 'deepseek'],
     ]},
     { title: P('Chmura GPU', 'Cloud GPU'), rows: [
