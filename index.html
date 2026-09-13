@@ -1,0 +1,1333 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kalkulator kosztów AI – API, chmura, własny serwer</title>
+<style>
+/* ============================================================
+   edulab – Colors & Type foundation
+   Fonts loaded from Google Fonts (CDN). See README "Visual
+   Foundations" for substitution notes.
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap');
+
+:root {
+  /* ---- Brand fonts ---- */
+  --font-display: 'Outfit', 'IBM Plex Sans', system-ui, sans-serif;
+  --font-sans:    'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+  --font-mono:    'Roboto Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* ============================================================
+     RAW COLOR TOKENS
+     ============================================================ */
+
+  /* Paper – page background is white; the sand steps are wells/alternating sections */
+  --paper:    #FFFFFF;   /* page background (white)    */
+  --paper-2:  #FBF7E6;   /* alternating section        */
+  --paper-3:  #F5EDCB;   /* deepest sand / wells       */
+  --surface:  #FFFFFF;   /* cards & sheets             */
+
+  /* Ink – warm near-black text & lines */
+  --ink:      #1C1917;   /* primary text               */
+  --ink-2:    #57534E;   /* secondary text             */
+  --ink-3:    #948C82;   /* muted / placeholder        */
+  --line:     #EDE7D2;   /* hairline borders           */
+  --line-2:   #DDD4B6;   /* stronger borders           */
+
+  /* ---- Brand: Yellow main · Blue + Green secondary · Red danger ----
+     Plain saturated colours. A "-soft" tint IS the saturated colour
+     (panels and chips are solid), "-ink" is the text colour ON it:
+     white on blue/green/red, dark ink on yellow. Never colour-on-colour
+     (no green text on green); the saturated colour itself goes only on
+     white or black. */
+
+  /* Yellow – primary (buttons, progress, values on dark panels) */
+  --yellow:      #FFD500;
+  --yellow-600:  #F0C800;  /* hover / press          */
+  --yellow-soft: #FFD500;  /* chip / panel fill      */
+  --yellow-ink:  #1C1917;  /* text on yellow         */
+
+  /* Blue – secondary (panels, chips, correct / selected state) */
+  --blue:      #1E8FC2;
+  --blue-600:  #177AA8;
+  --blue-soft: #1E8FC2;
+  --blue-ink:  #FFFFFF;
+
+  /* Green – secondary support (chips, success) */
+  --green:      #00A651;
+  --green-600:  #009444;
+  --green-soft: #00A651;
+  --green-ink:  #FFFFFF;
+
+  /* Red – danger / important / wrong (use sparingly) */
+  --red:      #E5322D;
+  --red-600:  #C92823;
+  --red-soft: #E5322D;
+  --red-ink:  #FFFFFF;
+
+  /* Legacy role aliases – older edulab apps use these names */
+  --marigold: var(--yellow); --marigold-600: var(--yellow-600); --marigold-soft: var(--yellow-soft); --marigold-ink: var(--yellow-ink);
+  --teal:     var(--blue);   --teal-600:     var(--blue-600);   --teal-soft:     var(--blue-soft);   --teal-ink:     var(--blue-ink);
+  --sky:      var(--green);                                     --sky-soft:      var(--green-soft);  --sky-ink:      var(--green-ink);
+  --coral:    var(--red);    --coral-600:    var(--red-600);    --coral-soft:    var(--red-soft);    --coral-ink:    var(--red-ink);
+
+  /* Play palette – subject/category colours in the kids app */
+  --play-sun:    #FFD500;
+  --play-grass:  #00A651;
+  --play-berry:  #C6478B;
+  --play-grape:  #7A5AC2;
+  --play-sky:    #1E8FC2;
+  --play-coral:  #E5322D;
+
+  /* ---- Semantic ---- */
+  --success:      #00A651;  --success-soft: #00A651;  --success-ink: #FFFFFF;
+  --warning:      #FFD500;  --warning-soft: #FFD500;  --warning-ink: #1C1917;
+  --danger:       #E5322D;  --danger-soft:  #E5322D;  --danger-ink:  #FFFFFF;
+  --info:         #1E8FC2;  --info-soft:    #1E8FC2;  --info-ink:    #FFFFFF;
+
+  /* ---- Functional aliases ---- */
+  --bg:        var(--paper);
+  --fg:        var(--ink);
+  --fg-muted:  var(--ink-2);
+  --primary:   var(--yellow);
+  --on-primary:#1C1917;      /* dark text on yellow */
+  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--yellow) 45%, transparent);
+
+  /* ============================================================
+     SPACING  (4pt base)
+     ============================================================ */
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px;
+  --sp-12: 48px; --sp-16: 64px; --sp-20: 80px; --sp-24: 96px;
+
+  /* ---- Radii (friendly, generous) ---- */
+  --r-xs: 6px; --r-sm: 10px; --r-md: 14px; --r-lg: 20px; --r-xl: 28px; --r-pill: 999px;
+
+  /* ---- Elevation – warm, low, soft ---- */
+  --shadow-sm: 0 1px 2px rgba(33,30,26,.06), 0 1px 1px rgba(33,30,26,.04);
+  --shadow-md: 0 4px 16px rgba(33,30,26,.08), 0 1px 3px rgba(33,30,26,.05);
+  --shadow-lg: 0 16px 40px rgba(33,30,26,.12), 0 3px 8px rgba(33,30,26,.06);
+  --shadow-primary:  0 8px 22px color-mix(in srgb, var(--yellow) 30%, transparent);
+  --shadow-marigold: var(--shadow-primary);   /* legacy alias */
+
+  /* ============================================================
+     TYPE SCALE (semantic sizes)
+     ============================================================ */
+  --display-font:  clamp(48px, 6vw, 72px);
+  --h1: 44px; --h2: 33px; --h3: 25px; --h4: 19px;
+  --body-lg: 18px; --body: 16px; --body-sm: 14px;
+  --caption: 13px; --overline: 12px;
+}
+
+/* ============================================================
+   SEMANTIC ELEMENT STYLES
+   Apply via element selectors or .edu-prose wrapper.
+   ============================================================ */
+
+.edu-display, .edu h1.display {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--display-font);
+  line-height: 1.02;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+}
+.edu h1, .edu-h1 {
+  font-family: var(--font-display);
+  font-weight: 700; font-size: var(--h1);
+  line-height: 1.06; letter-spacing: -0.02em; color: var(--ink);
+}
+.edu h2, .edu-h2 {
+  font-family: var(--font-display);
+  font-weight: 600; font-size: var(--h2);
+  line-height: 1.12; letter-spacing: -0.015em; color: var(--ink);
+}
+.edu h3, .edu-h3 {
+  font-family: var(--font-display);
+  font-weight: 600; font-size: var(--h3);
+  line-height: 1.2; letter-spacing: -0.01em; color: var(--ink);
+}
+.edu h4, .edu-h4 {
+  font-family: var(--font-sans);
+  font-weight: 700; font-size: var(--h4);
+  line-height: 1.3; color: var(--ink);
+}
+.edu p, .edu-p, .edu-body {
+  font-family: var(--font-sans);
+  font-weight: 400; font-size: var(--body);
+  line-height: 1.6; color: var(--ink-2);
+}
+.edu-body-lg { font-family: var(--font-sans); font-size: var(--body-lg); line-height: 1.6; color: var(--ink-2); }
+.edu-small  { font-family: var(--font-sans); font-size: var(--body-sm); line-height: 1.5; color: var(--ink-2); }
+.edu-caption{ font-family: var(--font-sans); font-size: var(--caption); line-height: 1.45; color: var(--ink-3); }
+
+/* Overline – mono, tracked; functional labels only (never above page/section titles) */
+.edu-overline {
+  font-family: var(--font-mono);
+  font-weight: 500; font-size: var(--overline);
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ink);
+}
+.edu code, .edu-mono {
+  font-family: var(--font-mono);
+  font-size: 0.92em; color: var(--ink);
+  background: var(--paper-3); padding: 0.12em 0.4em; border-radius: var(--r-xs);
+}
+
+/* Solid colour blocks (callouts, stat cards, chips): set background: var(--X-soft) and
+   color: var(--X-ink) on the block, add .edu-block, and every heading/paragraph inside
+   inherits that text colour instead of the default ink. */
+.edu-block, .edu-block h1, .edu-block h2, .edu-block h3, .edu-block h4, .edu-block p,
+.edu-block li, .edu-block small { color: inherit; }
+
+body.edu { background: var(--paper); color: var(--ink); font-family: var(--font-sans); }
+
+
+/* ─── Layout ─── */
+* { box-sizing: border-box; }
+body { margin: 0; padding: 0; }
+.edu-header { position: sticky; top: 0; z-index: 50; width: 100%; background: rgba(255,255,255,.85);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
+.edu-header-inner { max-width: 1100px; margin: 0 auto; padding: 8px 30px; display: flex; align-items: center; gap: 12px; }
+.edu-logo { width: 64px; height: 64px; display: block; margin-right: -6px; }
+.edu-wordmark { font-family: var(--font-display); font-weight: 700; font-size: 22px; letter-spacing: -.02em; color: var(--ink); }
+.header-spacer { flex: 1; }
+main { max-width: 1100px; margin: 0 auto; padding: 34px 30px 70px; }
+.page-head { text-align: center; margin-bottom: var(--sp-10); }
+.app-title { font-family: var(--font-display); font-weight: 800; font-size: clamp(2rem, 4.5vw, 2.85rem);
+  letter-spacing: -.025em; line-height: 1.05; color: var(--ink); margin: 0 0 var(--sp-3); }
+.edu-lead { font-size: 1.0625rem; color: var(--ink-2); margin: 0; }
+section { margin-bottom: var(--sp-8); }
+.sec-title { font-family: var(--font-display); font-weight: 600; font-size: var(--h3); color: var(--ink); margin: 0 0 var(--sp-4); letter-spacing: -.01em; }
+.sec-note { color: var(--ink-2); font-size: var(--body-sm); margin: calc(-1 * var(--sp-2)) 0 var(--sp-4); }
+
+/* ─── Controls ─── */
+.edu-seg { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 3px; background: var(--paper-2); border-radius: var(--r-pill); }
+.edu-seg button { border: none; background: transparent; padding: 7px 14px; border-radius: var(--r-pill);
+  font-family: var(--font-sans); font-weight: 600; font-size: var(--body-sm); color: var(--ink-2); cursor: pointer; transition: background-color .15s; }
+.edu-seg button:hover { background: var(--paper-3); }
+.edu-seg button.active { background: var(--yellow); color: var(--yellow-ink); }
+.edu-seg button:focus-visible, .edu-btn:focus-visible, .ghost-btn:focus-visible, input:focus-visible, select:focus-visible, tr:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); margin-bottom: var(--sp-5); }
+.toolbar .label { font-family: var(--font-mono); font-size: var(--overline); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); }
+
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--shadow-sm); padding: 22px 24px; }
+.card-head { display: flex; align-items: center; gap: var(--sp-3); margin-bottom: var(--sp-4); }
+.card-head h3 { font-family: var(--font-display); font-weight: 600; font-size: var(--h4); margin: 0; color: var(--ink); }
+.dot { width: 12px; height: 12px; border-radius: 50%; flex: none; }
+.field { display: flex; flex-direction: column; justify-content: flex-end; gap: 5px; margin-bottom: var(--sp-3); }
+.field label { font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+.field input, .field select { font-family: var(--font-sans); font-size: var(--body); color: var(--ink); background: var(--paper-2);
+  border: 1px solid var(--line); border-radius: var(--r-sm); padding: 9px 12px; width: 100%; }
+.field select { cursor: pointer; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
+.hint { font-size: 12.5px; color: var(--ink-3); margin: 0; line-height: 1.45; }
+.check { display: flex; gap: 8px; align-items: center; font-size: var(--body-sm); color: var(--ink-2); margin-bottom: var(--sp-3); cursor: pointer; }
+.check input { accent-color: var(--yellow); width: 16px; height: 16px; }
+
+.edu-btn { font-family: var(--font-display); font-weight: 600; font-size: var(--body-sm); background: var(--yellow); color: var(--on-primary);
+  border: none; border-radius: var(--r-pill); padding: 10px 18px; cursor: pointer; transition: background-color .15s; }
+.edu-btn:hover { background: var(--yellow-600); }
+.ghost-btn { font-family: var(--font-sans); font-weight: 600; font-size: var(--body-sm); background: var(--paper-2); color: var(--ink-2);
+  border: none; border-radius: var(--r-pill); padding: 10px 16px; cursor: pointer; transition: background-color .15s; }
+.ghost-btn:hover { background: var(--paper-3); }
+
+/* ─── Results ─── */
+.result { position: relative; }
+.result .big { font-family: var(--font-display); font-weight: 700; font-size: 34px; letter-spacing: -.02em; color: var(--ink); line-height: 1.1; }
+.result .per { font-size: var(--body-sm); color: var(--ink-3); }
+.kv { display: flex; justify-content: space-between; gap: var(--sp-3); padding: 7px 0; border-top: 1px dashed var(--line); font-size: var(--body-sm); color: var(--ink-2); }
+.kv b { font-family: var(--font-mono); font-weight: 500; color: var(--ink); text-align: right; }
+.kv:first-of-type { margin-top: var(--sp-4); }
+.edu-chip { font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; padding: 4px 10px; border-radius: var(--r-pill); white-space: nowrap; }
+.chip-win { background: var(--green-soft); color: var(--green-ink); }
+.chip-warn { background: var(--red-soft); color: var(--red-ink); }
+.chip-mini { background: var(--paper-3); color: var(--ink); }
+.chip-standard { background: var(--blue-soft); color: var(--blue-ink); }
+.chip-frontier { background: var(--ink); color: var(--paper); }
+.result.winner { border-color: var(--green); box-shadow: var(--shadow-md); outline: 2px solid var(--green); outline-offset: -1px; }
+
+.panel-dark { background: var(--ink); color: var(--paper); border-radius: var(--r-xl); padding: 28px 32px; }
+.panel-dark .label { font-family: var(--font-mono); font-size: var(--overline); letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.55); margin-bottom: var(--sp-3); }
+.panel-dark ul { list-style: none; margin: 0; padding: 0; }
+.panel-dark li { display: flex; justify-content: space-between; gap: var(--sp-4); padding: 10px 0; border-top: 1px solid rgba(255,255,255,.14); font-size: 15px; }
+.panel-dark li:first-child { border-top: none; }
+.panel-dark li span:last-child { font-family: var(--font-display); font-weight: 600; color: var(--yellow); text-align: right; }
+
+.callout { background: var(--blue-soft); color: var(--blue-ink); border-radius: var(--r-md); padding: 16px 20px; font-size: var(--body-sm); line-height: 1.55; }
+.callout-warn { background: var(--red-soft); color: var(--red-ink); }
+.callout strong { color: inherit; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: stretch; }
+
+/* ─── Charts ─── */
+.chart-card { padding: 20px 20px 14px; }
+.chart-title { font-family: var(--font-display); font-weight: 600; font-size: var(--h4); margin: 0 0 4px; color: var(--ink); }
+.chart-sub { font-size: 13px; color: var(--ink-3); margin: 0 0 var(--sp-3); }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 6px; font-size: 13px; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend svg { display: block; }
+.chart-wrap { position: relative; width: 100%; }
+.chart-wrap svg { display: block; width: 100%; height: auto; overflow: visible; }
+.tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-sm);
+  box-shadow: var(--shadow-md); padding: 8px 10px; font-size: 12.5px; color: var(--ink-2); min-width: 170px; z-index: 5; transition: opacity .1s; }
+.tip .tip-head { font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); margin-bottom: 4px; }
+.tip .row { display: flex; align-items: center; gap: 8px; padding: 1px 0; }
+.tip .row b { color: var(--ink); font-weight: 600; font-family: var(--font-mono); margin-left: auto; padding-left: 10px; }
+details.data-table { margin-top: 6px; font-size: 13px; color: var(--ink-2); }
+details.data-table summary { cursor: pointer; color: var(--ink-3); font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+
+/* ─── Model table ─── */
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); }
+table { width: 100%; border-collapse: collapse; font-size: var(--body-sm); }
+th { font-family: var(--font-mono); font-weight: 500; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3);
+  text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--line); background: var(--paper-2); white-space: nowrap; }
+td { padding: 10px 14px; border-bottom: 1px solid var(--line); color: var(--ink-2); white-space: nowrap; }
+td.num, th.num { text-align: right; font-family: var(--font-mono); }
+td.num { color: var(--ink); }
+tbody tr { cursor: pointer; transition: background-color .12s; }
+tbody tr:hover { background: var(--paper-2); }
+tbody tr.selected { background: var(--yellow); }
+tbody tr.selected td { color: var(--yellow-ink); }
+tbody tr:last-child td { border-bottom: none; }
+td.name { color: var(--ink); font-weight: 600; }
+.mini-table td, .mini-table th { padding: 6px 10px; }
+
+.drop { border: 1.5px dashed var(--line-2); border-radius: var(--r-md); padding: 12px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); color: var(--ink-2); font-size: var(--body-sm); transition: background-color .15s; }
+.drop.over { background: var(--paper-2); }
+.drop .src { font-family: var(--font-mono); font-size: 12px; color: var(--ink); }
+.kbd { font-family: var(--font-mono); font-size: 11px; background: var(--paper-3); color: var(--ink); padding: 1px 6px; border-radius: var(--r-xs); }
+footer.shortcuts { color: var(--ink-3); font-size: 12.5px; text-align: center; margin-top: var(--sp-8); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ─── Assumptions dialog ─── */
+.page-actions { margin-top: var(--sp-5); display: flex; justify-content: center; }
+dialog.assump { border: none; border-radius: var(--r-xl); padding: 0; width: min(980px, calc(100% - 32px)); max-height: calc(100vh - 48px);
+  background: var(--surface); color: var(--ink); box-shadow: var(--shadow-lg); }
+dialog.assump::backdrop { background: rgba(28,25,23,.45); }
+dialog.assump[open] { animation: fadeIn .18s ease-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.assump-head { position: sticky; top: 0; z-index: 2; background: var(--surface); border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; gap: var(--sp-3); padding: 18px 26px; }
+.assump-head h2 { font-family: var(--font-display); font-weight: 700; font-size: var(--h3); margin: 0; flex: 1; letter-spacing: -.01em; }
+.assump-body { padding: 8px 26px 26px; }
+.assump-body > p { color: var(--ink-2); font-size: var(--body-sm); margin: 12px 0 4px; }
+.assump-sec h3 { font-family: var(--font-display); font-weight: 600; font-size: var(--h4); margin: 22px 0 10px; }
+.assump-table td { white-space: normal; vertical-align: top; }
+.assump-table td.name { width: 22%; }
+.assump-table td.val { width: 26%; font-family: var(--font-mono); font-size: 12.5px; color: var(--ink); }
+.assump-table td.note { color: var(--ink-2); line-height: 1.5; }
+.assump-table tbody tr { cursor: default; }
+.assump-table a { color: var(--blue); font-weight: 600; text-decoration: none; white-space: nowrap; }
+.assump-table a:hover { text-decoration: underline; }
+.csv-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); }
+.csv-row .drop { flex: 1 1 320px; }
+.csv-row .hint { flex: 1 1 100%; }
+.seg-field { margin-bottom: var(--sp-3); }
+
+@media (max-width: 768px) {
+  .assump-table td.name, .assump-table td.val { width: auto; }
+  .assump-head, .assump-body { padding-left: 16px; padding-right: 16px; }
+  .edu-header-inner { padding: 6px 16px; }
+  .edu-logo { width: 48px; height: 48px; }
+  main { padding: 24px 16px 50px; }
+  .grid-3, .two-col { grid-template-columns: 1fr; }
+  .result .big { font-size: 28px; }
+}
+
+/* ─── v3: simplified layout ─── */
+.sec-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-3); margin-bottom: var(--sp-4); }
+.sec-row .sec-title { margin: 0; }
+.fields-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: var(--sp-3); }
+.workload-foot { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--sp-6); margin-top: var(--sp-2); padding-top: var(--sp-4); border-top: 1px dashed var(--line); }
+.seg-inline { margin: 0; }
+.stat { display: flex; flex-direction: column; gap: 4px; }
+.stat span { font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+.stat b { font-family: var(--font-display); font-weight: 600; font-size: 20px; color: var(--ink); }
+.option { display: flex; flex-direction: column; }
+.option .card-head .chip-slot { margin-left: auto; }
+.opt-total { display: flex; align-items: baseline; gap: 6px; }
+.opt-total .big { font-family: var(--font-display); font-weight: 700; font-size: 34px; letter-spacing: -.02em; color: var(--ink); line-height: 1.1; }
+.opt-total .per { font-size: var(--body-sm); color: var(--ink-3); }
+.opt-lines { margin: var(--sp-3) 0 var(--sp-4); background: var(--paper-2); border-radius: var(--r-md); padding: 10px 14px; }
+.line { display: flex; justify-content: space-between; gap: var(--sp-3); padding: 6px 0; font-size: var(--body-sm); color: var(--ink-2); }
+.line b { font-family: var(--font-mono); font-weight: 500; color: var(--ink); text-align: right; white-space: nowrap; }
+.line-total { border-top: 1px solid var(--line-2); margin-top: 2px; padding-top: 8px; color: var(--ink); font-weight: 600; }
+.line-total b { font-weight: 700; }
+.line-muted { font-size: 13px; }
+.line-muted b { color: var(--ink-2); }
+.line-total + .line-muted { border-top: 1px dashed var(--line-2); margin-top: 6px; padding-top: 8px; }
+.warn-line { margin: 8px 0 2px; }
+.opt-settings { margin-top: auto; }
+.bars { display: flex; flex-direction: column; gap: 12px; margin: var(--sp-3) 0 var(--sp-5); }
+.bar-row { display: grid; grid-template-columns: minmax(90px, 34%) 1fr auto; align-items: center; gap: 10px; font-size: var(--body-sm); }
+.bar-label { color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar-track { height: 14px; }
+.bar-fill { height: 100%; border-radius: 0 4px 4px 0; transition: width .25s ease-out; }
+.bar-value { font-family: var(--font-mono); font-weight: 500; color: var(--ink); white-space: nowrap; }
+.answers { list-style: none; margin: 0; padding: 0; }
+.answers li { display: flex; justify-content: space-between; gap: var(--sp-4); padding: 9px 0; border-top: 1px dashed var(--line); font-size: var(--body-sm); color: var(--ink-2); }
+.answers li b { font-family: var(--font-display); font-weight: 600; color: var(--ink); text-align: right; }
+details.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--shadow-sm); margin-bottom: var(--sp-4); }
+details.panel > summary { cursor: pointer; list-style: none; padding: 16px 24px; font-family: var(--font-display); font-weight: 600; font-size: var(--h4); color: var(--ink); display: flex; align-items: center; gap: 10px; }
+details.panel > summary::-webkit-details-marker { display: none; }
+details.panel > summary::before { content: '+'; display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--paper-2); color: var(--ink); font-family: var(--font-mono); font-size: 15px; }
+details.panel[open] > summary::before { content: '–'; }
+details.panel > :not(summary) { margin-left: 24px; margin-right: 24px; }
+details.panel[open] { padding-bottom: 20px; }
+.adv-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-6); }
+.adv-grid h4 { font-family: var(--font-mono); font-weight: 500; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); margin: 4px 0 var(--sp-3); }
+@media (max-width: 1000px) { .fields-grid { grid-template-columns: repeat(3, 1fr); } .adv-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 768px) { .fields-grid, .adv-grid { grid-template-columns: repeat(2, 1fr); } .bar-row { grid-template-columns: 1fr auto; } .bar-track { grid-column: 1 / -1; grid-row: 2; } }
+</style>
+</head>
+<body class="edu">
+<header class="edu-header"><div class="edu-header-inner">
+  <img class="edu-logo" alt="edulab" src="data:image/png;base64,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">
+  <span class="edu-wordmark">edulab</span>
+  <span class="header-spacer"></span>
+  <button type="button" class="ghost-btn js-assump" data-t="assumpBtn"></button>
+  <div class="edu-seg" role="group" aria-label="Język / Language">
+    <button type="button" data-lang="pl">PL</button>
+    <button type="button" data-lang="en">EN</button>
+  </div>
+</div></header>
+
+<main id="app" data-state="loading">
+  <div class="page-head">
+    <h1 class="app-title" data-t="title"></h1>
+    <p class="edu-lead" data-t="lead"></p>
+  </div>
+
+  <!-- ─── Workload ─── -->
+  <section>
+    <div class="sec-row">
+      <h2 class="sec-title" data-t="secWorkload"></h2>
+      <div class="edu-seg" id="presets" role="group"></div>
+    </div>
+    <div class="card">
+      <div class="fields-grid">
+        <div class="field"><label for="users" data-t="users"></label><input id="users" type="number" min="1" step="1"></div>
+        <div class="field"><label for="reqPerDay" data-t="reqPerDay"></label><input id="reqPerDay" type="number" min="0" step="1"></div>
+        <div class="field"><label for="chunks" data-t="chunks"></label><input id="chunks" type="number" min="0" step="1"></div>
+        <div class="field"><label for="chunkTok" data-t="chunkTok"></label><input id="chunkTok" type="number" min="0" step="100"></div>
+        <div class="field"><label for="promptTok" data-t="promptTok"></label><input id="promptTok" type="number" min="0" step="100"></div>
+        <div class="field"><label for="outTok" data-t="outTok"></label><input id="outTok" type="number" min="0" step="50"></div>
+      </div>
+      <div class="workload-foot">
+        <div class="field seg-inline"><label data-t="docLang"></label>
+          <div class="edu-seg" role="group">
+            <button type="button" data-doclang="pl" data-t="langPl"></button>
+            <button type="button" data-doclang="en" data-t="langEn"></button>
+          </div>
+        </div>
+        <div class="stat"><span data-t="kvTokens"></span><b id="kvTokens"></b></div>
+        <div class="stat"><span data-t="kvReqMonth"></span><b id="kvReqMonth"></b></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Options ─── -->
+  <section>
+    <h2 class="sec-title" data-t="secOptions"></h2>
+    <div class="grid-3" id="options" aria-live="polite">
+      <div class="card option" id="optApi" data-path="api">
+        <div class="card-head"><span class="dot" style="background:#1E8FC2"></span><h3 data-t="apiPath"></h3><span class="chip-slot"></span></div>
+        <div class="opt-total"><span class="big"></span><span class="per" data-t="monthly"></span></div>
+        <div class="opt-lines"></div>
+        <div class="opt-settings">
+          <div class="field"><label for="model" data-t="model"></label><select id="model"></select></div>
+          <p class="hint" id="modelNote"></p>
+        </div>
+      </div>
+      <div class="card option" id="optCloud" data-path="cloud">
+        <div class="card-head"><span class="dot" style="background:#00A651"></span><h3 data-t="cloudPath"></h3><span class="chip-slot"></span></div>
+        <div class="opt-total"><span class="big"></span><span class="per" data-t="monthly"></span></div>
+        <div class="opt-lines"></div>
+        <div class="opt-settings">
+          <div class="field"><label for="cloudGpu" data-t="gpu"></label><input id="cloudGpu" type="text"></div>
+          <div class="field"><label for="cloudPrice" data-t="cloudPrice"></label><input id="cloudPrice" type="number" min="0" step="500"></div>
+          <div class="field"><label data-t="cloudMode"></label>
+            <div class="edu-seg" role="group">
+              <button type="button" data-cloudmode="247" data-t="mode247"></button>
+              <button type="button" data-cloudmode="work" data-t="modeWork"></button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card option" id="optOwn" data-path="own">
+        <div class="card-head"><span class="dot" style="background:#7A5AC2"></span><h3 data-t="ownPath"></h3><span class="chip-slot"></span></div>
+        <div class="opt-total"><span class="big"></span><span class="per" data-t="monthly"></span></div>
+        <div class="opt-lines"></div>
+        <div class="opt-settings">
+          <div class="field"><label for="ownGpu" data-t="gpu"></label><input id="ownGpu" type="text"></div>
+          <div class="field-row">
+            <div class="field"><label for="ownCapex" data-t="capex"></label><input id="ownCapex" type="number" min="0" step="10000"></div>
+            <div class="field"><label for="ownAmort" data-t="amort"></label><input id="ownAmort" type="number" min="1" step="6"></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label for="ownOps" data-t="ops"></label><input id="ownOps" type="number" min="0" step="100"></div>
+            <div class="field"><label for="kwh" data-t="kwh"></label><input id="kwh" type="number" min="0" step="0.05"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Summary ─── -->
+  <section class="two-col">
+    <div class="card">
+      <h3 class="chart-title" data-t="summaryTitle"></h3>
+      <p class="chart-sub" data-t="summarySub"></p>
+      <div id="bars" class="bars"></div>
+      <ul id="answers" class="answers"></ul>
+    </div>
+    <div class="card chart-card">
+      <h3 class="chart-title" data-t="chartTime"></h3>
+      <p class="chart-sub" data-t="chartTimeSub"></p>
+      <div class="legend" id="legendTime"></div>
+      <div class="chart-wrap" id="chartTime"></div>
+      <details class="data-table"><summary data-t="showData"></summary><div class="table-wrap" id="tableTime"></div></details>
+    </div>
+  </section>
+
+  <!-- ─── More ─── -->
+  <details class="panel" id="modelsPanel">
+    <summary><span data-t="secModels"></span></summary>
+    <p class="sec-note" data-t="modelsNote"></p>
+    <div class="table-wrap">
+      <table id="modelTable">
+        <thead><tr>
+          <th data-t="thModel"></th><th class="num" data-t="thTok"></th><th class="num" data-t="thIn"></th><th class="num" data-t="thOut"></th>
+          <th class="num" data-t="thReq"></th><th class="num" data-t="thMonth"></th><th data-t="thVs"></th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </details>
+
+  <details class="panel" id="advancedPanel">
+    <summary><span data-t="secAdvanced"></span></summary>
+    <div class="adv-grid">
+      <div>
+        <h4 data-t="advApi"></h4>
+        <div class="field"><label for="fx" data-t="fx"></label><input id="fx" type="number" min="0.1" step="0.01"></div>
+        <label class="check"><input type="checkbox" id="thinking"><span data-t="thinking"></span></label>
+        <div class="field"><label for="thinkMult" data-t="thinkMult"></label><input id="thinkMult" type="number" min="1" step="0.5"></div>
+        <label class="check"><input type="checkbox" id="offPeak"><span data-t="offPeak"></span></label>
+      </div>
+      <div>
+        <h4 data-t="advTime"></h4>
+        <div class="field-row">
+          <div class="field"><label for="workDays" data-t="workDays"></label><input id="workDays" type="number" min="1" max="365" step="1"></div>
+          <div class="field"><label for="workHours" data-t="workHours"></label><input id="workHours" type="number" min="1" max="24" step="1"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label for="peak" data-t="peak"></label><input id="peak" type="number" min="1" step="0.5"></div>
+          <div class="field"><label for="horizon" data-t="horizon"></label><input id="horizon" type="number" min="6" max="120" step="6"></div>
+        </div>
+        <div class="field"><label for="ownPower" data-t="power"></label><input id="ownPower" type="number" min="0" step="50"></div>
+      </div>
+      <div>
+        <h4 data-t="advGpu"></h4>
+        <div class="field-row">
+          <div class="field"><label for="cloudPrefill" data-t="cloudPrefill"></label><input id="cloudPrefill" type="number" min="1" step="500"></div>
+          <div class="field"><label for="cloudDecode" data-t="cloudDecode"></label><input id="cloudDecode" type="number" min="1" step="100"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label for="ownPrefill" data-t="ownPrefill"></label><input id="ownPrefill" type="number" min="1" step="500"></div>
+          <div class="field"><label for="ownDecode" data-t="ownDecode"></label><input id="ownDecode" type="number" min="1" step="100"></div>
+        </div>
+      </div>
+      <div>
+        <h4 data-t="csvTitle"></h4>
+        <div class="drop" id="drop"><span data-t="csvSource"></span> <span class="src" id="csvSrc"></span></div>
+        <div class="csv-row" style="margin-top:var(--sp-3)">
+          <label class="edu-btn" for="csvFile" tabindex="0" id="csvBtn" data-t="csvLoad"></label>
+          <input type="file" id="csvFile" accept=".csv,text/csv" class="sr-only">
+          <button class="ghost-btn" id="csvReset" type="button" data-t="csvReset"></button>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <footer class="shortcuts" data-t="shortcuts"></footer>
+  <div class="sr-only" aria-live="polite" id="live"></div>
+  <dialog class="assump" id="assumptions" aria-labelledby="assumpTitle">
+    <div class="assump-head">
+      <h2 id="assumpTitle" data-t="assumpTitle"></h2>
+      <button type="button" class="ghost-btn" id="assumpClose" data-t="close"></button>
+    </div>
+    <div class="assump-body">
+      <p data-t="assumpLead"></p>
+      <div id="assumpBody"></div>
+    </div>
+  </dialog>
+</main>
+
+<script id="csvData" type="text/csv">﻿nazwa,cena_wejscie_per_1M_USD,cena_wyjscie_per_1M_USD,okno_kontekstu,klasa,uwaga
+OpenAI GPT-5.6 Luna,0.2,1.2,1050000,mini,Sprawdzono 2026-09-13. USD/1M tokenów tekstowych. API bez cache i Batch. Bez opłat za narzędzia. Klasa umowna do ćwiczenia. Standard. ID: gpt-5.6-luna. Wejście do 272K. Powyżej 272K: 0.40/1.80 USD (wejście/wyjście) dla całego żądania. Okno obejmuje wejście i wyjście. Źródła: https://developers.openai.com/api/docs/pricing https://developers.openai.com/api/docs/models/gpt-5.6-luna
+OpenAI GPT-5.6 Terra,2,12,1050000,mini,Sprawdzono 2026-09-13. USD/1M tokenów tekstowych. API bez cache i Batch. Bez opłat za narzędzia. Klasa umowna do ćwiczenia. Standard. ID: gpt-5.6-terra. Wejście do 272K. Powyżej 272K: 4/18 USD (wejście/wyjście) dla całego żądania. Okno obejmuje wejście i wyjście. Źródła: https://developers.openai.com/api/docs/pricing https://developers.openai.com/api/docs/models/gpt-5.6-terra
+OpenAI GPT-5.6 Sol,4,20,1050000,frontier,Sprawdzono 2026-09-13. USD/1M tokenów tekstowych. API bez cache i Batch. Bez opłat za narzędzia. Klasa umowna do ćwiczenia. Standard. ID: gpt-5.6-sol. Wejście do 272K. Powyżej 272K: 8/30 USD (wejście/wyjście) dla całego żądania. Cena promocyjna co najmniej do 2026-11-21. Okno obejmuje wejście i wyjście. Źródła: https://developers.openai.com/api/docs/pricing https://developers.openai.com/api/docs/models/gpt-5.6-sol
+OpenAI GPT-6 Astra,10,50,1050000,frontier,Sprawdzono 2026-09-13. USD/1M tokenów tekstowych. API bez cache i Batch. Bez opłat za narzędzia. Klasa umowna do ćwiczenia. Standard. ID: gpt-6-astra. Wejście do 272K. Powyżej 272K: 20/75 USD (wejście/wyjście) dla całego żądania. Okno obejmuje wejście i wyjście. Źródła: https://developers.openai.com/api/docs/pricing https://developers.openai.com/api/docs/models/gpt-6-astra
+Anthropic Claude Haiku 4.5,1,5,200000,mini,Sprawdzono 2026-09-13. USD/1M tokenów tekstowych. API bez cache i Batch. Bez opłat za narzędzia. Klasa umowna do ćwiczenia. Standard w Claude API. ID: claude-haiku-4-5-20251001. Źródła: https://platform.claude.com/docs/en/about-claude/pricing https://platform.claude.com/docs/en/models/overview
+Anthropic Claude Sonnet 5,2,10,1000000,standard,Sprawdzono 2026-09-13. USD/1M tokenów tekstowych. API bez cache i Batch. Bez opłat za narzędzia. Klasa umowna do ćwiczenia. Standard w Claude API z globalnym routingiem. ID: claude-sonnet-5. Bez dopłaty za długi kontekst. Źródła: https://platform.claude.com/docs/en/about-claude/pricing https://platform.claude.com/docs/en/models/overview
+Anthropic Claude Opus 5,5,25,1000000,frontier,Sprawdzono 2026-09-13. USD/1M tokenów tekstowych. API bez cache i Batch. Bez opłat za narzędzia. Klasa umowna do ćwiczenia. Standard w Claude API z globalnym routingiem. ID: claude-opus-5. Bez Fast mode i dopłaty za długi kontekst. Źródła: https://platform.claude.com/docs/en/about-claude/pricing https://platform.claude.com/docs/en/models/overview
+Anthropic Claude Fable 5.1,10,50,1000000,frontier,Sprawdzono 2026-09-13. USD/1M tokenów tekstowych. API bez cache i Batch. Bez opłat za narzędzia. Klasa umowna do ćwiczenia. Standard w Claude API z globalnym routingiem. ID: claude-fable-5-1. Bez dopłaty za długi kontekst. Źródła: https://platform.claude.com/docs/en/about-claude/pricing https://platform.claude.com/docs/en/models/overview
+DeepSeek V4.1 Flash,0.3,1.2,1000000,mini,Sprawdzono 2026-09-13. USD/1M tokenów tekstowych. API bez cache i Batch. Bez opłat za narzędzia. Klasa umowna do ćwiczenia. Bezpośrednie API. ID: deepseek-flash. Ceny PEAK: pon.-pt. 01:00-04:00 i 06:00-10:00 UTC. Poza tymi godzinami: 0.15/0.60 USD (wejście/wyjście). Oba tryby myślenia. Źródło: https://api-docs.deepseek.com/quick_start/pricing/
+DeepSeek V4 Pro 0813,1.32,3.96,1000000,frontier,Sprawdzono 2026-09-13. USD/1M tokenów tekstowych. API bez cache i Batch. Bez opłat za narzędzia. Klasa umowna do ćwiczenia. Bezpośrednie API. ID: deepseek-v4-pro. Ceny PEAK: pon.-pt. 01:00-04:00 i 06:00-10:00 UTC. Poza tymi godzinami: 0.66/1.98 USD (wejście/wyjście). Oba tryby myślenia. Źródło: https://api-docs.deepseek.com/quick_start/pricing/
+Alibaba Qwen3.7 Plus (2026-05-26),0.4,1.6,1000000,standard,Sprawdzono 2026-09-13. USD/1M tokenów tekstowych. API bez cache i Batch. Bez opłat za narzędzia. Klasa umowna do ćwiczenia. Model Studio: Singapur / International. ID: qwen3.7-plus-2026-05-26. Wejście do 256K. Powyżej 256K: 1.20/4.80 USD (wejście/wyjście). Oba tryby myślenia. Cena wersji datowanej bez promocji aliasu. Źródła: https://www.alibabacloud.com/help/en/model-studio/model-pricing https://www.alibabacloud.com/help/en/model-studio/qwen3-7-plus
+Z.ai GLM-5.3,1.4,4.4,1000000,frontier,Sprawdzono 2026-09-13. USD/1M tokenów tekstowych. API bez cache i Batch. Bez opłat za narzędzia. Klasa umowna do ćwiczenia. Z.ai API rozliczane za tokeny. ID: glm-5.3. Nie abonament GLM Coding Plan. Rozumowanie zawsze włączone. Źródła: https://docs.z.ai/guides/overview/pricing https://docs.z.ai/guides/llm/glm-5.3
+</script>
+<script>
+// ─── Constants ───
+const CURRENCY = 'PLN';
+const COLORS = { api: '#1E8FC2', cloud: '#00A651', own: '#7A5AC2', ink: '#1C1917', ink3: '#948C82', line: '#EDE7D2', surface: '#FFFFFF' };
+const MINUTE_OF_WORK = 15000 / (168 * 60); // 1.49 PLN
+const HOURS_MONTH = 730;
+// Tokens per word, measured 2026-09-13 on the Solaris dataset (45.8K Polish words) and a parallel PL/EN text.
+// Claude has no public tokenizer: Haiku 4.5 assumed like o200k, Claude 4.7+ tokenizer +30% (Anthropic docs).
+const TOK_PER_WORD = {
+  openai:    { pl: 2.32, en: 1.37, label: 'OpenAI o200k' },
+  deepseek:  { pl: 2.41, en: 1.38, label: 'DeepSeek V3' },
+  glm:       { pl: 2.41, en: 1.39, label: 'GLM' },
+  qwen:      { pl: 2.61, en: 1.46, label: 'Qwen3' },
+  claude:    { pl: 2.32, en: 1.37, label: 'Claude (Haiku 4.5)' },
+  claudeNew: { pl: 3.02, en: 1.78, label: 'Claude 4.7+ (+30%)' },
+};
+const BASE_FAMILY = 'openai';      // workload tokens are entered as OpenAI o200k tokens of Polish text
+const SELF_HOSTED_FAMILY = 'qwen';
+const EN_WORD_FACTOR = 502 / 443;  // the same text in English has 13% more words
+const THINKING_INPUT = { 'qwen3.7-plus': { pin: 1.6, tierPin: 4.8 } };
+const PRESETS = {
+  S1: { users: 30, reqPerDay: 15 },
+  S2: { users: 200, reqPerDay: 20 },
+  S3: { users: 8, reqPerDay: 5 },
+};
+const PRESET_FIELDS = Object.keys(PRESETS.S1);
+const DEFAULTS = {
+  ...PRESETS.S1, chunks: 5, chunkTok: 2000, promptTok: 500, outTok: 500, docLang: 'pl', workDays: 250, workHours: 8,
+  model: 'OpenAI GPT-5.6 Luna', fx: 3.73, offPeak: false, thinking: false, thinkMult: 3,
+  cloudGpu: '1× NVIDIA H100 80GB', cloudPrice: 10000, cloudMode: '247', cloudPrefill: 10000, cloudDecode: 1500,
+  ownGpu: '1× RTX PRO 6000 96GB', ownCapex: 250000, ownAmort: 36, ownOps: 1000, ownPower: 900, kwh: 1.0, ownPrefill: 10000, ownDecode: 1500,
+  peak: 2, horizon: 36,
+};
+const NUM_FIELDS = ['users','reqPerDay','chunks','chunkTok','promptTok','outTok','workDays','workHours','fx','thinkMult',
+  'cloudPrice','cloudPrefill','cloudDecode','ownCapex','ownAmort','ownOps','ownPower','kwh','ownPrefill','ownDecode','peak','horizon'];
+const TEXT_FIELDS = ['cloudGpu','ownGpu'];
+const LS_LANG = 'edulab-token-cost-lang';
+const SOURCES = {
+  openai: 'https://developers.openai.com/api/docs/pricing',
+  anthropic: 'https://platform.claude.com/docs/en/about-claude/pricing',
+  deepseek: 'https://api-docs.deepseek.com/quick_start/pricing/',
+  alibaba: 'https://www.alibabacloud.com/help/en/model-studio/model-pricing',
+  nbp: 'https://www.bankier.pl/waluty/kursy-walut/nbp',
+  h100: 'https://getdeploying.com/gpus/nvidia-h100',
+  pro6000: 'https://www.tomshardware.com/pc-components/gpus/nvidia-doubles-rtx-pro-6000-blackwells-msrp-to-a-staggering-usd16-000-96gb-card-started-pre-orders-below-usd8-000-last-year',
+  bench: 'https://www.databasemart.com/blog/vllm-gpu-benchmark-pro6000',
+  bench2: 'https://www.spheron.network/blog/rent-nvidia-rtx-pro-6000/',
+  power: 'https://onmedia.com.pl/cena-pradu-dla-firm-czerwiec-2026/',
+  rag: 'https://www.premai.io/blog/rag-chunking-strategies-the-2026-benchmark-guide/',
+  bielik: 'https://arxiv.org/html/2410.18565v1',
+};
+
+const T = {
+  pl: {
+    title: 'Ile kosztuje AI w firmie?',
+    lead: 'Asystent RAG odpowiada na podstawie firmowych dokumentów. Porównaj miesięczny koszt trzech opcji: płatne API modelu, GPU w chmurze i własny serwer.',
+    assumpBtn: 'Założenia i źródła', assumpTitle: 'Założenia kalkulatora', close: 'Zamknij',
+    assumpLead: 'Liczby sprawdzone 13.09.2026. Wartości „obecnie” pochodzą z pól kalkulatora. Koszty netto, bez VAT.',
+    thAssump: 'Założenie', thValue: 'Wartość', thSource: 'Uzasadnienie i źródło',
+    secWorkload: 'Obciążenie', presetS1: 'S1 Handlowcy · 30', presetS2: 'S2 Cała firma · 200', presetS3: 'S3 Przetargi · 8',
+    users: 'Użytkownicy', reqPerDay: 'Zapytań / osobę / dzień', chunks: 'Fragmenty RAG', chunkTok: 'Tokeny / fragment',
+    promptTok: 'Instrukcje + pytanie (tok.)', outTok: 'Odpowiedź (tok.)',
+    docLang: 'Język treści', langPl: 'Polski', langEn: 'Angielski',
+    kvTokens: 'Tokeny / zapytanie (we / wy)', kvReqMonth: 'Zapytań / mies.',
+    secOptions: 'Trzy opcje – koszt miesięczny',
+    apiPath: 'API', cloudPath: 'Chmura GPU', ownPath: 'Własny serwer', monthly: '/ mies.',
+    model: 'Model', gpu: 'GPU', cloudPrice: 'Cena / mies. z obsługą (PLN)', cloudMode: 'Czas pracy GPU', mode247: '24/7', modeWork: 'Godziny pracy',
+    capex: 'Zakup (PLN)', amort: 'Amortyzacja (mies.)', ops: 'Obsługa / mies. (PLN)', kwh: 'Prąd PLN / kWh',
+    lInput: 'Tokeny wejścia', lOutput: 'Tokeny wyjścia', lGpu: 'GPU z obsługą', lAmort: 'Amortyzacja zakupu', lEnergy: 'Prąd', lOps: 'Obsługa',
+    lYear: 'Rocznie', lFirstYear: 'Pierwszy rok (z zakupem)', lPerReq: 'Za zapytanie', lUtil: 'Wykorzystanie GPU',
+    cheapest: 'Najtańsze', tierNote: 'Prompt powyżej {k}K tokenów: droższa stawka.', ctxOver: 'Prompt nie mieści się w oknie kontekstu modelu!',
+    summaryTitle: 'Podsumowanie miesięczne', summarySub: 'Koszt każdej opcji przy bieżącym obciążeniu.',
+    aApiVsCloud: 'API tańsze od chmury do', aApiVsOwn: 'API tańsze od własnego serwera do',
+    aPayback: 'Serwer zwraca się względem chmury po', aMinute: 'Zapytanie API a minuta pracy (1,49 zł)',
+    usersUnit: 'użytk.', monthsUnit: 'mies.', never: 'nie w ciągu 10 lat', apiNever: 'nigdy (już 1 osoba)',
+    chartTime: 'Koszt narastająco w czasie', chartTimeSub: 'Własny serwer startuje od ceny zakupu. Po okresie amortyzacji doliczamy wymianę sprzętu.',
+    showData: 'Pokaż dane', monthLabel: 'Miesiąc',
+    secModels: 'Porównaj wszystkie modele API', modelsNote: 'Tokeny liczone tokenizerem danego modelu. Kliknij wiersz, aby wybrać model.',
+    thModel: 'Model', thTok: 'Tokeny we / wy', thIn: 'We $/1M', thOut: 'Wy $/1M', thReq: 'Zapytanie', thMonth: 'Miesięcznie', thVs: 'Na tle GPU',
+    vsCheaper: 'tańsze niż GPU', vsDearer: 'droższe niż oba GPU', vsMid: 'pomiędzy',
+    secAdvanced: 'Ustawienia zaawansowane', advApi: 'API', advTime: 'Czas i obciążenie', advGpu: 'Przepustowość GPU (tok/s)',
+    fx: 'Kurs USD → PLN', thinking: 'Tryb myślenia (reasoning)', thinkMult: 'Mnożnik wyjścia przy myśleniu', offPeak: 'DeepSeek poza szczytem',
+    workDays: 'Dni robocze / rok', workHours: 'Godziny pracy / dzień', peak: 'Mnożnik szczytu', horizon: 'Horyzont wykresu (mies.)', power: 'Moc serwera (W)',
+    cloudPrefill: 'Chmura: wejście', cloudDecode: 'Chmura: wyjście', ownPrefill: 'Serwer: wejście', ownDecode: 'Serwer: wyjście',
+    csvTitle: 'Cennik modeli', csvSource: 'Źródło:', csvLoad: 'Wczytaj CSV', csvReset: 'Cennik wbudowany',
+    csvBuiltIn: 'cennik_modeli_2026-09.csv (wbudowany)', csvError: 'Nie udało się odczytać CSV: brak wymaganych kolumn.',
+    shortcuts: 'Skróty: 1–3 scenariusze · A założenia · L język · ↑/↓ na liście modeli',
+    live: 'API {api}, chmura {cloud}, własny serwer {own} miesięcznie.',
+  },
+  en: {
+    title: 'What does AI cost a business?',
+    lead: 'A RAG assistant answers from company documents. Compare the monthly cost of three options: a paid model API, a cloud GPU and your own server.',
+    assumpBtn: 'Assumptions and sources', assumpTitle: 'Calculator assumptions', close: 'Close',
+    assumpLead: 'Figures checked on 13 Sep 2026. “Currently” values come from the calculator fields. Net costs, excluding VAT.',
+    thAssump: 'Assumption', thValue: 'Value', thSource: 'Rationale and source',
+    secWorkload: 'Workload', presetS1: 'S1 Sales · 30', presetS2: 'S2 Whole company · 200', presetS3: 'S3 Tenders · 8',
+    users: 'Users', reqPerDay: 'Requests / person / day', chunks: 'RAG chunks', chunkTok: 'Tokens / chunk',
+    promptTok: 'Instructions + question (tok.)', outTok: 'Answer (tok.)',
+    docLang: 'Content language', langPl: 'Polish', langEn: 'English',
+    kvTokens: 'Tokens / request (in / out)', kvReqMonth: 'Requests / month',
+    secOptions: 'Three options – monthly cost',
+    apiPath: 'API', cloudPath: 'Cloud GPU', ownPath: 'Own server', monthly: '/ month',
+    model: 'Model', gpu: 'GPU', cloudPrice: 'Price / month incl. support (PLN)', cloudMode: 'GPU running time', mode247: '24/7', modeWork: 'Working hours',
+    capex: 'Purchase (PLN)', amort: 'Depreciation (months)', ops: 'Support / month (PLN)', kwh: 'Power PLN / kWh',
+    lInput: 'Input tokens', lOutput: 'Output tokens', lGpu: 'GPU incl. support', lAmort: 'Purchase depreciation', lEnergy: 'Power', lOps: 'Support',
+    lYear: 'Per year', lFirstYear: 'First year (with purchase)', lPerReq: 'Per request', lUtil: 'GPU utilisation',
+    cheapest: 'Cheapest', tierNote: 'Prompt above {k}K tokens: higher rate.', ctxOver: 'Prompt does not fit the model context window!',
+    summaryTitle: 'Monthly summary', summarySub: 'Cost of each option at the current workload.',
+    aApiVsCloud: 'API cheaper than cloud up to', aApiVsOwn: 'API cheaper than own server up to',
+    aPayback: 'Server pays back vs cloud after', aMinute: 'API request vs a minute of work (1.49 PLN)',
+    usersUnit: 'users', monthsUnit: 'mo.', never: 'not within 10 years', apiNever: 'never (even 1 user)',
+    chartTime: 'Cumulative cost over time', chartTimeSub: 'Own server starts at the purchase price. After depreciation, hardware replacement is added.',
+    showData: 'Show data', monthLabel: 'Month',
+    secModels: 'Compare all API models', modelsNote: 'Tokens counted with each model’s tokenizer. Click a row to select the model.',
+    thModel: 'Model', thTok: 'Tokens in / out', thIn: 'In $/1M', thOut: 'Out $/1M', thReq: 'Request', thMonth: 'Monthly', thVs: 'Vs GPU',
+    vsCheaper: 'cheaper than GPU', vsDearer: 'dearer than both GPUs', vsMid: 'in between',
+    secAdvanced: 'Advanced settings', advApi: 'API', advTime: 'Time and load', advGpu: 'GPU throughput (tok/s)',
+    fx: 'USD → PLN rate', thinking: 'Thinking mode (reasoning)', thinkMult: 'Output multiplier when thinking', offPeak: 'DeepSeek off-peak',
+    workDays: 'Working days / year', workHours: 'Working hours / day', peak: 'Peak multiplier', horizon: 'Chart horizon (months)', power: 'Server power (W)',
+    cloudPrefill: 'Cloud: input', cloudDecode: 'Cloud: output', ownPrefill: 'Server: input', ownDecode: 'Server: output',
+    csvTitle: 'Model price list', csvSource: 'Source:', csvLoad: 'Load CSV', csvReset: 'Built-in list',
+    csvBuiltIn: 'cennik_modeli_2026-09.csv (built-in)', csvError: 'Could not read the CSV: required columns missing.',
+    shortcuts: 'Shortcuts: 1–3 scenarios · A assumptions · L language · ↑/↓ in the model list',
+    live: 'API {api}, cloud {cloud}, own server {own} per month.',
+  },
+};
+
+// ─── State ───
+const state = { ...DEFAULTS, lang: 'pl', models: [], csvSource: null };
+
+// ─── DOM refs ───
+const $ = (id) => document.getElementById(id);
+const appEl = $('app');
+const modelSel = $('model');
+const modelTbody = document.querySelector('#modelTable tbody');
+const dropEl = $('drop');
+const dialogEl = $('assumptions');
+
+// ─── Helpers ───
+function t(key, vars) {
+  let s = (T[state.lang] && T[state.lang][key]) ?? T.pl[key] ?? key;
+  if (vars) for (const k in vars) s = s.replaceAll('{' + k + '}', vars[k]);
+  return s;
+}
+const P = (pl, en) => state.lang === 'pl' ? pl : en;
+const locale = () => state.lang === 'pl' ? 'pl-PL' : 'en-GB';
+function fmtNum(v, d = 0) { return new Intl.NumberFormat(locale(), { minimumFractionDigits: d, maximumFractionDigits: d }).format(v); }
+function money(v, digits) { return fmtNum(v, digits ?? (Math.abs(v) < 10 ? 2 : 0)) + ' ' + CURRENCY; }
+function moneyShort(v) {
+  const a = Math.abs(v);
+  if (a >= 1e6) return fmtNum(v / 1e6, 1) + ' mln';
+  if (a >= 1e3) return fmtNum(v / 1e3, 0) + (state.lang === 'pl' ? ' tys.' : 'k');
+  return fmtNum(v, 0);
+}
+function fmtTok(v) {
+  if (v >= 1e9) return fmtNum(v / 1e9, 2) + (state.lang === 'pl' ? ' mld' : ' bn');
+  if (v >= 1e6) return fmtNum(v / 1e6, 1) + (state.lang === 'pl' ? ' mln' : ' M');
+  return fmtNum(Math.round(v));
+}
+const pct = (v) => fmtNum(v * 100, 0) + '%';
+const pair = (a, b) => fmtTok(a) + ' / ' + fmtTok(b);
+function el(tag, attrs = {}, text) {
+  const n = document.createElement(tag);
+  for (const k in attrs) n.setAttribute(k, attrs[k]);
+  if (text != null) n.textContent = text;
+  return n;
+}
+const SVG_NS = 'http://www.w3.org/2000/svg';
+function svgEl(tag, attrs = {}) {
+  const n = document.createElementNS(SVG_NS, tag);
+  for (const k in attrs) n.setAttribute(k, attrs[k]);
+  return n;
+}
+
+// CSV parser with quoted fields
+function parseCsv(text) {
+  text = text.replace(/^\uFEFF/, '');
+  const rows = []; let row = []; let cur = ''; let q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) {
+      if (c === '"' && text[i + 1] === '"') { cur += '"'; i++; }
+      else if (c === '"') q = false;
+      else cur += c;
+    } else if (c === '"') q = true;
+    else if (c === ',') { row.push(cur); cur = ''; }
+    else if (c === '\n' || c === '\r') {
+      if (c === '\r' && text[i + 1] === '\n') i++;
+      row.push(cur); cur = '';
+      if (row.some((x) => x.trim() !== '')) rows.push(row);
+      row = [];
+    } else cur += c;
+  }
+  row.push(cur);
+  if (row.some((x) => x.trim() !== '')) rows.push(row);
+  return rows;
+}
+const numOf = (s) => parseFloat(String(s).replace(',', '.'));
+function familyOf(id, name) {
+  const s = (id || name).toLowerCase();
+  if (/claude-(opus|sonnet|fable|mythos)-[5-9]|claude-opus-4-[78]/.test(s) || /claude (opus|sonnet|fable) 5/i.test(name)) return 'claudeNew';
+  if (s.includes('claude')) return 'claude';
+  if (s.includes('deepseek')) return 'deepseek';
+  if (s.includes('qwen')) return 'qwen';
+  if (s.includes('glm')) return 'glm';
+  return 'openai';
+}
+function modelsFromCsv(text) {
+  const rows = parseCsv(text);
+  if (!rows.length) return null;
+  const head = rows[0].map((h) => h.trim());
+  const idx = (n) => head.indexOf(n);
+  const iName = idx('nazwa'), iIn = idx('cena_wejscie_per_1M_USD'), iOut = idx('cena_wyjscie_per_1M_USD');
+  if (iName < 0 || iIn < 0 || iOut < 0) return null;
+  const iCtx = idx('okno_kontekstu'), iCls = idx('klasa'), iNote = idx('uwaga');
+  return rows.slice(1).map((r) => {
+    const note = iNote >= 0 ? (r[iNote] || '') : '';
+    const name = (r[iName] || '').trim();
+    const tier = note.match(/Powyżej\s+(\d+)K:\s*([\d.]+)\/([\d.]+)/);
+    const off = note.match(/Poza tymi godzinami:\s*([\d.]+)\/([\d.]+)/);
+    const id = ((note.match(/ID:\s*([\w.\-]+)/) || [])[1] || '').replace(/\.$/, '');
+    const thinkKey = Object.keys(THINKING_INPUT).find((k) => id.startsWith(k));
+    return {
+      name, id, note,
+      pin: numOf(r[iIn]), pout: numOf(r[iOut]),
+      ctx: iCtx >= 0 ? numOf(r[iCtx]) : Infinity,
+      cls: iCls >= 0 ? (r[iCls] || '').trim() : '',
+      family: familyOf(id, name),
+      alwaysThinks: /Rozumowanie zawsze włączone/i.test(note),
+      thinkingIn: thinkKey ? THINKING_INPUT[thinkKey] : null,
+      tier: tier ? { above: +tier[1] * 1000, pin: +tier[2], pout: +tier[3] } : null,
+      offPeak: off ? { pin: +off[1], pout: +off[2] } : null,
+    };
+  }).filter((m) => m.name && isFinite(m.pin) && isFinite(m.pout));
+}
+
+// ─── Cost model ───
+// Workload tokens are o200k tokens of Polish text; convert to words, then to each tokenizer and language.
+function reqTokens(family, s, thinks) {
+  const base = TOK_PER_WORD[BASE_FAMILY].pl;
+  const langWords = s.docLang === 'en' ? EN_WORD_FACTOR : 1;
+  const k = TOK_PER_WORD[family][s.docLang] / base * langWords;
+  const inBase = s.chunks * s.chunkTok + s.promptTok;
+  return { inTok: inBase * k, outTok: s.outTok * k * (thinks ? s.thinkMult : 1) };
+}
+const reqPerMonth = (s, users = s.users) => users * s.reqPerDay * s.workDays / 12;
+function workload(s, users = s.users) {
+  const tk = reqTokens(SELF_HOSTED_FAMILY, s, s.thinking);
+  const perSec = users * s.reqPerDay / (s.workHours * 3600) * s.peak;
+  return { reqMonth: reqPerMonth(s, users), ...tk, inPeakPerSec: perSec * tk.inTok, outPeakPerSec: perSec * tk.outTok };
+}
+const modelThinks = (m, s) => s.thinking || m.alwaysThinks;
+function modelRates(m, s, inTok) {
+  let pin = m.pin, pout = m.pout, tiered = false;
+  if (s.offPeak && m.offPeak) { pin = m.offPeak.pin; pout = m.offPeak.pout; }
+  const thinkIn = s.thinking && m.thinkingIn;
+  if (thinkIn) pin = m.thinkingIn.pin;
+  if (m.tier && inTok > m.tier.above) { pin = thinkIn ? m.thinkingIn.tierPin : m.tier.pin; pout = m.tier.pout; tiered = true; }
+  return { pin, pout, tiered };
+}
+function apiCost(m, s, users = s.users) {
+  const reqMonth = reqPerMonth(s, users);
+  const tk = reqTokens(m.family, s, modelThinks(m, s));
+  const r = modelRates(m, s, tk.inTok);
+  const inPerReq = tk.inTok * r.pin / 1e6 * s.fx, outPerReq = tk.outTok * r.pout / 1e6 * s.fx;
+  const perReq = inPerReq + outPerReq;
+  return { ...tk, ...r, perReq, inMonthly: inPerReq * reqMonth, outMonthly: outPerReq * reqMonth, monthly: perReq * reqMonth, reqMonth };
+}
+function gpuUnits(w, prefill, decode) {
+  const load = w.inPeakPerSec / prefill + w.outPeakPerSec / decode;
+  return { load, units: Math.max(1, Math.ceil(load - 1e-9)) };
+}
+const cloudHours = (s) => s.cloudMode === 'work' ? s.workDays / 12 * s.workHours : HOURS_MONTH;
+function cloudCost(s, users = s.users) {
+  const w = workload(s, users);
+  const g = gpuUnits(w, s.cloudPrefill, s.cloudDecode);
+  const hours = cloudHours(s);
+  const monthly = g.units * s.cloudPrice * hours / HOURS_MONTH;
+  return { ...g, hours, monthly, perReq: w.reqMonth ? monthly / w.reqMonth : 0 };
+}
+function ownCost(s, users = s.users) {
+  const w = workload(s, users);
+  const g = gpuUnits(w, s.ownPrefill, s.ownDecode);
+  const energy = g.units * s.ownPower / 1000 * 24 * 30.4 * s.kwh;
+  const amort = g.units * s.ownCapex / s.ownAmort;
+  const running = energy + s.ownOps;
+  const monthly = amort + running;
+  return { ...g, energy, amort, running, capex: g.units * s.ownCapex, monthly, perReq: w.reqMonth ? monthly / w.reqMonth : 0 };
+}
+const currentModel = () => state.models.find((m) => m.name === state.model) || state.models[0];
+
+function breakEvenUsers(costA, costB, max) {
+  let last = 0;
+  for (let u = 1; u <= max; u++) { if (costA(u) <= costB(u)) last = u; else if (last) break; }
+  return last;
+}
+function paybackMonth(own, other, horizon) {
+  for (let m = 0; m <= horizon; m++) if (own.capex + own.running * m <= other * m) return m;
+  return null;
+}
+
+// ─── Render ───
+function applyI18n() {
+  document.documentElement.lang = state.lang;
+  document.querySelectorAll('[data-t]').forEach((n) => { n.textContent = t(n.dataset.t); });
+  document.querySelectorAll('[data-lang]').forEach((b) => b.classList.toggle('active', b.dataset.lang === state.lang));
+  document.title = state.lang === 'pl' ? 'Kalkulator kosztów AI – API, chmura, własny serwer' : 'AI cost calculator – API, cloud, own server';
+}
+function renderPresets() {
+  const box = $('presets'); box.replaceChildren();
+  Object.keys(PRESETS).forEach((k, i) => {
+    const active = PRESET_FIELDS.every((f) => state[f] === PRESETS[k][f]);
+    const b = el('button', { type: 'button', 'data-preset': k, title: String(i + 1) }, t('preset' + k));
+    b.classList.toggle('active', active);
+    box.append(b);
+  });
+}
+function renderModelSelect() {
+  modelSel.replaceChildren(...state.models.map((m) => el('option', { value: m.name }, m.name)));
+  if (!state.models.some((m) => m.name === state.model) && state.models[0]) state.model = state.models[0].name;
+  modelSel.value = state.model;
+  $('csvSrc').textContent = state.csvSource || t('csvBuiltIn');
+}
+function syncInputs() {
+  [...NUM_FIELDS, ...TEXT_FIELDS].forEach((f) => { const n = $(f); if (document.activeElement !== n) n.value = state[f]; });
+  $('offPeak').checked = state.offPeak;
+  $('thinking').checked = state.thinking;
+  modelSel.value = state.model;
+}
+function syncSegs() {
+  document.querySelectorAll('[data-doclang]').forEach((b) => b.classList.toggle('active', b.dataset.doclang === state.docLang));
+  document.querySelectorAll('[data-cloudmode]').forEach((b) => b.classList.toggle('active', b.dataset.cloudmode === state.cloudMode));
+}
+
+function renderOption(node, { monthly, win, lines, extra, warn }) {
+  node.classList.toggle('winner', win);
+  node.dataset.monthly = monthly.toFixed(2); node.dataset.winner = String(win);
+  const slot = node.querySelector('.chip-slot');
+  slot.replaceChildren(); if (win) slot.append(el('span', { class: 'edu-chip chip-win' }, t('cheapest')));
+  node.querySelector('.opt-total .big').textContent = money(monthly, 0);
+  const box = node.querySelector('.opt-lines'); box.replaceChildren();
+  lines.forEach(([l, v]) => { const d = el('div', { class: 'line' }); d.append(el('span', {}, l), el('b', {}, v)); box.append(d); });
+  const sum = el('div', { class: 'line line-total' }); sum.append(el('span', {}, P('Razem miesięcznie', 'Total per month')), el('b', {}, money(monthly, 0))); box.append(sum);
+  extra.forEach(([l, v]) => { const d = el('div', { class: 'line line-muted' }); d.append(el('span', {}, l), el('b', {}, v)); box.append(d); });
+  if (warn) { const w = el('p', { class: 'hint warn-line' }); w.append(el('span', { class: 'edu-chip chip-warn' }, '!'), document.createTextNode(' ' + warn)); box.append(w); }
+}
+
+function renderBars(items) {
+  const box = $('bars'); box.replaceChildren();
+  const max = Math.max(...items.map((i) => i.value)) || 1;
+  items.forEach((i) => {
+    const row = el('div', { class: 'bar-row', title: `${i.label}: ${money(i.value, 0)}`, 'data-path': i.key });
+    const lab = el('span', { class: 'bar-label' }, i.label);
+    const track = el('div', { class: 'bar-track' });
+    const fill = el('div', { class: 'bar-fill' });
+    fill.style.width = Math.max(0.5, i.value / max * 100) + '%';
+    fill.style.background = i.color;
+    track.append(fill);
+    row.append(lab, track, el('b', { class: 'bar-value' }, money(i.value, 0)));
+    box.append(row);
+  });
+}
+
+function render() {
+  const s = state;
+  const m = currentModel();
+  if (!m) return;
+  syncSegs();
+  renderPresets();
+  const w = workload(s);
+  const api = apiCost(m, s), cloud = cloudCost(s), own = ownCost(s);
+  const costs = { api: api.monthly, cloud: cloud.monthly, own: own.monthly };
+  const winner = Object.keys(costs).reduce((a, b) => costs[a] <= costs[b] ? a : b);
+
+  // workload summary (base tokenizer)
+  const base = reqTokens(BASE_FAMILY, s, false);
+  $('kvTokens').textContent = pair(base.inTok, base.outTok);
+  $('kvReqMonth').textContent = fmtNum(api.reqMonth);
+
+  // options
+  const fam = TOK_PER_WORD[m.family];
+  $('modelNote').textContent = `${api.pin} / ${api.pout} USD / 1M · ${fam.label} · ${P('tokeny', 'tokens')} ${pair(api.inTok, api.outTok)}` +
+    (modelThinks(m, s) ? ` · ${P('wyjście', 'output')} ×${fmtNum(s.thinkMult, 1)}` : '');
+  let apiWarn = null;
+  if (api.inTok + api.outTok > m.ctx) apiWarn = t('ctxOver');
+  else if (api.tiered) apiWarn = t('tierNote', { k: m.tier.above / 1000 });
+  renderOption($('optApi'), { monthly: api.monthly, win: winner === 'api', warn: apiWarn,
+    lines: [[t('lInput'), money(api.inMonthly, 0)], [t('lOutput'), money(api.outMonthly, 0)]],
+    extra: [[t('lYear'), money(api.monthly * 12, 0)], [t('lPerReq'), money(api.perReq, 4)]] });
+  renderOption($('optCloud'), { monthly: cloud.monthly, win: winner === 'cloud',
+    lines: [[t('lGpu') + ` (${cloud.units} × ${fmtNum(cloud.hours, 0)} h)`, money(cloud.monthly, 0)]],
+    extra: [[t('lYear'), money(cloud.monthly * 12, 0)], [t('lPerReq'), money(cloud.perReq, 4)], [t('lUtil'), cloud.units + ' GPU · ' + pct(cloud.load / cloud.units)]] });
+  renderOption($('optOwn'), { monthly: own.monthly, win: winner === 'own',
+    lines: [[t('lAmort'), money(own.amort, 0)], [t('lEnergy'), money(own.energy, 0)], [t('lOps'), money(s.ownOps, 0)]],
+    extra: [[t('lYear'), money(own.monthly * 12, 0)], [t('lFirstYear'), money(own.capex + own.running * 12, 0)], [t('lPerReq'), money(own.perReq, 4)],
+      [t('lUtil'), own.units + ' GPU · ' + pct(own.load / own.units)]] });
+
+  // summary
+  renderBars([
+    { key: 'api', label: t('apiPath') + ' · ' + m.name, value: api.monthly, color: COLORS.api },
+    { key: 'cloud', label: t('cloudPath'), value: cloud.monthly, color: COLORS.cloud },
+    { key: 'own', label: t('ownPath'), value: own.monthly, color: COLORS.own },
+  ]);
+  const maxU = Math.max(20000, s.users * 20);
+  const beCloud = breakEvenUsers((u) => apiCost(m, s, u).monthly, (u) => cloudCost(s, u).monthly, maxU);
+  const beOwn = breakEvenUsers((u) => apiCost(m, s, u).monthly, (u) => ownCost(s, u).monthly, maxU);
+  const beTxt = (n) => n === 0 ? t('apiNever') : n >= maxU ? '> ' + fmtNum(maxU) + ' ' + t('usersUnit') : '~' + fmtNum(n) + ' ' + t('usersUnit');
+  const pbCloud = paybackMonth(own, cloud.monthly, 120);
+  const minuteRatio = api.perReq / MINUTE_OF_WORK;
+  const answers = [
+    [t('aApiVsCloud'), beTxt(beCloud)],
+    [t('aApiVsOwn'), beTxt(beOwn)],
+    [t('aPayback'), pbCloud == null ? t('never') : pbCloud + ' ' + t('monthsUnit')],
+    [t('aMinute'), money(api.perReq, 4) + ' · ' + (minuteRatio < 0.01 ? '<1%' : pct(minuteRatio))],
+  ];
+  $('answers').replaceChildren(...answers.map(([l, v]) => { const li = el('li'); li.append(el('span', {}, l), el('b', {}, v)); return li; }));
+
+  renderModelTable(cloud.monthly, own.monthly);
+  renderCharts(m, api, cloud, own);
+  if (dialogEl.open) renderAssumptions();
+
+  // DOM contract
+  Object.assign(appEl.dataset, {
+    state: 'ready', model: m.name, modelFamily: m.family, modelsLoaded: String(state.models.length), winner, docLang: s.docLang,
+    thinking: String(s.thinking), cloudMode: s.cloudMode, reqMonth: api.reqMonth.toFixed(0),
+    baseInTokens: base.inTok.toFixed(0), baseOutTokens: base.outTok.toFixed(0), inTokens: api.inTok.toFixed(0), outTokens: api.outTok.toFixed(0),
+    ossInTokens: w.inTok.toFixed(0), ossOutTokens: w.outTok.toFixed(0),
+    apiMonthly: api.monthly.toFixed(2), cloudMonthly: cloud.monthly.toFixed(2), ownMonthly: own.monthly.toFixed(2),
+    ownAmort: own.amort.toFixed(2), ownEnergy: own.energy.toFixed(2), apiPerReq: api.perReq.toFixed(6),
+    cloudUnits: String(cloud.units), ownUnits: String(own.units),
+    breakEvenCloudUsers: String(beCloud), breakEvenOwnUsers: String(beOwn), paybackVsCloud: String(pbCloud ?? ''), lang: state.lang,
+    assumptionsOpen: String(dialogEl.open),
+  });
+  $('live').textContent = t('live', { api: money(api.monthly, 0), cloud: money(cloud.monthly, 0), own: money(own.monthly, 0) });
+}
+
+function renderModelTable(cloudM, ownM) {
+  const rows = state.models.map((m) => ({ m, c: apiCost(m, state) })).sort((a, b) => a.c.monthly - b.c.monthly);
+  const cheapest = Math.min(cloudM, ownM);
+  modelTbody.replaceChildren(...rows.map(({ m, c }) => {
+    const tr = el('tr', { tabindex: '0', 'data-model': m.name, 'data-monthly': c.monthly.toFixed(2) });
+    tr.classList.toggle('selected', m.name === state.model);
+    let vs;
+    if (c.monthly <= cheapest) vs = el('span', { class: 'edu-chip chip-win' }, t('vsCheaper'));
+    else if (c.monthly > Math.max(cloudM, ownM)) vs = el('span', { class: 'edu-chip chip-warn' }, t('vsDearer'));
+    else vs = el('span', { class: 'edu-chip chip-mini' }, t('vsMid'));
+    const tdVs = el('td'); tdVs.append(vs);
+    tr.append(el('td', { class: 'name' }, m.name), el('td', { class: 'num' }, pair(c.inTok, c.outTok)),
+      el('td', { class: 'num' }, fmtNum(c.pin, 2)), el('td', { class: 'num' }, fmtNum(c.pout, 2)),
+      el('td', { class: 'num' }, money(c.perReq, 4)), el('td', { class: 'num' }, money(c.monthly, 0)), tdVs);
+    return tr;
+  }));
+}
+
+function renderCharts(m, api, cloud, own) {
+  const s = state;
+  const base = [
+    { key: 'api', color: COLORS.api, short: t('apiPath'), label: t('apiPath') + ' · ' + m.name },
+    { key: 'cloud', color: COLORS.cloud, dash: '7 4', short: t('cloudPath'), label: t('cloudPath') + ' · ' + s.cloudGpu },
+    { key: 'own', color: COLORS.own, dash: '2 4', short: t('ownPath'), label: t('ownPath') + ' · ' + s.ownGpu },
+  ];
+  const hz = Math.max(6, Math.round(s.horizon));
+  const ms = Array.from({ length: hz + 1 }, (_, i) => i);
+  const series = base.map((b) => ({ ...b,
+    ys: ms.map((mo) => b.key === 'api' ? api.monthly * mo : b.key === 'cloud' ? cloud.monthly * mo
+      : own.capex * Math.max(1, Math.ceil(mo / s.ownAmort)) + own.running * mo) }));
+  renderLegend($('legendTime'), series);
+  lineChart($('chartTime'), { xs: ms, series, xFmt: (v) => String(v), xHead: t('monthLabel') });
+  dataTable($('tableTime'), ms, series, t('monthLabel'), (v) => String(v));
+}
+
+// ─── Assumptions ───
+function buildAssumptions() {
+  const s = state;
+  const now = (v) => P('obecnie: ', 'currently: ') + v;
+  const b = reqTokens(BASE_FAMILY, s, false);
+  return [
+    { title: P('Model użycia: asystent RAG', 'Usage model: RAG assistant'), rows: [
+      [P('Zapytanie', 'Request'), now(`${s.chunks} × ${fmtNum(s.chunkTok)} + ${fmtNum(s.promptTok)} → ${fmtNum(s.outTok)} tok.`),
+        P('Każde zapytanie wysyła do modelu znalezione fragmenty dokumentów oraz instrukcje z pytaniem. Tokeny podane dla polskiego tekstu w tokenizerze OpenAI o200k.', 'Each request sends retrieved document chunks plus instructions and the question. Tokens given for Polish text in the OpenAI o200k tokenizer.')],
+      [P('Fragmenty', 'Chunks'), '5 × 2000 ' + P('tokenów', 'tokens'),
+        P('Duże fragmenty (np. cała strona umowy lub karta produktu). Typowy RAG używa 256–512 tokenów i top-k 3–5, więc to wariant bogaty w kontekst.', 'Large chunks (e.g. a whole contract page or product sheet). Typical RAG uses 256–512 tokens and top-k 3–5, so this is a context-rich variant.'), 'rag'],
+      [P('Odpowiedź', 'Answer'), '500 ' + P('tokenów', 'tokens'), P('Około 215 polskich słów. Bez historii rozmowy.', 'About 215 Polish words. No conversation history.')],
+      [P('Bieżące zapytanie', 'Current request'), pair(b.inTok, b.outTok) + ' tok.', P('W innych tokenizerach i po angielsku liczba tokenów się zmienia (sekcja niżej).', 'Other tokenizers and English change the token count (see below).')],
+      [P('Nie liczymy', 'Not counted'), P('embeddingi, indeksowanie', 'embeddings, indexing'),
+        P('Embedding zapytań i indeksowanie dokumentów kosztują grosze wobec generowania.', 'Query embeddings and document indexing cost pennies compared with generation.')],
+    ]},
+    { title: P('Tokeny i język', 'Tokens and language'), rows: [
+      ...Object.values(TOK_PER_WORD).map((f, i) => [f.label, `PL ${fmtNum(f.pl, 2)} · EN ${fmtNum(f.en, 2)} tok/${P('słowo', 'word')}`,
+        i ? P(`×${fmtNum(f.pl / TOK_PER_WORD.openai.pl, 2)} względem o200k dla polskiego`, `×${fmtNum(f.pl / TOK_PER_WORD.openai.pl, 2)} vs o200k for Polish`)
+          : P('Zmierzone 13.09.2026 na 45,8 tys. polskich słów z danych warsztatu i równoległym tekście PL/EN. Ta sama treść po polsku to 1,42–1,52× więcej tokenów niż po angielsku.', 'Measured on 13 Sep 2026 on 45.8K Polish words from the workshop data and a parallel PL/EN text. The same content in Polish is 1.42–1.52× more tokens than in English.'),
+        i ? null : 'bielik']),
+      [P('Claude', 'Claude'), P('Sonnet 5 / Opus 5 / Fable +30%', 'Sonnet 5 / Opus 5 / Fable +30%'),
+        P('Tokenizer Claude nie jest publiczny. Anthropic podaje ok. 30% więcej tokenów w modelach 4.7+. Szacunek.', 'The Claude tokenizer is not public. Anthropic states about 30% more tokens in 4.7+ models. An estimate.'), 'anthropic'],
+      [P('Tokeny myślenia', 'Thinking tokens'), now((s.thinking ? P('włączone', 'on') : P('wyłączone', 'off')) + ' · ×' + fmtNum(s.thinkMult, 1)),
+        P('Płatne jak wyjście. GLM-5.3 myśli zawsze. Qwen3.7 Plus z myśleniem ma wejście 1,60 USD.', 'Billed as output. GLM-5.3 always thinks. Qwen3.7 Plus thinking input is 1.60 USD.'), 'alibaba'],
+    ]},
+    { title: P('API', 'API'), rows: [
+      [P('Cennik', 'Price list'), `${state.models.length} ` + P('modeli', 'models'),
+        P('Stawki standardowe bez cache i Batch, sprawdzone 13.09.2026. Batch obniża koszt o 50%, cache wejścia o 75–90% (przy RAG te same fragmenty wracają często).', 'Standard rates without cache or Batch, checked 13 Sep 2026. Batch halves the cost, input caching cuts 75–90% (RAG often reuses the same chunks).'), 'openai'],
+      [P('Kurs USD/PLN', 'USD/PLN rate'), now(fmtNum(s.fx, 2)), P('Kurs średni NBP z 11.09.2026: 3,7267.', 'NBP mid rate on 11 Sep 2026: 3.7267.'), 'nbp'],
+      [P('Długi kontekst', 'Long context'), 'OpenAI > 272K · Qwen > 256K', P('Powyżej progu droższa stawka dla całego żądania.', 'Above the threshold the whole request uses a higher rate.')],
+      [P('DeepSeek', 'DeepSeek'), P('szczyt pon.–pt. 01–04 i 06–10 UTC', 'peak Mon–Fri 01–04 and 06–10 UTC'), P('Poza szczytem połowa ceny.', 'Half price off-peak.'), 'deepseek'],
+    ]},
+    { title: P('Chmura GPU', 'Cloud GPU'), rows: [
+      [P('Cena z obsługą', 'Price incl. support'), now(money(s.cloudPrice, 0) + P(' / mies.', ' / month')),
+        P(`Cena zawiera utrzymanie. Odpowiada ${fmtNum(s.cloudPrice / s.fx / HOURS_MONTH, 2)} USD/h za 1× H100 24/7. Mediana rynkowa samego GPU 3,37 USD/h, w UE 2,99–3,85 USD/h.`, `The price includes support. Equals ${fmtNum(s.cloudPrice / s.fx / HOURS_MONTH, 2)} USD/h for 1× H100 24/7. Market median for the GPU alone is 3.37 USD/h, 2.99–3.85 USD/h in the EU.`), 'h100'],
+      [P('Czas pracy GPU', 'GPU running time'), now(s.cloudMode === 'work' ? t('modeWork') : '24/7'),
+        P('W trybie godzin pracy cena skaluje się do dni roboczych × godzin (ok. 167 h zamiast 730 h).', 'In working-hours mode the price scales to working days × hours (about 167 h instead of 730 h).')],
+    ]},
+    { title: P('Własny serwer', 'Own server'), rows: [
+      [P('Zakup', 'Purchase'), now(money(s.ownCapex, 0)),
+        P('1× RTX PRO 6000 96GB z serwerem, UPS i wdrożeniem. Sama karta 16–20 tys. USD.', '1× RTX PRO 6000 96GB with server, UPS and setup. The card alone is 16–20K USD.'), 'pro6000'],
+      [P('Amortyzacja', 'Depreciation'), now(s.ownAmort + ' ' + t('monthsUnit')), P('Po tym okresie wykres dolicza wymianę sprzętu.', 'After that the chart adds a hardware replacement.')],
+      [P('Obsługa', 'Support'), now(money(s.ownOps, 0) + P(' / mies.', ' / month')), P('Drobna administracja i części. Bez etatu MLOps i bez drugiej karty na wypadek awarii.', 'Light administration and parts. No MLOps role and no failover card.')],
+      [P('Prąd', 'Power'), now(`${fmtNum(s.ownPower)} W · ${fmtNum(s.kwh, 2)} PLN/kWh · 24/7`),
+        P('Pełna moc przez całą dobę, więc górna granica. Firmy płacą 0,95–1,18 PLN/kWh brutto z dystrybucją.', 'Full power around the clock, so an upper bound. Businesses pay 0.95–1.18 PLN/kWh gross incl. distribution.'), 'power'],
+    ]},
+    { title: P('Przepustowość', 'Throughput'), rows: [
+      [P('Obie karty', 'Both cards'), now(`${fmtNum(s.cloudPrefill)} / ${fmtNum(s.cloudDecode)} tok/s`),
+        P('Gęsty model 32B przy 300 równoczesnych zapytaniach: RTX PRO 6000 1 655, H100 1 482 tok/s wyjścia. Liczone w tokenach Qwen.', 'Dense 32B model at 300 concurrent requests: RTX PRO 6000 1,655, H100 1,482 tok/s output. Counted in Qwen tokens.'), 'bench'],
+      [P('Szczyt', 'Peak'), now('×' + fmtNum(s.peak, 1) + ' · ' + s.workHours + ' h'), P('Ruch dzienny rozłożony na godziny pracy i pomnożony przez mnożnik szczytu.', 'Daily traffic spread over working hours and multiplied by the peak multiplier.')],
+      [P('Szybkość dla użytkownika', 'Speed per user'), P('ok. 30–35 tok/s pod obciążeniem', 'about 30–35 tok/s under load'), P('Wysoka łączna przepustowość oznacza wolniejsze odpowiedzi dla jednej osoby.', 'High total throughput means slower answers per person.'), 'bench2'],
+    ]},
+    { title: P('Nie tylko koszt', 'Not just cost'), rows: [
+      [P('Minuta pracy', 'Minute of work'), fmtNum(MINUTE_OF_WORK, 2) + ' PLN', P('15 000 PLN / 168 h / 60 min.', '15,000 PLN / 168 h / 60 min.')],
+      [P('API', 'API'), P('dane poza firmą', 'data leaves the company'), P('RODO i umowa powierzenia, zależność od dostawcy.', 'GDPR and a data processing agreement, vendor lock-in.')],
+      [P('GPU', 'GPU'), P('jakość i utrzymanie', 'quality and upkeep'), P('Model open-source bywa słabszy po polsku; ktoś musi go aktualizować i zabezpieczać.', 'Open-source models can be weaker in Polish; someone must update and secure them.')],
+      [P('Pominięte', 'Left out'), P('budowa aplikacji, VAT', 'app build, VAT'), P('Bez budowy aplikacji i wdrożenia RAG, licencji, redundancji i spadku cen API w czasie.', 'No app build or RAG implementation, licences, redundancy or API price drops over time.')],
+    ]},
+  ];
+}
+function renderAssumptions() {
+  $('assumpBody').replaceChildren(...buildAssumptions().map((sec) => {
+    const wrap = el('section', { class: 'assump-sec' });
+    wrap.append(el('h3', {}, sec.title));
+    const tw = el('div', { class: 'table-wrap' });
+    const table = el('table', { class: 'assump-table' });
+    const hr = el('tr'); hr.append(el('th', {}, t('thAssump')), el('th', {}, t('thValue')), el('th', {}, t('thSource')));
+    const th = el('thead'); th.append(hr);
+    const tb = el('tbody');
+    sec.rows.forEach(([label, value, note, src]) => {
+      const tr = el('tr');
+      const tdNote = el('td', { class: 'note' }, note || '');
+      if (src && SOURCES[src]) { tdNote.append(document.createTextNode(' '), el('a', { href: SOURCES[src], target: '_blank', rel: 'noopener' }, P('źródło', 'source') + ' ↗')); }
+      tr.append(el('td', { class: 'name' }, label), el('td', { class: 'val' }, value), tdNote);
+      tb.append(tr);
+    });
+    table.append(th, tb); tw.append(table); wrap.append(tw);
+    return wrap;
+  }));
+}
+function openAssumptions() {
+  renderAssumptions();
+  if (!dialogEl.open) dialogEl.showModal();
+  appEl.dataset.assumptionsOpen = 'true';
+}
+
+// ─── Charts ───
+function renderLegend(box, series) {
+  box.replaceChildren(...series.map((s) => {
+    const sp = el('span');
+    const sv = svgEl('svg', { width: 22, height: 10 });
+    sv.append(svgEl('line', { x1: 1, y1: 5, x2: 21, y2: 5, stroke: s.color, 'stroke-width': 2.5, 'stroke-dasharray': s.dash || '', 'stroke-linecap': 'round' }));
+    sp.append(sv, document.createTextNode(s.label));
+    return sp;
+  }));
+}
+function niceMax(v) {
+  if (v <= 0) return 1;
+  const p = Math.pow(10, Math.floor(Math.log10(v)));
+  const n = v / p;
+  return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * p;
+}
+function lineChart(wrap, { xs, series, xFmt, xHead, height = 280 }) {
+  wrap.replaceChildren();
+  const W = Math.max(300, wrap.clientWidth || 500), H = height;
+  const pad = { l: 58, r: 96, t: 12, b: 30 };
+  const iw = W - pad.l - pad.r, ih = H - pad.t - pad.b;
+  const yMax = niceMax(Math.max(...series.flatMap((s) => s.ys)) * 1.05);
+  const xMin = xs[0], xMax = xs[xs.length - 1];
+  const X = (v) => pad.l + (v - xMin) / (xMax - xMin || 1) * iw;
+  const Y = (v) => pad.t + ih - v / yMax * ih;
+  const svg = svgEl('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': series.map((s) => s.label).join(', ') });
+  // grid + y ticks
+  for (let i = 0; i <= 4; i++) {
+    const v = yMax * i / 4, y = Y(v);
+    svg.append(svgEl('line', { x1: pad.l, x2: pad.l + iw, y1: y, y2: y, stroke: COLORS.line, 'stroke-width': 1 }));
+    const tx = svgEl('text', { x: pad.l - 8, y: y + 4, 'text-anchor': 'end', 'font-size': 11, fill: COLORS.ink3, 'font-family': 'Roboto Mono, monospace' });
+    tx.textContent = moneyShort(v); svg.append(tx);
+  }
+  // x ticks
+  const ticks = 5;
+  for (let i = 0; i <= ticks; i++) {
+    const v = xMin + (xMax - xMin) * i / ticks;
+    const tx = svgEl('text', { x: X(v), y: H - 8, 'text-anchor': 'middle', 'font-size': 11, fill: COLORS.ink3, 'font-family': 'Roboto Mono, monospace' });
+    tx.textContent = xFmt(Math.round(v)); svg.append(tx);
+  }
+  // lines
+  series.forEach((s) => {
+    const d = xs.map((x, i) => (s.step && i ? `H${X(x).toFixed(1)}V${Y(s.ys[i]).toFixed(1)}` : `${i ? 'L' : 'M'}${X(x).toFixed(1)},${Y(s.ys[i]).toFixed(1)}`)).join('');
+    svg.append(svgEl('path', { d, fill: 'none', stroke: s.color, 'stroke-width': 2, 'stroke-dasharray': s.dash || '', 'stroke-linejoin': 'round', 'stroke-linecap': 'round', 'data-series': s.key }));
+  });
+  // direct labels at right end with collision avoidance
+  const ends = series.map((s) => ({ s, y: Y(s.ys[s.ys.length - 1]) })).sort((a, b) => a.y - b.y);
+  for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 15) ends[i].y = ends[i - 1].y + 15;
+  ends.forEach(({ s, y }) => {
+    const tx = svgEl('text', { x: pad.l + iw + 8, y: y + 4, 'font-size': 12, fill: COLORS.ink, 'font-family': 'IBM Plex Sans, sans-serif' });
+    tx.textContent = s.short; svg.append(tx);
+  });
+  // hover layer
+  const cross = svgEl('line', { y1: pad.t, y2: pad.t + ih, stroke: COLORS.ink3, 'stroke-width': 1, opacity: 0 });
+  const dots = series.map((s) => svgEl('circle', { r: 4.5, fill: s.color, stroke: COLORS.surface, 'stroke-width': 2, opacity: 0 }));
+  svg.append(cross, ...dots);
+  const hit = svgEl('rect', { x: pad.l, y: pad.t, width: iw, height: ih, fill: 'transparent', tabindex: 0 });
+  svg.append(hit);
+  wrap.append(svg);
+  const tip = el('div', { class: 'tip' }); tip.style.opacity = 0; wrap.append(tip);
+  let idx = xs.length - 1;
+  const show = (i) => {
+    idx = Math.max(0, Math.min(xs.length - 1, i));
+    const scale = wrap.clientWidth / W;
+    const x = X(xs[idx]);
+    cross.setAttribute('x1', x); cross.setAttribute('x2', x); cross.setAttribute('opacity', 1);
+    dots.forEach((d, k) => { d.setAttribute('cx', x); d.setAttribute('cy', Y(series[k].ys[idx])); d.setAttribute('opacity', 1); });
+    tip.replaceChildren(el('div', { class: 'tip-head' }, xHead + ': ' + xFmt(xs[idx])));
+    [...series].sort((a, b) => a.ys[idx] - b.ys[idx]).forEach((s) => {
+      const row = el('div', { class: 'row' });
+      const key = svgEl('svg', { width: 14, height: 6 }); key.append(svgEl('line', { x1: 0, y1: 3, x2: 14, y2: 3, stroke: s.color, 'stroke-width': 2.5, 'stroke-dasharray': s.dash ? '4 2' : '' }));
+      row.append(key, el('span', {}, s.short), el('b', {}, money(s.ys[idx], 0)));
+      tip.append(row);
+    });
+    tip.style.opacity = 1;
+    const tw = tip.offsetWidth;
+    let left = x * scale + 14; if (left + tw > wrap.clientWidth) left = x * scale - tw - 14;
+    tip.style.left = Math.max(0, left) + 'px'; tip.style.top = '10px';
+  };
+  const hide = () => { tip.style.opacity = 0; cross.setAttribute('opacity', 0); dots.forEach((d) => d.setAttribute('opacity', 0)); };
+  hit.addEventListener('pointermove', (e) => {
+    const rect = svg.getBoundingClientRect();
+    const px = (e.clientX - rect.left) * W / rect.width;
+    const v = xMin + (px - pad.l) / iw * (xMax - xMin);
+    let best = 0; xs.forEach((x, i) => { if (Math.abs(x - v) < Math.abs(xs[best] - v)) best = i; });
+    show(best);
+  });
+  hit.addEventListener('pointerleave', hide);
+  hit.addEventListener('focus', () => show(idx));
+  hit.addEventListener('blur', hide);
+  hit.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight') { e.preventDefault(); show(idx + 1); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); show(idx - 1); }
+  });
+}
+function dataTable(box, xs, series, xHead, xFmt) {
+  const table = el('table', { class: 'mini-table' });
+  const hr = el('tr'); hr.append(el('th', {}, xHead), ...series.map((s) => el('th', { class: 'num' }, s.short)));
+  const tb = el('tbody');
+  const step = Math.max(1, Math.ceil(xs.length / 12));
+  xs.forEach((x, i) => {
+    if (i % step && i !== xs.length - 1) return;
+    const tr = el('tr'); tr.append(el('td', {}, xFmt(x)), ...series.map((s) => el('td', { class: 'num' }, money(s.ys[i], 0)))); tb.append(tr);
+  });
+  const th = el('thead'); th.append(hr); table.append(th, tb); box.replaceChildren(table);
+}
+// ─── Listeners ───
+function onInput(e) {
+  const id = e.target.id;
+  if (NUM_FIELDS.includes(id)) { const v = numOf(e.target.value); if (!isFinite(v) || v < 0) return; state[id] = v; }
+  else if (TEXT_FIELDS.includes(id)) state[id] = e.target.value;
+  else if (id === 'offPeak' || id === 'thinking') state[id] = e.target.checked;
+  else if (id === 'model') state.model = e.target.value;
+  else return;
+  render();
+}
+document.addEventListener('input', onInput);
+document.addEventListener('change', (e) => { if (['offPeak', 'thinking', 'model'].includes(e.target.id)) onInput(e); });
+
+function applyPreset(k) { Object.assign(state, PRESETS[k]); syncInputs(); render(); }
+$('presets').addEventListener('click', (e) => { const b = e.target.closest('[data-preset]'); if (b) applyPreset(b.dataset.preset); });
+document.addEventListener('click', (e) => {
+  const dl = e.target.closest('[data-doclang]'); if (dl) { state.docLang = dl.dataset.doclang; render(); }
+  const cm = e.target.closest('[data-cloudmode]'); if (cm) { state.cloudMode = cm.dataset.cloudmode; render(); }
+  if (e.target.closest('.js-assump')) openAssumptions();
+});
+
+document.querySelectorAll('[data-lang]').forEach((b) => b.addEventListener('click', () => setLang(b.dataset.lang)));
+function setLang(l) {
+  state.lang = l;
+  try { localStorage.setItem(LS_LANG, l); } catch (_) {}
+  applyI18n(); renderModelSelect(); render();
+}
+
+$('assumpClose').addEventListener('click', () => dialogEl.close());
+dialogEl.addEventListener('click', (e) => { if (e.target === dialogEl) dialogEl.close(); });
+dialogEl.addEventListener('close', () => { appEl.dataset.assumptionsOpen = 'false'; });
+
+modelTbody.addEventListener('click', (e) => { const tr = e.target.closest('tr[data-model]'); if (tr) selectModel(tr.dataset.model); });
+modelTbody.addEventListener('keydown', (e) => {
+  const tr = e.target.closest('tr[data-model]'); if (!tr) return;
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectModel(tr.dataset.model); }
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    const sib = e.key === 'ArrowDown' ? tr.nextElementSibling : tr.previousElementSibling;
+    if (sib) selectModel(sib.dataset.model);
+  }
+});
+function selectModel(name) {
+  state.model = name; modelSel.value = name; render();
+  const row = modelTbody.querySelector(`tr[data-model="${CSS.escape(name)}"]`); if (row) row.focus();
+}
+
+function loadCsvText(text, source) {
+  const models = modelsFromCsv(text);
+  if (!models || !models.length) { $('csvSrc').textContent = t('csvError'); return false; }
+  state.models = models; state.csvSource = source;
+  renderModelSelect(); render();
+  return true;
+}
+$('csvFile').addEventListener('change', (e) => { const f = e.target.files[0]; if (f) f.text().then((txt) => loadCsvText(txt, f.name)); e.target.value = ''; });
+$('csvBtn').addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('csvFile').click(); } });
+$('csvReset').addEventListener('click', () => loadCsvText($('csvData').textContent, null));
+['dragenter', 'dragover'].forEach((ev) => dropEl.addEventListener(ev, (e) => { e.preventDefault(); dropEl.classList.add('over'); }));
+['dragleave', 'drop'].forEach((ev) => dropEl.addEventListener(ev, (e) => { e.preventDefault(); dropEl.classList.remove('over'); }));
+dropEl.addEventListener('drop', (e) => { const f = e.dataTransfer.files[0]; if (f) f.text().then((txt) => loadCsvText(txt, f.name)); });
+
+document.addEventListener('keydown', (e) => {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.target.closest?.('input, select, textarea')) return;
+  if (dialogEl.open) return;
+  const keys = Object.keys(PRESETS);
+  if (/^[1-3]$/.test(e.key)) applyPreset(keys[+e.key - 1]);
+  const k = e.key.toLowerCase();
+  if (k === 'l') setLang(state.lang === 'pl' ? 'en' : 'pl');
+  if (k === 'a' || k === 'z') openAssumptions();
+});
+let resizeTimer;
+window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(render, 120); });
+
+// ─── Init ───
+(function init() {
+  try { const l = localStorage.getItem(LS_LANG); if (l === 'pl' || l === 'en') state.lang = l; } catch (_) {}
+  state.models = modelsFromCsv($('csvData').textContent) || [];
+  applyI18n();
+  renderModelSelect();
+  syncInputs();
+  render();
+})();
+</script>
+</body>
+</html>
