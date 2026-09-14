@@ -6,3 +6,5 @@ review*.md
 *.plan.md
 *.draft.*
 scratch/
+__pycache__/
+*.pyc

@@ -32,7 +32,7 @@
   /* Ink – warm near-black text & lines */
   --ink:      #1C1917;   /* primary text               */
   --ink-2:    #57534E;   /* secondary text             */
-  --ink-3:    #948C82;   /* muted / placeholder        */
+  --ink-3:    #70675C;   /* muted / placeholder        */
   --line:     #EDE7D2;   /* hairline borders           */
   --line-2:   #DDD4B6;   /* stronger borders           */
 
@@ -60,6 +60,8 @@
   --green-600:  #009444;
   --green-soft: #00A651;
   --green-ink:  #FFFFFF;
+  --success-chip: #007A3D; /* darker success chip for small white text */
+  --success-chip-ink: #FFFFFF;
 
   /* Red – danger / important / wrong (use sparingly) */
   --red:      #E5322D;
@@ -96,6 +98,36 @@
   --focus-ring: 0 0 0 3px color-mix(in srgb, var(--yellow) 45%, transparent);
 
   /* ============================================================
+     COMPONENT TOKENS
+     Keep component typography, alignment and translucent surfaces
+     in one place so the page can be reskinned without selector edits.
+     ============================================================ */
+  --transparent: transparent;
+  --header-bg: rgba(255, 255, 255, .85);
+  --dialog-backdrop: rgba(28, 25, 23, .45);
+  --align-start: left;
+  --align-center: center;
+  --align-end: right;
+  --font-code-size: .92em;
+  --wordmark-size: 22px;
+  --title-size: clamp(2rem, 4.5vw, 2.85rem);
+  --lead-size: 1.0625rem;
+  --label-size: 11px;
+  --small-size: 12.5px;
+  --tiny-size: 12px;
+  --body-tight-size: 15px;
+  --stat-size: 20px;
+  --total-size: 34px;
+  --disclosure-size: 15px;
+  --chart-tick-size: 11px;
+  --chart-label-size: 12px;
+  --chart-tick-align: end;
+  --chart-x-align: middle;
+  --line-height-body: 1.6;
+  --line-height-note: 1.5;
+  --line-height-tight: 1.45;
+
+  /* ============================================================
      SPACING  (4pt base)
      ============================================================ */
   --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
@@ -121,91 +153,35 @@
   --caption: 13px; --overline: 12px;
 }
 
-/* ============================================================
-   SEMANTIC ELEMENT STYLES
-   Apply via element selectors or .edu-prose wrapper.
-   ============================================================ */
-
-.edu-display, .edu h1.display {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: var(--display-font);
-  line-height: 1.02;
-  letter-spacing: -0.025em;
+body.edu {
+  background: var(--paper);
   color: var(--ink);
-}
-.edu h1, .edu-h1 {
-  font-family: var(--font-display);
-  font-weight: 700; font-size: var(--h1);
-  line-height: 1.06; letter-spacing: -0.02em; color: var(--ink);
-}
-.edu h2, .edu-h2 {
-  font-family: var(--font-display);
-  font-weight: 600; font-size: var(--h2);
-  line-height: 1.12; letter-spacing: -0.015em; color: var(--ink);
-}
-.edu h3, .edu-h3 {
-  font-family: var(--font-display);
-  font-weight: 600; font-size: var(--h3);
-  line-height: 1.2; letter-spacing: -0.01em; color: var(--ink);
-}
-.edu h4, .edu-h4 {
   font-family: var(--font-sans);
-  font-weight: 700; font-size: var(--h4);
-  line-height: 1.3; color: var(--ink);
+  line-height: var(--line-height-body);
 }
-.edu p, .edu-p, .edu-body {
-  font-family: var(--font-sans);
-  font-weight: 400; font-size: var(--body);
-  line-height: 1.6; color: var(--ink-2);
-}
-.edu-body-lg { font-family: var(--font-sans); font-size: var(--body-lg); line-height: 1.6; color: var(--ink-2); }
-.edu-small  { font-family: var(--font-sans); font-size: var(--body-sm); line-height: 1.5; color: var(--ink-2); }
-.edu-caption{ font-family: var(--font-sans); font-size: var(--caption); line-height: 1.45; color: var(--ink-3); }
-
-/* Overline – mono, tracked; functional labels only (never above page/section titles) */
-.edu-overline {
-  font-family: var(--font-mono);
-  font-weight: 500; font-size: var(--overline);
-  letter-spacing: 0.14em; text-transform: uppercase;
-  color: var(--ink);
-}
-.edu code, .edu-mono {
-  font-family: var(--font-mono);
-  font-size: 0.92em; color: var(--ink);
-  background: var(--paper-3); padding: 0.12em 0.4em; border-radius: var(--r-xs);
-}
-
-/* Solid colour blocks (callouts, stat cards, chips): set background: var(--X-soft) and
-   color: var(--X-ink) on the block, add .edu-block, and every heading/paragraph inside
-   inherits that text colour instead of the default ink. */
-.edu-block, .edu-block h1, .edu-block h2, .edu-block h3, .edu-block h4, .edu-block p,
-.edu-block li, .edu-block small { color: inherit; }
-
-body.edu { background: var(--paper); color: var(--ink); font-family: var(--font-sans); }
 
 
 /* ─── Layout ─── */
 * { box-sizing: border-box; }
 body { margin: 0; padding: 0; }
-.edu-header { position: sticky; top: 0; z-index: 50; width: 100%; background: rgba(255,255,255,.85);
+.edu-header { position: sticky; top: 0; z-index: 50; width: 100%; background: var(--header-bg);
   backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
 .edu-header-inner { max-width: 1100px; margin: 0 auto; padding: 8px 30px; display: flex; align-items: center; gap: 12px; }
 .edu-logo { width: 64px; height: 64px; display: block; margin-right: -6px; }
-.edu-wordmark { font-family: var(--font-display); font-weight: 700; font-size: 22px; letter-spacing: -.02em; color: var(--ink); }
+.edu-wordmark { font-family: var(--font-display); font-weight: 700; font-size: var(--wordmark-size); letter-spacing: -.02em; color: var(--ink); }
 .header-spacer { flex: 1; }
 main { max-width: 1100px; margin: 0 auto; padding: 34px 30px 70px; }
-.page-head { text-align: center; margin-bottom: var(--sp-10); }
-.app-title { font-family: var(--font-display); font-weight: 800; font-size: clamp(2rem, 4.5vw, 2.85rem);
+.page-head { text-align: var(--align-center); margin-bottom: var(--sp-10); }
+.app-title { font-family: var(--font-display); font-weight: 800; font-size: var(--title-size);
   letter-spacing: -.025em; line-height: 1.05; color: var(--ink); margin: 0 0 var(--sp-3); }
-.edu-lead { font-size: 1.0625rem; color: var(--ink-2); margin: 0; }
+.edu-lead { font-size: var(--lead-size); color: var(--ink-2); margin: 0; }
 section { margin-bottom: var(--sp-8); }
 .sec-title { font-family: var(--font-display); font-weight: 600; font-size: var(--h3); color: var(--ink); margin: 0 0 var(--sp-4); letter-spacing: -.01em; }
 .sec-note { color: var(--ink-2); font-size: var(--body-sm); margin: calc(-1 * var(--sp-2)) 0 var(--sp-4); }
 
 /* ─── Controls ─── */
 .edu-seg { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 3px; background: var(--paper-2); border-radius: var(--r-pill); }
-.edu-seg button { border: none; background: transparent; padding: 7px 14px; border-radius: var(--r-pill);
+.edu-seg button { border: none; background: var(--transparent); padding: 7px 14px; border-radius: var(--r-pill);
   font-family: var(--font-sans); font-weight: 600; font-size: var(--body-sm); color: var(--ink-2); cursor: pointer; transition: background-color .15s; }
 .edu-seg button:hover { background: var(--paper-3); }
 .edu-seg button.active { background: var(--yellow); color: var(--yellow-ink); }
@@ -214,17 +190,18 @@ section { margin-bottom: var(--sp-8); }
 .toolbar .label { font-family: var(--font-mono); font-size: var(--overline); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); }
 
 .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.grid-3 > * { min-width: 0; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--shadow-sm); padding: 22px 24px; }
 .card-head { display: flex; align-items: center; gap: var(--sp-3); margin-bottom: var(--sp-4); }
 .card-head h3 { font-family: var(--font-display); font-weight: 600; font-size: var(--h4); margin: 0; color: var(--ink); }
 .dot { width: 12px; height: 12px; border-radius: 50%; flex: none; }
 .field { display: flex; flex-direction: column; justify-content: flex-end; gap: 5px; margin-bottom: var(--sp-3); }
-.field label { font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+.field label { font-family: var(--font-mono); font-size: var(--label-size); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
 .field input, .field select { font-family: var(--font-sans); font-size: var(--body); color: var(--ink); background: var(--paper-2);
   border: 1px solid var(--line); border-radius: var(--r-sm); padding: 9px 12px; width: 100%; }
 .field select { cursor: pointer; }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
-.hint { font-size: 12.5px; color: var(--ink-3); margin: 0; line-height: 1.45; }
+.hint { font-size: var(--small-size); color: var(--ink-3); margin: 0; line-height: var(--line-height-tight); }
 .check { display: flex; gap: 8px; align-items: center; font-size: var(--body-sm); color: var(--ink-2); margin-bottom: var(--sp-3); cursor: pointer; }
 .check input { accent-color: var(--yellow); width: 16px; height: 16px; }
 
@@ -236,56 +213,39 @@ section { margin-bottom: var(--sp-8); }
 .ghost-btn:hover { background: var(--paper-3); }
 
 /* ─── Results ─── */
-.result { position: relative; }
-.result .big { font-family: var(--font-display); font-weight: 700; font-size: 34px; letter-spacing: -.02em; color: var(--ink); line-height: 1.1; }
-.result .per { font-size: var(--body-sm); color: var(--ink-3); }
-.kv { display: flex; justify-content: space-between; gap: var(--sp-3); padding: 7px 0; border-top: 1px dashed var(--line); font-size: var(--body-sm); color: var(--ink-2); }
-.kv b { font-family: var(--font-mono); font-weight: 500; color: var(--ink); text-align: right; }
-.kv:first-of-type { margin-top: var(--sp-4); }
-.edu-chip { font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; padding: 4px 10px; border-radius: var(--r-pill); white-space: nowrap; }
-.chip-win { background: var(--green-soft); color: var(--green-ink); }
+.edu-chip { font-family: var(--font-mono); font-size: var(--label-size); text-transform: uppercase; letter-spacing: .08em; padding: 4px 10px; border-radius: var(--r-pill); white-space: nowrap; }
+.chip-win { background: var(--success-chip); color: var(--success-chip-ink); }
 .chip-warn { background: var(--red-soft); color: var(--red-ink); }
 .chip-mini { background: var(--paper-3); color: var(--ink); }
 .chip-standard { background: var(--blue-soft); color: var(--blue-ink); }
 .chip-frontier { background: var(--ink); color: var(--paper); }
-.result.winner { border-color: var(--green); box-shadow: var(--shadow-md); outline: 2px solid var(--green); outline-offset: -1px; }
-
-.panel-dark { background: var(--ink); color: var(--paper); border-radius: var(--r-xl); padding: 28px 32px; }
-.panel-dark .label { font-family: var(--font-mono); font-size: var(--overline); letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.55); margin-bottom: var(--sp-3); }
-.panel-dark ul { list-style: none; margin: 0; padding: 0; }
-.panel-dark li { display: flex; justify-content: space-between; gap: var(--sp-4); padding: 10px 0; border-top: 1px solid rgba(255,255,255,.14); font-size: 15px; }
-.panel-dark li:first-child { border-top: none; }
-.panel-dark li span:last-child { font-family: var(--font-display); font-weight: 600; color: var(--yellow); text-align: right; }
-
-.callout { background: var(--blue-soft); color: var(--blue-ink); border-radius: var(--r-md); padding: 16px 20px; font-size: var(--body-sm); line-height: 1.55; }
-.callout-warn { background: var(--red-soft); color: var(--red-ink); }
-.callout strong { color: inherit; }
+.option.winner { border-color: var(--green); box-shadow: var(--shadow-md); outline: 2px solid var(--green); outline-offset: -1px; }
 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: stretch; }
 
 /* ─── Charts ─── */
 .chart-card { padding: 20px 20px 14px; }
 .chart-title { font-family: var(--font-display); font-weight: 600; font-size: var(--h4); margin: 0 0 4px; color: var(--ink); }
-.chart-sub { font-size: 13px; color: var(--ink-3); margin: 0 0 var(--sp-3); }
-.legend { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 6px; font-size: 13px; color: var(--ink-2); }
+.chart-sub { font-size: var(--caption); color: var(--ink-3); margin: 0 0 var(--sp-3); }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 6px; font-size: var(--caption); color: var(--ink-2); }
 .legend span { display: inline-flex; align-items: center; gap: 6px; }
 .legend svg { display: block; }
 .chart-wrap { position: relative; width: 100%; }
 .chart-wrap svg { display: block; width: 100%; height: auto; overflow: visible; }
 .tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-sm);
-  box-shadow: var(--shadow-md); padding: 8px 10px; font-size: 12.5px; color: var(--ink-2); min-width: 170px; z-index: 5; transition: opacity .1s; }
-.tip .tip-head { font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); margin-bottom: 4px; }
+  box-shadow: var(--shadow-md); padding: 8px 10px; font-size: var(--small-size); color: var(--ink-2); min-width: 170px; z-index: 5; transition: opacity .1s; }
+.tip .tip-head { font-family: var(--font-mono); font-size: var(--label-size); color: var(--ink-3); margin-bottom: 4px; }
 .tip .row { display: flex; align-items: center; gap: 8px; padding: 1px 0; }
 .tip .row b { color: var(--ink); font-weight: 600; font-family: var(--font-mono); margin-left: auto; padding-left: 10px; }
-details.data-table { margin-top: 6px; font-size: 13px; color: var(--ink-2); }
-details.data-table summary { cursor: pointer; color: var(--ink-3); font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+details.data-table { margin-top: 6px; font-size: var(--caption); color: var(--ink-2); }
+details.data-table summary { cursor: pointer; color: var(--ink-3); font-family: var(--font-mono); font-size: var(--label-size); letter-spacing: .08em; text-transform: uppercase; }
 
 /* ─── Model table ─── */
 .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); }
 table { width: 100%; border-collapse: collapse; font-size: var(--body-sm); }
-th { font-family: var(--font-mono); font-weight: 500; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3);
-  text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--line); background: var(--paper-2); white-space: nowrap; }
+th { font-family: var(--font-mono); font-weight: 500; font-size: var(--label-size); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3);
+  text-align: var(--align-start); padding: 12px 14px; border-bottom: 1px solid var(--line); background: var(--paper-2); white-space: nowrap; }
 td { padding: 10px 14px; border-bottom: 1px solid var(--line); color: var(--ink-2); white-space: nowrap; }
-td.num, th.num { text-align: right; font-family: var(--font-mono); }
+td.num, th.num { text-align: var(--align-end); font-family: var(--font-mono); }
 td.num { color: var(--ink); }
 tbody tr { cursor: pointer; transition: background-color .12s; }
 tbody tr:hover { background: var(--paper-2); }
@@ -297,16 +257,14 @@ td.name { color: var(--ink); font-weight: 600; }
 
 .drop { border: 1.5px dashed var(--line-2); border-radius: var(--r-md); padding: 12px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); color: var(--ink-2); font-size: var(--body-sm); transition: background-color .15s; }
 .drop.over { background: var(--paper-2); }
-.drop .src { font-family: var(--font-mono); font-size: 12px; color: var(--ink); }
-.kbd { font-family: var(--font-mono); font-size: 11px; background: var(--paper-3); color: var(--ink); padding: 1px 6px; border-radius: var(--r-xs); }
-footer.shortcuts { color: var(--ink-3); font-size: 12.5px; text-align: center; margin-top: var(--sp-8); }
+.drop .src { font-family: var(--font-mono); font-size: var(--tiny-size); color: var(--ink); }
+footer.shortcuts { color: var(--ink-3); font-size: var(--small-size); text-align: var(--align-center); margin-top: var(--sp-8); }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* ─── Assumptions dialog ─── */
-.page-actions { margin-top: var(--sp-5); display: flex; justify-content: center; }
 dialog.assump { border: none; border-radius: var(--r-xl); padding: 0; width: min(980px, calc(100% - 32px)); max-height: calc(100vh - 48px);
   background: var(--surface); color: var(--ink); box-shadow: var(--shadow-lg); }
-dialog.assump::backdrop { background: rgba(28,25,23,.45); }
+dialog.assump::backdrop { background: var(--dialog-backdrop); }
 dialog.assump[open] { animation: fadeIn .18s ease-out; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 .assump-head { position: sticky; top: 0; z-index: 2; background: var(--surface); border-bottom: 1px solid var(--line);
@@ -317,15 +275,38 @@ dialog.assump[open] { animation: fadeIn .18s ease-out; }
 .assump-sec h3 { font-family: var(--font-display); font-weight: 600; font-size: var(--h4); margin: 22px 0 10px; }
 .assump-table td { white-space: normal; vertical-align: top; }
 .assump-table td.name { width: 22%; }
-.assump-table td.val { width: 26%; font-family: var(--font-mono); font-size: 12.5px; color: var(--ink); }
-.assump-table td.note { color: var(--ink-2); line-height: 1.5; }
+.assump-table td.val { width: 26%; font-family: var(--font-mono); font-size: var(--small-size); color: var(--ink); }
+.assump-table td.note { color: var(--ink-2); line-height: var(--line-height-note); }
 .assump-table tbody tr { cursor: default; }
 .assump-table a { color: var(--blue); font-weight: 600; text-decoration: none; white-space: nowrap; }
 .assump-table a:hover { text-decoration: underline; }
 .csv-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); }
 .csv-row .drop { flex: 1 1 320px; }
-.csv-row .hint { flex: 1 1 100%; }
-.seg-field { margin-bottom: var(--sp-3); }
+
+/* Invalid input keeps the correction controls visible while pausing derived results. */
+#validationStatus, #csvError {
+  color: var(--red-ink);
+  background: var(--red-soft);
+  border-radius: var(--r-md);
+  padding: var(--sp-3) var(--sp-4);
+  margin: 0 0 var(--sp-4);
+  font-size: var(--body-sm);
+  line-height: var(--line-height-tight);
+}
+#app[data-state="invalid"] .opt-total,
+#app[data-state="invalid"] .opt-lines,
+#app[data-state="invalid"] #modelNote,
+#app[data-state="invalid"] #bars,
+#app[data-state="invalid"] #answers,
+#app[data-state="invalid"] #chartTime,
+#app[data-state="invalid"] #legendTime,
+#app[data-state="invalid"] #tableTime { display: none; }
+input[aria-invalid="true"], select[aria-invalid="true"] {
+  border-color: var(--red);
+  outline: 2px solid var(--red);
+  outline-offset: 1px;
+}
+progress#fileProgress { accent-color: var(--yellow); }
 
 @media (max-width: 768px) {
   .assump-table td.name, .assump-table td.val { width: auto; }
@@ -334,7 +315,6 @@ dialog.assump[open] { animation: fadeIn .18s ease-out; }
   .edu-logo { width: 48px; height: 48px; }
   main { padding: 24px 16px 50px; }
   .grid-3, .two-col { grid-template-columns: 1fr; }
-  .result .big { font-size: 28px; }
 }
 
 /* ─── v3: simplified layout ─── */
@@ -344,24 +324,24 @@ dialog.assump[open] { animation: fadeIn .18s ease-out; }
 .workload-foot { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--sp-6); margin-top: var(--sp-2); padding-top: var(--sp-4); border-top: 1px dashed var(--line); }
 .seg-inline { margin: 0; }
 .stat { display: flex; flex-direction: column; gap: 4px; }
-.stat span { font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
-.stat b { font-family: var(--font-display); font-weight: 600; font-size: 20px; color: var(--ink); }
+.stat span { font-family: var(--font-mono); font-size: var(--label-size); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+.stat b { font-family: var(--font-display); font-weight: 600; font-size: var(--stat-size); color: var(--ink); }
 .option { display: flex; flex-direction: column; }
 .option .card-head .chip-slot { margin-left: auto; }
 .opt-total { display: flex; align-items: baseline; gap: 6px; }
-.opt-total .big { font-family: var(--font-display); font-weight: 700; font-size: 34px; letter-spacing: -.02em; color: var(--ink); line-height: 1.1; }
+.opt-total .big { min-width: 0; overflow-wrap: anywhere; font-family: var(--font-display); font-weight: 700; font-size: var(--total-size); letter-spacing: -.02em; color: var(--ink); line-height: 1.1; }
 .opt-total .per { font-size: var(--body-sm); color: var(--ink-3); }
 .opt-lines { margin: var(--sp-3) 0 var(--sp-4); background: var(--paper-2); border-radius: var(--r-md); padding: 10px 14px; }
 .line { display: flex; justify-content: space-between; gap: var(--sp-3); padding: 6px 0; font-size: var(--body-sm); color: var(--ink-2); }
-.line b { font-family: var(--font-mono); font-weight: 500; color: var(--ink); text-align: right; white-space: nowrap; }
+.line b { font-family: var(--font-mono); font-weight: 500; color: var(--ink); text-align: var(--align-end); white-space: nowrap; }
 .line-total { border-top: 1px solid var(--line-2); margin-top: 2px; padding-top: 8px; color: var(--ink); font-weight: 600; }
 .line-total b { font-weight: 700; }
-.line-muted { font-size: 13px; }
+.line-muted { font-size: var(--caption); }
 .line-muted b { color: var(--ink-2); }
 .line-total + .line-muted { border-top: 1px dashed var(--line-2); margin-top: 6px; padding-top: 8px; }
 .warn-line { margin: 8px 0 2px; }
 .opt-settings { margin-top: auto; }
-.bars { display: flex; flex-direction: column; gap: 12px; margin: var(--sp-3) 0 var(--sp-5); }
+.bars { display: flex; flex-direction: column; gap: var(--sp-3); margin: var(--sp-3) 0 var(--sp-5); }
 .bar-row { display: grid; grid-template-columns: minmax(90px, 34%) 1fr auto; align-items: center; gap: 10px; font-size: var(--body-sm); }
 .bar-label { color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bar-track { height: 14px; }
@@ -369,16 +349,17 @@ dialog.assump[open] { animation: fadeIn .18s ease-out; }
 .bar-value { font-family: var(--font-mono); font-weight: 500; color: var(--ink); white-space: nowrap; }
 .answers { list-style: none; margin: 0; padding: 0; }
 .answers li { display: flex; justify-content: space-between; gap: var(--sp-4); padding: 9px 0; border-top: 1px dashed var(--line); font-size: var(--body-sm); color: var(--ink-2); }
-.answers li b { font-family: var(--font-display); font-weight: 600; color: var(--ink); text-align: right; }
+.answers li b { font-family: var(--font-display); font-weight: 600; color: var(--ink); text-align: var(--align-end); }
+.answers li.hint { display: block; border-top: none; padding-top: var(--sp-2); font-size: var(--small-size); line-height: var(--line-height-tight); color: var(--ink-3); }
 details.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--shadow-sm); margin-bottom: var(--sp-4); }
 details.panel > summary { cursor: pointer; list-style: none; padding: 16px 24px; font-family: var(--font-display); font-weight: 600; font-size: var(--h4); color: var(--ink); display: flex; align-items: center; gap: 10px; }
 details.panel > summary::-webkit-details-marker { display: none; }
-details.panel > summary::before { content: '+'; display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--paper-2); color: var(--ink); font-family: var(--font-mono); font-size: 15px; }
+details.panel > summary::before { content: '+'; display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--paper-2); color: var(--ink); font-family: var(--font-mono); font-size: var(--disclosure-size); }
 details.panel[open] > summary::before { content: '–'; }
 details.panel > :not(summary) { margin-left: 24px; margin-right: 24px; }
 details.panel[open] { padding-bottom: 20px; }
 .adv-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-6); }
-.adv-grid h4 { font-family: var(--font-mono); font-weight: 500; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); margin: 4px 0 var(--sp-3); }
+.adv-grid h4 { font-family: var(--font-mono); font-weight: 500; font-size: var(--label-size); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); margin: 4px 0 var(--sp-3); }
 @media (max-width: 1000px) { .fields-grid { grid-template-columns: repeat(3, 1fr); } .adv-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 768px) { .fields-grid, .adv-grid { grid-template-columns: repeat(2, 1fr); } .bar-row { grid-template-columns: 1fr auto; } .bar-track { grid-column: 1 / -1; grid-row: 2; } }
 </style>
@@ -396,16 +377,27 @@ details.panel[open] { padding-bottom: 20px; }
 </div></header>
 
 <main id="app" data-state="loading">
+  <p id="validationStatus" role="alert" hidden></p>
   <div class="page-head">
     <h1 class="app-title" data-t="title"></h1>
     <p class="edu-lead" data-t="lead"></p>
+    <p class="hint" data-t="estimateNotice"></p>
+  </div>
+  <div class="toolbar" role="group" aria-label="Scenariusz / Scenario">
+    <button class="ghost-btn" id="scenarioSave" type="button" data-t="scenarioSave"></button>
+    <button class="ghost-btn" id="scenarioExport" type="button" data-t="scenarioExport"></button>
+    <button class="ghost-btn" id="scenarioImport" type="button" data-t="scenarioImport"></button>
+    <button class="ghost-btn" id="scenarioReset" type="button" data-t="scenarioReset"></button>
+    <input id="scenarioFile" type="file" accept=".json,application/json" hidden>
+    <span id="scenarioStatus" class="hint" role="status" aria-live="polite"></span>
+    <progress id="fileProgress" hidden aria-label="Import" max="1"></progress>
   </div>
 
   <!-- ─── Workload ─── -->
   <section>
     <div class="sec-row">
-      <h2 class="sec-title" data-t="secWorkload"></h2>
-      <div class="edu-seg" id="presets" role="group"></div>
+      <h2 class="sec-title" id="workloadTitle" data-t="secWorkload"></h2>
+      <div class="edu-seg" id="presets" role="group" aria-labelledby="workloadTitle"></div>
     </div>
     <div class="card">
       <div class="fields-grid">
@@ -417,8 +409,8 @@ details.panel[open] { padding-bottom: 20px; }
         <div class="field"><label for="outTok" data-t="outTok"></label><input id="outTok" type="number" min="0" step="50"></div>
       </div>
       <div class="workload-foot">
-        <div class="field seg-inline"><label data-t="docLang"></label>
-          <div class="edu-seg" role="group">
+        <div class="field seg-inline"><label id="docLangLabel" data-t="docLang"></label>
+          <div class="edu-seg" role="group" aria-labelledby="docLangLabel">
             <button type="button" data-doclang="pl" data-t="langPl"></button>
             <button type="button" data-doclang="en" data-t="langEn"></button>
           </div>
@@ -434,7 +426,7 @@ details.panel[open] { padding-bottom: 20px; }
     <h2 class="sec-title" data-t="secOptions"></h2>
     <div class="grid-3" id="options" aria-live="polite">
       <div class="card option" id="optApi" data-path="api">
-        <div class="card-head"><span class="dot" style="background:#1E8FC2"></span><h3 data-t="apiPath"></h3><span class="chip-slot"></span></div>
+        <div class="card-head"><span class="dot" style="background:var(--blue)"></span><h3 data-t="apiPath"></h3><span class="chip-slot"></span></div>
         <div class="opt-total"><span class="big"></span><span class="per" data-t="monthly"></span></div>
         <div class="opt-lines"></div>
         <div class="opt-settings">
@@ -443,14 +435,15 @@ details.panel[open] { padding-bottom: 20px; }
         </div>
       </div>
       <div class="card option" id="optCloud" data-path="cloud">
-        <div class="card-head"><span class="dot" style="background:#00A651"></span><h3 data-t="cloudPath"></h3><span class="chip-slot"></span></div>
+        <div class="card-head"><span class="dot" style="background:var(--green)"></span><h3 data-t="cloudPath"></h3><span class="chip-slot"></span></div>
         <div class="opt-total"><span class="big"></span><span class="per" data-t="monthly"></span></div>
         <div class="opt-lines"></div>
         <div class="opt-settings">
           <div class="field"><label for="cloudGpu" data-t="gpu"></label><input id="cloudGpu" type="text"></div>
           <div class="field"><label for="cloudPrice" data-t="cloudPrice"></label><input id="cloudPrice" type="number" min="0" step="500"></div>
-          <div class="field"><label data-t="cloudMode"></label>
-            <div class="edu-seg" role="group">
+          <div class="field"><label for="cloudOps" data-t="cloudOps"></label><input id="cloudOps" type="number" min="0" step="100"></div>
+          <div class="field"><label id="cloudModeLabel" data-t="cloudMode"></label>
+            <div class="edu-seg" role="group" aria-labelledby="cloudModeLabel">
               <button type="button" data-cloudmode="247" data-t="mode247"></button>
               <button type="button" data-cloudmode="work" data-t="modeWork"></button>
             </div>
@@ -458,7 +451,7 @@ details.panel[open] { padding-bottom: 20px; }
         </div>
       </div>
       <div class="card option" id="optOwn" data-path="own">
-        <div class="card-head"><span class="dot" style="background:#7A5AC2"></span><h3 data-t="ownPath"></h3><span class="chip-slot"></span></div>
+        <div class="card-head"><span class="dot" style="background:var(--play-grape)"></span><h3 data-t="ownPath"></h3><span class="chip-slot"></span></div>
         <div class="opt-total"><span class="big"></span><span class="per" data-t="monthly"></span></div>
         <div class="opt-lines"></div>
         <div class="opt-settings">
@@ -529,6 +522,7 @@ details.panel[open] { padding-bottom: 20px; }
           <div class="field"><label for="horizon" data-t="horizon"></label><input id="horizon" type="number" min="6" max="120" step="6"></div>
         </div>
         <div class="field"><label for="ownPower" data-t="power"></label><input id="ownPower" type="number" min="0" step="50"></div>
+        <div class="field"><label for="ownReplace" data-t="ownReplace"></label><input id="ownReplace" type="number" min="1" max="240" step="1"></div>
       </div>
       <div>
         <h4 data-t="advGpu"></h4>
@@ -545,14 +539,23 @@ details.panel[open] { padding-bottom: 20px; }
         <h4 data-t="csvTitle"></h4>
         <div class="drop" id="drop"><span data-t="csvSource"></span> <span class="src" id="csvSrc"></span></div>
         <div class="csv-row" style="margin-top:var(--sp-3)">
-          <label class="edu-btn" for="csvFile" tabindex="0" id="csvBtn" data-t="csvLoad"></label>
-          <input type="file" id="csvFile" accept=".csv,text/csv" class="sr-only">
+          <button class="edu-btn" type="button" id="csvBtn" data-t="csvLoad"></button>
+          <input type="file" id="csvFile" accept=".csv,text/csv" hidden>
           <button class="ghost-btn" id="csvReset" type="button" data-t="csvReset"></button>
+          <button class="ghost-btn" id="csvTemplate" type="button" data-t="csvTemplate"></button>
         </div>
+        <p class="hint" data-t="csvHelp"></p>
+        <p id="csvError" role="alert" hidden></p>
       </div>
     </div>
   </details>
 
+  <details class="panel" id="checksPanel">
+    <summary data-t="checksTitle"></summary>
+    <button class="ghost-btn" id="runChecks" type="button" data-t="runChecks"></button>
+    <p id="checksStatus" role="status"></p>
+    <ul id="checksResults"></ul>
+  </details>
   <footer class="shortcuts" data-t="shortcuts"></footer>
   <div class="sr-only" aria-live="polite" id="live"></div>
   <dialog class="assump" id="assumptions" aria-labelledby="assumpTitle">
@@ -567,26 +570,26 @@ details.panel[open] { padding-bottom: 20px; }
   </dialog>
 </main>
 
-<script id="csvData" type="text/csv">﻿nazwa,cena_wejscie_per_1M_USD,cena_wyjscie_per_1M_USD,okno_kontekstu,klasa,uwaga
-OpenAI GPT-5.6 Luna,0.2,1.2,1050000,mini,Sprawdzono 2026-09-13. USD/1M tokenów tekstowych. API bez cache i Batch. Bez opłat za narzędzia. Klasa umowna do ćwiczenia. Standard. ID: gpt-5.6-luna. Wejście do 272K. Powyżej 272K: 0.40/1.80 USD (wejście/wyjście) dla całego żądania. Okno obejmuje wejście i wyjście. Źródła: https://developers.openai.com/api/docs/pricing https://developers.openai.com/api/docs/models/gpt-5.6-luna
-OpenAI GPT-5.6 Terra,2,12,1050000,mini,Sprawdzono 2026-09-13. USD/1M tokenów tekstowych. API bez cache i Batch. Bez opłat za narzędzia. Klasa umowna do ćwiczenia. Standard. ID: gpt-5.6-terra. Wejście do 272K. Powyżej 272K: 4/18 USD (wejście/wyjście) dla całego żądania. Okno obejmuje wejście i wyjście. Źródła: https://developers.openai.com/api/docs/pricing https://developers.openai.com/api/docs/models/gpt-5.6-terra
-OpenAI GPT-5.6 Sol,4,20,1050000,frontier,Sprawdzono 2026-09-13. USD/1M tokenów tekstowych. API bez cache i Batch. Bez opłat za narzędzia. Klasa umowna do ćwiczenia. Standard. ID: gpt-5.6-sol. Wejście do 272K. Powyżej 272K: 8/30 USD (wejście/wyjście) dla całego żądania. Cena promocyjna co najmniej do 2026-11-21. Okno obejmuje wejście i wyjście. Źródła: https://developers.openai.com/api/docs/pricing https://developers.openai.com/api/docs/models/gpt-5.6-sol
-OpenAI GPT-6 Astra,10,50,1050000,frontier,Sprawdzono 2026-09-13. USD/1M tokenów tekstowych. API bez cache i Batch. Bez opłat za narzędzia. Klasa umowna do ćwiczenia. Standard. ID: gpt-6-astra. Wejście do 272K. Powyżej 272K: 20/75 USD (wejście/wyjście) dla całego żądania. Okno obejmuje wejście i wyjście. Źródła: https://developers.openai.com/api/docs/pricing https://developers.openai.com/api/docs/models/gpt-6-astra
-Anthropic Claude Haiku 4.5,1,5,200000,mini,Sprawdzono 2026-09-13. USD/1M tokenów tekstowych. API bez cache i Batch. Bez opłat za narzędzia. Klasa umowna do ćwiczenia. Standard w Claude API. ID: claude-haiku-4-5-20251001. Źródła: https://platform.claude.com/docs/en/about-claude/pricing https://platform.claude.com/docs/en/models/overview
-Anthropic Claude Sonnet 5,2,10,1000000,standard,Sprawdzono 2026-09-13. USD/1M tokenów tekstowych. API bez cache i Batch. Bez opłat za narzędzia. Klasa umowna do ćwiczenia. Standard w Claude API z globalnym routingiem. ID: claude-sonnet-5. Bez dopłaty za długi kontekst. Źródła: https://platform.claude.com/docs/en/about-claude/pricing https://platform.claude.com/docs/en/models/overview
-Anthropic Claude Opus 5,5,25,1000000,frontier,Sprawdzono 2026-09-13. USD/1M tokenów tekstowych. API bez cache i Batch. Bez opłat za narzędzia. Klasa umowna do ćwiczenia. Standard w Claude API z globalnym routingiem. ID: claude-opus-5. Bez Fast mode i dopłaty za długi kontekst. Źródła: https://platform.claude.com/docs/en/about-claude/pricing https://platform.claude.com/docs/en/models/overview
-Anthropic Claude Fable 5.1,10,50,1000000,frontier,Sprawdzono 2026-09-13. USD/1M tokenów tekstowych. API bez cache i Batch. Bez opłat za narzędzia. Klasa umowna do ćwiczenia. Standard w Claude API z globalnym routingiem. ID: claude-fable-5-1. Bez dopłaty za długi kontekst. Źródła: https://platform.claude.com/docs/en/about-claude/pricing https://platform.claude.com/docs/en/models/overview
-DeepSeek V4.1 Flash,0.3,1.2,1000000,mini,Sprawdzono 2026-09-13. USD/1M tokenów tekstowych. API bez cache i Batch. Bez opłat za narzędzia. Klasa umowna do ćwiczenia. Bezpośrednie API. ID: deepseek-flash. Ceny PEAK: pon.-pt. 01:00-04:00 i 06:00-10:00 UTC. Poza tymi godzinami: 0.15/0.60 USD (wejście/wyjście). Oba tryby myślenia. Źródło: https://api-docs.deepseek.com/quick_start/pricing/
-DeepSeek V4 Pro 0813,1.32,3.96,1000000,frontier,Sprawdzono 2026-09-13. USD/1M tokenów tekstowych. API bez cache i Batch. Bez opłat za narzędzia. Klasa umowna do ćwiczenia. Bezpośrednie API. ID: deepseek-v4-pro. Ceny PEAK: pon.-pt. 01:00-04:00 i 06:00-10:00 UTC. Poza tymi godzinami: 0.66/1.98 USD (wejście/wyjście). Oba tryby myślenia. Źródło: https://api-docs.deepseek.com/quick_start/pricing/
+<script id="csvData" type="text/csv">﻿nazwa,cena_wejscie_per_1M_USD,cena_wyjscie_per_1M_USD,okno_kontekstu,klasa,uwaga,id,family,max_output,always_thinks,tier_above,tier_input,tier_output,offpeak_input,offpeak_output,checked_at,source
+OpenAI GPT-5.6 Luna,0.2,1.2,1050000,mini,Stawka standardowa bez cache i Batch.,gpt-5.6-luna,openai,128000,false,272000,0.4,1.8,,,2026-09-13,https://developers.openai.com/api/docs/pricing
+OpenAI GPT-5.6 Terra,2,12,1050000,mini,Stawka standardowa bez cache i Batch.,gpt-5.6-terra,openai,128000,false,272000,4,18,,,2026-09-13,https://developers.openai.com/api/docs/pricing
+OpenAI GPT-5.6 Sol,4,20,1050000,frontier,Stawka standardowa bez cache i Batch.,gpt-5.6-sol,openai,128000,false,272000,8,30,,,2026-09-13,https://developers.openai.com/api/docs/pricing
+OpenAI GPT-6 Astra,10,50,1050000,frontier,Stawka standardowa bez cache i Batch.,gpt-6-astra,openai,128000,true,272000,20,75,,,2026-09-13,https://developers.openai.com/api/docs/pricing
+Anthropic Claude Haiku 4.5,1,5,200000,mini,Stawka standardowa bez cache i Batch.,claude-haiku-4-5-20251001,claude,64000,false,,,,,,2026-09-13,https://platform.claude.com/docs/en/about-claude/pricing
+Anthropic Claude Sonnet 5,2,10,1000000,standard,Stawka standardowa bez cache i Batch.,claude-sonnet-5,claudeNew,128000,false,,,,,,2026-09-13,https://platform.claude.com/docs/en/about-claude/pricing
+Anthropic Claude Opus 5,5,25,1000000,frontier,Stawka standardowa bez cache i Batch.,claude-opus-5,claudeNew,128000,false,,,,,,2026-09-13,https://platform.claude.com/docs/en/about-claude/pricing
+Anthropic Claude Fable 5.1,10,50,1000000,frontier,Stawka standardowa bez cache i Batch.,claude-fable-5-1,claudeNew,128000,true,,,,,,2026-09-13,https://platform.claude.com/docs/en/about-claude/pricing
+DeepSeek V4.1 Flash,0.3,1.2,1000000,mini,Stawka standardowa bez cache i Batch.,deepseek-flash,deepseek,384000,false,,,,0.15,0.6,2026-09-13,https://api-docs.deepseek.com/quick_start/pricing/
+DeepSeek V4 Pro 0813,1.32,3.96,1000000,frontier,Stawka standardowa bez cache i Batch.,deepseek-v4-pro,deepseek,384000,false,,,,0.66,1.98,2026-09-13,https://api-docs.deepseek.com/quick_start/pricing/
 </script>
 <script>
 // ─── Constants ───
 const CURRENCY = 'PLN';
-const COLORS = { api: '#1E8FC2', cloud: '#00A651', own: '#7A5AC2', ink: '#1C1917', ink3: '#948C82', line: '#EDE7D2', surface: '#FFFFFF' };
+const COLORS = {};
+const CHART_TYPE = {};
 const MINUTE_OF_WORK = 15000 / (168 * 60); // 1.49 PLN
 const HOURS_MONTH = 730;
-// Tokens per word, measured 2026-09-13 on the Solaris dataset (45.8K Polish words) and a parallel PL/EN text.
-// Claude has no public tokenizer: Haiku 4.5 assumed like o200k, Claude 4.7+ tokenizer +30% (Anthropic docs).
+// Token conversion assumptions are explicit so pricing and capability metadata stay independent.
 const TOK_PER_WORD = {
   openai:    { pl: 2.32, en: 1.37, label: 'OpenAI o200k' },
   deepseek:  { pl: 2.41, en: 1.38, label: 'DeepSeek V3' },
@@ -597,7 +600,6 @@ const TOK_PER_WORD = {
 const BASE_FAMILY = 'openai';      // workload tokens are entered as OpenAI o200k tokens of Polish text
 const SELF_HOSTED_FAMILY = 'qwen';
 const EN_WORD_FACTOR = 502 / 443;  // the same text in English has 13% more words
-const THINKING_INPUT = {}; // model id prefix -> { pin, tierPin } when thinking changes the input price
 const PRESETS = {
   S1: { users: 20, reqPerDay: 20 },
   S2: { users: 100, reqPerDay: 20 },
@@ -607,19 +609,44 @@ const PRESET_FIELDS = Object.keys(PRESETS.S1);
 const DEFAULTS = {
   ...PRESETS.S1, chunks: 5, chunkTok: 2000, promptTok: 500, outTok: 500, docLang: 'pl', workDays: 250, workHours: 8,
   model: 'OpenAI GPT-5.6 Terra', fx: 3.73, offPeak: false, thinking: false, thinkMult: 3,
-  cloudGpu: '1× NVIDIA H100 80GB', cloudPrice: 10000, cloudMode: '247', cloudPrefill: 10000, cloudDecode: 1500,
-  ownGpu: '1× RTX PRO 6000 96GB', ownCapex: 250000, ownAmort: 36, ownOps: 1000, ownPower: 900, kwh: 1.0, ownPrefill: 10000, ownDecode: 1500,
+  cloudGpu: '1× NVIDIA H100 80GB', cloudPrice: 10000, cloudOps: 0, cloudMode: '247', cloudPrefill: 10000, cloudDecode: 1500,
+  ownGpu: '1× RTX PRO 6000 96GB', ownCapex: 250000, ownAmort: 36, ownReplace: 36, ownOps: 1000, ownPower: 900, kwh: 1.0, ownPrefill: 10000, ownDecode: 1500,
   peak: 2, horizon: 36,
 };
-const NUM_FIELDS = ['users','reqPerDay','chunks','chunkTok','promptTok','outTok','workDays','workHours','fx','thinkMult',
-  'cloudPrice','cloudPrefill','cloudDecode','ownCapex','ownAmort','ownOps','ownPower','kwh','ownPrefill','ownDecode','peak','horizon'];
+const FIELD_SCHEMA = {
+  users:       { min: 1,     max: 20000,    integer: true },
+  reqPerDay:   { min: 0,     max: 10000,    integer: true },
+  chunks:      { min: 0,     max: 100,      integer: true },
+  chunkTok:    { min: 0,     max: 1000000,  integer: true },
+  promptTok:   { min: 0,     max: 1000000,  integer: true },
+  outTok:      { min: 0,     max: 1000000,  integer: true },
+  workDays:    { min: 1,     max: 365,      integer: true },
+  workHours:   { min: 1,     max: 24,       integer: true },
+  fx:          { min: 0.1,   max: 100,      integer: false },
+  thinkMult:   { min: 1,     max: 20,       integer: false },
+  cloudPrice:  { min: 0,     max: 100000000, integer: false },
+  cloudOps:    { min: 0,     max: 100000000, integer: false },
+  cloudPrefill:{ min: 1,     max: 100000000, integer: false },
+  cloudDecode: { min: 1,     max: 100000000, integer: false },
+  ownCapex:    { min: 0,     max: 100000000, integer: true },
+  ownAmort:    { min: 1,     max: 240,      integer: true },
+  ownReplace:  { min: 1,     max: 240,      integer: true },
+  ownOps:      { min: 0,     max: 100000000, integer: false },
+  ownPower:    { min: 0,     max: 1000000,   integer: true },
+  kwh:         { min: 0,     max: 100,      integer: false },
+  ownPrefill:  { min: 1,     max: 100000000, integer: false },
+  ownDecode:   { min: 1,     max: 100000000, integer: false },
+  peak:        { min: 1,     max: 100,      integer: false },
+  horizon:     { min: 6,     max: 120,      integer: true },
+};
+const NUM_FIELDS = Object.keys(FIELD_SCHEMA);
 const TEXT_FIELDS = ['cloudGpu','ownGpu'];
 const LS_LANG = 'edulab-token-cost-lang';
 const SOURCES = {
   openai: 'https://developers.openai.com/api/docs/pricing',
   anthropic: 'https://platform.claude.com/docs/en/about-claude/pricing',
   deepseek: 'https://api-docs.deepseek.com/quick_start/pricing/',
-  nbp: 'https://www.bankier.pl/waluty/kursy-walut/nbp',
+  nbp: 'https://rss.nbp.pl/kursy/TabRss.aspx?n=2026%2Fa%2F26a177',
   h100: 'https://getdeploying.com/gpus/nvidia-h100',
   pro6000: 'https://www.tomshardware.com/pc-components/gpus/nvidia-doubles-rtx-pro-6000-blackwells-msrp-to-a-staggering-usd16-000-96gb-card-started-pre-orders-below-usd8-000-last-year',
   bench: 'https://www.databasemart.com/blog/vllm-gpu-benchmark-pro6000',
@@ -634,7 +661,7 @@ const T = {
     title: 'Ile kosztuje AI w firmie?',
     lead: 'Asystent RAG odpowiada na podstawie firmowych dokumentów. Porównaj miesięczny koszt trzech opcji: płatne API modelu, GPU w chmurze i własny serwer.',
     assumpBtn: 'Założenia i źródła', assumpTitle: 'Założenia kalkulatora', close: 'Zamknij',
-    assumpLead: 'Liczby sprawdzone 13.09.2026. Wartości „obecnie” pochodzą z pól kalkulatora. Koszty netto, bez VAT.',
+    assumpLead: 'Źródła stawek zewnętrznych sprawdzone 14.09.2026. Domyślne obciążenie, parametry GPU i sprzętu są edytowalne i ilustracyjne. Koszty netto, bez VAT.',
     thAssump: 'Założenie', thValue: 'Wartość', thSource: 'Uzasadnienie i źródło',
     secWorkload: 'Obciążenie', presetS1: 'Handlowcy · 20', presetS2: 'Kilka działów · 100', presetS3: 'Firma · 300',
     users: 'Użytkownicy', reqPerDay: 'Zapytań / osobę / dzień', chunks: 'Fragmenty RAG', chunkTok: 'Tokeny / fragment',
@@ -643,18 +670,18 @@ const T = {
     kvTokens: 'Tokeny / zapytanie (we / wy)', kvReqMonth: 'Zapytań / mies.',
     secOptions: 'Trzy opcje – koszt miesięczny',
     apiPath: 'API', cloudPath: 'Chmura GPU', ownPath: 'Własny serwer', monthly: '/ mies.',
-    model: 'Model', gpu: 'GPU', cloudPrice: 'Cena / mies. z obsługą (PLN)', cloudMode: 'Czas pracy GPU', mode247: '24/7', modeWork: 'Godziny pracy',
-    capex: 'Zakup (PLN)', amort: 'Amortyzacja (mies.)', ops: 'Obsługa / mies. (PLN)', kwh: 'Prąd PLN / kWh',
-    lInput: 'Tokeny wejścia', lOutput: 'Tokeny wyjścia', lGpu: 'GPU z obsługą', lAmort: 'Amortyzacja zakupu', lEnergy: 'Prąd', lOps: 'Obsługa',
+    model: 'Model', gpu: 'GPU', cloudPrice: 'Cena GPU / mies. bez obsługi (PLN)', cloudMode: 'Czas pracy GPU', mode247: '24/7', modeWork: 'Godziny pracy',
+    capex: 'Zakup (PLN)', amort: 'Amortyzacja (mies.)', ops: 'Stała obsługa / mies. (PLN)', kwh: 'Prąd netto PLN / kWh',
+    lInput: 'Tokeny wejścia', lOutput: 'Tokeny wyjścia', lGpu: 'GPU bez obsługi', lAmort: 'Amortyzacja zakupu', lEnergy: 'Prąd netto', lOps: 'Obsługa',
     lYear: 'Rocznie', lFirstYear: 'Pierwszy rok (z zakupem)', lPerReq: 'Za zapytanie', lUtil: 'Wykorzystanie GPU',
     cheapest: 'Najtańsze', tierNote: 'Prompt powyżej {k}K tokenów: droższa stawka.', ctxOver: 'Prompt nie mieści się w oknie kontekstu modelu!',
     summaryTitle: 'Podsumowanie miesięczne', summarySub: 'Koszt każdej opcji przy bieżącym obciążeniu.',
-    aApiVsCloud: 'API tańsze od chmury do', aApiVsOwn: 'API tańsze od własnego serwera do',
-    aPayback: 'Serwer zwraca się względem chmury po', aMinute: 'Zapytanie API a minuta pracy (1,49 zł)',
+    aApiVsCloud: 'Pierwszy zakres przewagi API nad chmurą kończy się przy', aApiVsOwn: 'Pierwszy zakres przewagi API nad własnym serwerem kończy się przy',
+    aPayback: 'Pierwsze przecięcie kosztów gotówkowych serwera z chmurą po', aMinute: 'Zapytanie API a minuta pracy (1,49 zł)',
     usersUnit: 'użytk.', monthsUnit: 'mies.', never: 'nie w ciągu 10 lat', apiNever: 'nigdy (już 1 osoba)',
-    chartTime: 'Koszt narastająco w czasie', chartTimeSub: 'Własny serwer startuje od ceny zakupu. Po okresie amortyzacji doliczamy wymianę sprzętu.',
+    chartTime: 'Koszt narastająco w czasie', chartTimeSub: 'Własny serwer startuje od ceny zakupu. Co okres wymiany sprzętu doliczamy kolejny zakup.',
     showData: 'Pokaż dane', monthLabel: 'Miesiąc',
-    secModels: 'Porównaj wszystkie modele API', modelsNote: 'Tokeny liczone tokenizerem danego modelu. Kliknij wiersz, aby wybrać model.',
+    secModels: 'Porównaj wszystkie modele API', modelsNote: 'Tokeny są szacowane dla rodziny modelu, nie liczone uruchomieniem tokenizerów. Kliknij wiersz, aby wybrać model.',
     thModel: 'Model', thTok: 'Tokeny we / wy', thIn: 'We $/1M', thOut: 'Wy $/1M', thReq: 'Zapytanie', thMonth: 'Miesięcznie', thVs: 'Na tle GPU',
     vsCheaper: 'tańsze niż GPU', vsDearer: 'droższe niż oba GPU', vsMid: 'pomiędzy',
     secAdvanced: 'Ustawienia zaawansowane', advApi: 'API', advTime: 'Czas i obciążenie', advGpu: 'Przepustowość GPU (tok/s)',
@@ -663,14 +690,14 @@ const T = {
     cloudPrefill: 'Chmura: wejście', cloudDecode: 'Chmura: wyjście', ownPrefill: 'Serwer: wejście', ownDecode: 'Serwer: wyjście',
     csvTitle: 'Cennik modeli', csvSource: 'Źródło:', csvLoad: 'Wczytaj CSV', csvReset: 'Cennik wbudowany',
     csvBuiltIn: 'cennik_modeli_2026-09.csv (wbudowany)', csvError: 'Nie udało się odczytać CSV: brak wymaganych kolumn.',
-    shortcuts: 'Skróty: 1–3 scenariusze · A założenia · L język · ↑/↓ na liście modeli',
+    shortcuts: 'Skróty: 1–3 scenariusze · A założenia · L język · Ctrl/Cmd+S zapisz · ↑/↓ na liście modeli',
     live: 'API {api}, chmura {cloud}, własny serwer {own} miesięcznie.',
   },
   en: {
     title: 'What does AI cost a business?',
     lead: 'A RAG assistant answers from company documents. Compare the monthly cost of three options: a paid model API, a cloud GPU and your own server.',
     assumpBtn: 'Assumptions and sources', assumpTitle: 'Calculator assumptions', close: 'Close',
-    assumpLead: 'Figures checked on 13 Sep 2026. “Currently” values come from the calculator fields. Net costs, excluding VAT.',
+    assumpLead: 'External rate sources checked on 14 Sep 2026. Default workload, GPU and hardware values are editable illustrations. Net costs, excluding VAT.',
     thAssump: 'Assumption', thValue: 'Value', thSource: 'Rationale and source',
     secWorkload: 'Workload', presetS1: 'Sales · 20', presetS2: 'Several departments · 100', presetS3: 'Company · 300',
     users: 'Users', reqPerDay: 'Requests / person / day', chunks: 'RAG chunks', chunkTok: 'Tokens / chunk',
@@ -679,18 +706,18 @@ const T = {
     kvTokens: 'Tokens / request (in / out)', kvReqMonth: 'Requests / month',
     secOptions: 'Three options – monthly cost',
     apiPath: 'API', cloudPath: 'Cloud GPU', ownPath: 'Own server', monthly: '/ month',
-    model: 'Model', gpu: 'GPU', cloudPrice: 'Price / month incl. support (PLN)', cloudMode: 'GPU running time', mode247: '24/7', modeWork: 'Working hours',
-    capex: 'Purchase (PLN)', amort: 'Depreciation (months)', ops: 'Support / month (PLN)', kwh: 'Power PLN / kWh',
-    lInput: 'Input tokens', lOutput: 'Output tokens', lGpu: 'GPU incl. support', lAmort: 'Purchase depreciation', lEnergy: 'Power', lOps: 'Support',
+    model: 'Model', gpu: 'GPU', cloudPrice: 'GPU price / month excl. support (PLN)', cloudMode: 'GPU running time', mode247: '24/7', modeWork: 'Working hours',
+    capex: 'Purchase (PLN)', amort: 'Depreciation (months)', ops: 'Fixed support / month (PLN)', kwh: 'Net power PLN / kWh',
+    lInput: 'Input tokens', lOutput: 'Output tokens', lGpu: 'GPU excl. support', lAmort: 'Purchase depreciation', lEnergy: 'Net power', lOps: 'Support',
     lYear: 'Per year', lFirstYear: 'First year (with purchase)', lPerReq: 'Per request', lUtil: 'GPU utilisation',
     cheapest: 'Cheapest', tierNote: 'Prompt above {k}K tokens: higher rate.', ctxOver: 'Prompt does not fit the model context window!',
     summaryTitle: 'Monthly summary', summarySub: 'Cost of each option at the current workload.',
-    aApiVsCloud: 'API cheaper than cloud up to', aApiVsOwn: 'API cheaper than own server up to',
-    aPayback: 'Server pays back vs cloud after', aMinute: 'API request vs a minute of work (1.49 PLN)',
+    aApiVsCloud: 'First API-over-cloud advantage interval ends at', aApiVsOwn: 'First API-over-own-server advantage interval ends at',
+    aPayback: 'First cash-cost crossing of server and cloud after', aMinute: 'API request vs a minute of work (1.49 PLN)',
     usersUnit: 'users', monthsUnit: 'mo.', never: 'not within 10 years', apiNever: 'never (even 1 user)',
-    chartTime: 'Cumulative cost over time', chartTimeSub: 'Own server starts at the purchase price. After depreciation, hardware replacement is added.',
+    chartTime: 'Cumulative cost over time', chartTimeSub: 'Own server starts at the purchase price. A new purchase is added each hardware-replacement period.',
     showData: 'Show data', monthLabel: 'Month',
-    secModels: 'Compare all API models', modelsNote: 'Tokens counted with each model’s tokenizer. Click a row to select the model.',
+    secModels: 'Compare all API models', modelsNote: 'Tokens are estimated for the model family, not measured by running each tokenizer. Click a row to select the model.',
     thModel: 'Model', thTok: 'Tokens in / out', thIn: 'In $/1M', thOut: 'Out $/1M', thReq: 'Request', thMonth: 'Monthly', thVs: 'Vs GPU',
     vsCheaper: 'cheaper than GPU', vsDearer: 'dearer than both GPUs', vsMid: 'in between',
     secAdvanced: 'Advanced settings', advApi: 'API', advTime: 'Time and load', advGpu: 'GPU throughput (tok/s)',
@@ -699,13 +726,45 @@ const T = {
     cloudPrefill: 'Cloud: input', cloudDecode: 'Cloud: output', ownPrefill: 'Server: input', ownDecode: 'Server: output',
     csvTitle: 'Model price list', csvSource: 'Source:', csvLoad: 'Load CSV', csvReset: 'Built-in list',
     csvBuiltIn: 'cennik_modeli_2026-09.csv (built-in)', csvError: 'Could not read the CSV: required columns missing.',
-    shortcuts: 'Shortcuts: 1–3 scenarios · A assumptions · L language · ↑/↓ in the model list',
+    shortcuts: 'Shortcuts: 1–3 scenarios · A assumptions · L language · Ctrl/Cmd+S save · ↑/↓ in the model list',
     live: 'API {api}, cloud {cloud}, own server {own} per month.',
   },
 };
 
+Object.assign(T.pl, {
+  estimateNotice: 'Szacunek kosztów inferencji, nie oferta ani gwarancja jakości i wydajności. Kwoty netto.',
+  cloudOps: 'Stała obsługa chmury / mies. (PLN)', ownReplace: 'Wymiana sprzętu co (mies.)',
+  scenarioSave: 'Zapisz lokalnie', scenarioExport: 'Eksport JSON', scenarioImport: 'Import JSON', scenarioReset: 'Reset scenariusza',
+  scenarioSaved: 'Scenariusz zapisany w tej przeglądarce.', scenarioLoaded: 'Scenariusz wczytany.', scenarioResetDone: 'Przywrócono ustawienia. Cennik zachowany.',
+  scenarioUnsaved: 'Zmiany niezapisane.', storageError: 'Zapis lokalny niedostępny. Użyj eksportu JSON.', scenarioError: 'Nie można wczytać scenariusza: {error}',
+  invalidFields: 'Popraw pola: {fields}. Wyniki wstrzymane.', invalidNumber: 'Podaj liczbę z zakresu {min}–{max}.', invalidInteger: 'Podaj liczbę całkowitą z zakresu {min}–{max}.',
+  unavailable: 'Niedostępne', outputOver: 'Odpowiedź z rozumowaniem przekracza limit wyjścia modelu.',
+  forcedThinking: 'Ten model zawsze używa rozumowania. Mnożnik jest szacunkiem.',
+  firstCrossNote: 'Pokazano koniec pierwszego przedziału przewagi API (do 20 000 osób). Kolejne GPU mogą odwrócić porównanie ponownie. Zwrot oznacza pierwsze przecięcie kosztów gotówkowych, nie trwałą przewagę.',
+  csvTemplate: 'Pobierz wzór CSV', csvHelp: 'Wymagany cennik ze strukturalnymi kolumnami. Pobierz wzór; limity: 100 modeli, 1 MB. Import zastępuje cały cennik.',
+  csvLoadError: 'Cennik odrzucony: {error}. Poprzedni cennik zachowany.', fileError: 'Nie można odczytać pliku (maks. 1 MB).',
+  checksTitle: 'Testy kalkulatora', runChecks: 'Uruchom testy', checksResult: 'Wynik: {passed}/{total}.',
+  importBusy: 'Wczytywanie pliku…', csvLoaded: 'Cennik wczytany. Zapisz scenariusz, aby zachować zmiany.',
+});
+Object.assign(T.en, {
+  estimateNotice: 'Inference cost estimate, not a quote or a quality/capacity guarantee. Net amounts.',
+  cloudOps: 'Fixed cloud support / month (PLN)', ownReplace: 'Replace hardware every (months)',
+  scenarioSave: 'Save locally', scenarioExport: 'Export JSON', scenarioImport: 'Import JSON', scenarioReset: 'Reset scenario',
+  scenarioSaved: 'Scenario saved in this browser.', scenarioLoaded: 'Scenario loaded.', scenarioResetDone: 'Settings reset. Price list retained.',
+  scenarioUnsaved: 'Unsaved changes.', storageError: 'Local storage unavailable. Use JSON export.', scenarioError: 'Could not load scenario: {error}',
+  invalidFields: 'Correct these fields: {fields}. Results paused.', invalidNumber: 'Enter a number between {min} and {max}.', invalidInteger: 'Enter an integer between {min} and {max}.',
+  unavailable: 'Unavailable', outputOver: 'Answer plus reasoning exceeds the model output limit.',
+  forcedThinking: 'This model always reasons. The multiplier is an estimate.',
+  firstCrossNote: 'Shows the end of the first interval favouring API (up to 20,000 users). Additional GPUs may reverse the comparison again. Payback means the first cash-cost crossing, not a permanent advantage.',
+  csvTemplate: 'Download CSV template', csvHelp: 'Structured pricing columns required. Download the template; limits: 100 models, 1 MB. Import replaces the entire price list.',
+  csvLoadError: 'Price list rejected: {error}. Previous list retained.', fileError: 'Could not read file (maximum 1 MB).',
+  checksTitle: 'Calculator checks', runChecks: 'Run checks', checksResult: 'Result: {passed}/{total}.',
+  importBusy: 'Reading file…', csvLoaded: 'Price list loaded. Save the scenario to retain changes.',
+});
+
 // ─── State ───
 const state = { ...DEFAULTS, lang: 'pl', models: [], csvSource: null };
+const App = { state, results: null, invalidFields: new Set(), fileBusy: false, fileRevision: 0, dirty: false };
 
 // ─── DOM refs ───
 const $ = (id) => document.getElementById(id);
@@ -751,73 +810,223 @@ function svgEl(tag, attrs = {}) {
   return n;
 }
 
-// CSV parser with quoted fields
+// CSV parser and validation helpers
+const MAX_CSV_BYTES = 1024 * 1024;
+const MAX_CSV_MODELS = 100;
+const MAX_CSV_NUMBER = 1000000000;
+const KNOWN_FAMILIES = Object.keys(TOK_PER_WORD);
+const CSV_REQUIRED_COLUMNS = [
+  'nazwa', 'cena_wejscie_per_1M_USD', 'cena_wyjscie_per_1M_USD', 'okno_kontekstu', 'klasa', 'uwaga',
+  'id', 'family', 'max_output', 'always_thinks', 'tier_above', 'tier_input', 'tier_output',
+  'offpeak_input', 'offpeak_output', 'checked_at', 'source',
+];
+const EXACT_NUMBER_RE = /^[+-]?(?:(?:\d+(?:\.\d*)?)|(?:\.\d+))(?:e[+-]?\d+)?$/i;
+
+function utf8ByteLength(text) {
+  let bytes = 0;
+  for (const ch of text) {
+    const cp = ch.codePointAt(0);
+    bytes += cp <= 0x7f ? 1 : cp <= 0x7ff ? 2 : cp <= 0xffff ? 3 : 4;
+  }
+  return bytes;
+}
+function csvError(row, code, reason) {
+  const err = new Error(`CSV row ${row}: ${code} (${reason})`);
+  err.row = row;
+  err.code = code;
+  err.reason = reason;
+  return err;
+}
+
+// Strict RFC-style CSV parser. Quotes may only start a field and must close before a delimiter.
 function parseCsv(text) {
+  if (typeof text !== 'string') throw csvError(1, 'type', 'CSV text must be a string');
+  if (utf8ByteLength(text) > MAX_CSV_BYTES) throw csvError(0, 'file_size', 'CSV exceeds 1 MiB');
   text = text.replace(/^\uFEFF/, '');
-  const rows = []; let row = []; let cur = ''; let q = false;
+  const rows = [];
+  let row = [];
+  let cur = '';
+  let inQuotes = false;
+  let afterQuote = false;
+  let rowNo = 1;
+  const finishField = () => {
+    row.push(cur);
+    cur = '';
+    afterQuote = false;
+  };
+  const finishRow = () => {
+    finishField();
+    if (row.some((value) => value.trim() !== '')) rows.push(row);
+    row = [];
+    rowNo++;
+  };
+
   for (let i = 0; i < text.length; i++) {
     const c = text[i];
-    if (q) {
+    if (inQuotes) {
       if (c === '"' && text[i + 1] === '"') { cur += '"'; i++; }
-      else if (c === '"') q = false;
+      else if (c === '"') { inQuotes = false; afterQuote = true; }
       else cur += c;
-    } else if (c === '"') q = true;
-    else if (c === ',') { row.push(cur); cur = ''; }
-    else if (c === '\n' || c === '\r') {
+      continue;
+    }
+    if (afterQuote) {
+      if (c === ',') finishField();
+      else if (c === '\r' || c === '\n') {
+        if (c === '\r' && text[i + 1] === '\n') i++;
+        finishRow();
+      } else throw csvError(rowNo, 'malformed_quotes', 'characters after closing quote');
+      continue;
+    }
+    if (c === '"') {
+      if (cur !== '') throw csvError(rowNo, 'malformed_quotes', 'quote must start a field');
+      inQuotes = true;
+    } else if (c === ',') finishField();
+    else if (c === '\r' || c === '\n') {
       if (c === '\r' && text[i + 1] === '\n') i++;
-      row.push(cur); cur = '';
-      if (row.some((x) => x.trim() !== '')) rows.push(row);
-      row = [];
+      finishRow();
     } else cur += c;
   }
-  row.push(cur);
-  if (row.some((x) => x.trim() !== '')) rows.push(row);
+  if (inQuotes) throw csvError(rowNo, 'malformed_quotes', 'unterminated quoted field');
+  if (row.length || cur !== '' || afterQuote) finishRow();
   return rows;
 }
-const numOf = (s) => parseFloat(String(s).replace(',', '.'));
-function familyOf(id, name) {
-  const s = (id || name).toLowerCase();
-  if (/claude-(opus|sonnet|fable|mythos)-[5-9]|claude-opus-4-[78]/.test(s) || /claude (opus|sonnet|fable) 5/i.test(name)) return 'claudeNew';
-  if (s.includes('claude')) return 'claude';
-  if (s.includes('deepseek')) return 'deepseek';
-  if (s.includes('qwen')) return 'qwen';
-  return 'openai';
+
+function exactNumber(value) {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : NaN;
+  if (typeof value !== 'string') return NaN;
+  const raw = value.trim();
+  if (!raw || !EXACT_NUMBER_RE.test(raw)) return NaN;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : NaN;
+}
+function numOf(value) { return exactNumber(value); }
+
+function validateField(id, value) {
+  const spec = FIELD_SCHEMA[id];
+  if (!spec) return { valid: false, value: null, error: 'range' };
+  const n = exactNumber(value);
+  if (!Number.isFinite(n)) return { valid: false, value: null, error: 'number' };
+  if (spec.integer && !Number.isInteger(n)) return { valid: false, value: null, error: 'integer' };
+  if (n < spec.min || n > spec.max) return { valid: false, value: null, error: 'range' };
+  return { valid: true, value: n, error: null };
+}
+function validateState(s) {
+  const errors = {};
+  for (const id of NUM_FIELDS) {
+    const result = validateField(id, s && s[id]);
+    if (!result.valid) errors[id] = result.error;
+  }
+  return errors;
+}
+
+function familyOf(id, name, explicit) {
+  const family = String(explicit ?? '').trim();
+  if (!KNOWN_FAMILIES.includes(family)) throw new Error(`Unknown model family: ${family || '(missing)'}`);
+  return family;
+}
+function csvText(row, index, rowNo, field, required = true) {
+  const value = String(row[index] ?? '').trim();
+  if (required && !value) throw csvError(rowNo, 'required', `${field} is required`);
+  return value;
+}
+function csvNumber(row, index, rowNo, field, options = {}) {
+  const raw = csvText(row, index, rowNo, field, true);
+  const value = exactNumber(raw);
+  if (!Number.isFinite(value)) throw csvError(rowNo, 'number', `${field} must be a finite number`);
+  if (options.integer && !Number.isInteger(value)) throw csvError(rowNo, 'integer', `${field} must be an integer`);
+  const min = options.min ?? 0;
+  const max = options.max ?? MAX_CSV_NUMBER;
+  if (value < min || value > max || (options.positive && value <= 0)) throw csvError(rowNo, 'range', `${field} must be ${options.positive ? 'positive' : 'nonnegative'} and at most ${max}`);
+  return value;
+}
+function csvOptionalNumber(row, index, rowNo, field) {
+  const raw = String(row[index] ?? '').trim();
+  return raw ? csvNumber(row, index, rowNo, field) : null;
+}
+function csvBoolean(row, index, rowNo, field) {
+  const raw = csvText(row, index, rowNo, field).toLowerCase();
+  if (raw === 'true' || raw === '1') return true;
+  if (raw === 'false' || raw === '0') return false;
+  throw csvError(rowNo, 'boolean', `${field} must be true or false`);
 }
 function modelsFromCsv(text) {
   const rows = parseCsv(text);
-  if (!rows.length) return null;
-  const head = rows[0].map((h) => h.trim());
-  const idx = (n) => head.indexOf(n);
-  const iName = idx('nazwa'), iIn = idx('cena_wejscie_per_1M_USD'), iOut = idx('cena_wyjscie_per_1M_USD');
-  if (iName < 0 || iIn < 0 || iOut < 0) return null;
-  const iCtx = idx('okno_kontekstu'), iCls = idx('klasa'), iNote = idx('uwaga');
-  return rows.slice(1).map((r) => {
-    const note = iNote >= 0 ? (r[iNote] || '') : '';
-    const name = (r[iName] || '').trim();
-    const tier = note.match(/Powyżej\s+(\d+)K:\s*([\d.]+)\/([\d.]+)/);
-    const off = note.match(/Poza tymi godzinami:\s*([\d.]+)\/([\d.]+)/);
-    const id = ((note.match(/ID:\s*([\w.\-]+)/) || [])[1] || '').replace(/\.$/, '');
-    const thinkKey = Object.keys(THINKING_INPUT).find((k) => id.startsWith(k));
-    return {
-      name, id, note,
-      pin: numOf(r[iIn]), pout: numOf(r[iOut]),
-      ctx: iCtx >= 0 ? numOf(r[iCtx]) : Infinity,
-      cls: iCls >= 0 ? (r[iCls] || '').trim() : '',
-      family: familyOf(id, name),
-      alwaysThinks: /Rozumowanie zawsze włączone/i.test(note),
-      thinkingIn: thinkKey ? THINKING_INPUT[thinkKey] : null,
-      tier: tier ? { above: +tier[1] * 1000, pin: +tier[2], pout: +tier[3] } : null,
-      offPeak: off ? { pin: +off[1], pout: +off[2] } : null,
+  if (!rows.length) throw csvError(1, 'empty', 'header is missing');
+  if (rows.length < 2) throw csvError(1, 'empty', 'at least one model row is required');
+  if (rows.length - 1 > MAX_CSV_MODELS) throw csvError(0, 'row_limit', `maximum is ${MAX_CSV_MODELS} models`);
+  const head = rows[0].map((value) => value.trim());
+  const positions = {};
+  head.forEach((value, index) => {
+    if (Object.prototype.hasOwnProperty.call(positions, value)) throw csvError(1, 'duplicate_column', value);
+    positions[value] = index;
+  });
+  const missing = CSV_REQUIRED_COLUMNS.filter((column) => !Object.prototype.hasOwnProperty.call(positions, column));
+  if (missing.length) throw csvError(1, 'missing_column', missing.join(', '));
+  const models = [];
+  const names = new Set();
+  const ids = new Set();
+  for (let index = 1; index < rows.length; index++) {
+    const rowNo = index + 1;
+    const row = rows[index];
+    if (row.length !== head.length) throw csvError(rowNo, 'columns', `expected ${head.length}, got ${row.length}`);
+    const read = (field, required = true) => csvText(row, positions[field], rowNo, field, required);
+    const name = read('nazwa');
+    const id = read('id');
+    const nameKey = name.toLocaleLowerCase();
+    const idKey = id.toLocaleLowerCase();
+    if (names.has(nameKey)) throw csvError(rowNo, 'duplicate_name', name);
+    if (ids.has(idKey)) throw csvError(rowNo, 'duplicate_id', id);
+    names.add(nameKey);
+    ids.add(idKey);
+    const family = read('family');
+    if (!KNOWN_FAMILIES.includes(family)) throw csvError(rowNo, 'family', `unknown family ${family}`);
+    const tierFields = ['tier_above', 'tier_input', 'tier_output'];
+    const tierValues = tierFields.map((field) => read(field, false));
+    const tierSet = tierValues.some(Boolean);
+    if (tierSet && tierValues.some((value) => !value)) throw csvError(rowNo, 'metadata', 'tier fields must be all filled or all empty');
+    const offPeakFields = ['offpeak_input', 'offpeak_output'];
+    const offPeakValues = offPeakFields.map((field) => read(field, false));
+    const offPeakSet = offPeakValues.some(Boolean);
+    if (offPeakSet && offPeakValues.some((value) => !value)) throw csvError(rowNo, 'metadata', 'off-peak fields must be both filled or both empty');
+    const tier = tierSet ? {
+      above: csvNumber(row, positions.tier_above, rowNo, 'tier_above', { positive: true, integer: true }),
+      pin: csvNumber(row, positions.tier_input, rowNo, 'tier_input'),
+      pout: csvNumber(row, positions.tier_output, rowNo, 'tier_output'),
+    } : null;
+    const offPeak = offPeakSet ? {
+      pin: csvNumber(row, positions.offpeak_input, rowNo, 'offpeak_input'),
+      pout: csvNumber(row, positions.offpeak_output, rowNo, 'offpeak_output'),
+    } : null;
+    const model = {
+      name,
+      id,
+      note: read('uwaga', false),
+      pin: csvNumber(row, positions.cena_wejscie_per_1M_USD, rowNo, 'cena_wejscie_per_1M_USD'),
+      pout: csvNumber(row, positions.cena_wyjscie_per_1M_USD, rowNo, 'cena_wyjscie_per_1M_USD'),
+      ctx: csvNumber(row, positions.okno_kontekstu, rowNo, 'okno_kontekstu', { positive: true, integer: true }),
+      cls: read('klasa', false),
+      family,
+      maxOutput: csvNumber(row, positions.max_output, rowNo, 'max_output', { positive: true, integer: true }),
+      alwaysThinks: csvBoolean(row, positions.always_thinks, rowNo, 'always_thinks'),
+      tier,
+      offPeak,
+      checkedAt: read('checked_at'),
+      source: read('source'),
     };
-  }).filter((m) => m.name && isFinite(m.pin) && isFinite(m.pout));
+    models.push(model);
+  }
+  return models;
 }
 
 // ─── Cost model ───
 // Workload tokens are o200k tokens of Polish text; convert to words, then to each tokenizer and language.
 function reqTokens(family, s, thinks) {
+  const tokenizer = TOK_PER_WORD[family];
+  if (!tokenizer) throw new Error(`Unknown tokenizer family: ${family}`);
+  if (s.docLang !== 'pl' && s.docLang !== 'en') throw new Error(`Unknown document language: ${s.docLang}`);
   const base = TOK_PER_WORD[BASE_FAMILY].pl;
   const langWords = s.docLang === 'en' ? EN_WORD_FACTOR : 1;
-  const k = TOK_PER_WORD[family][s.docLang] / base * langWords;
+  const k = tokenizer[s.docLang] / base * langWords;
   const inBase = s.chunks * s.chunkTok + s.promptTok;
   return { inTok: inBase * k, outTok: s.outTok * k * (thinks ? s.thinkMult : 1) };
 }
@@ -827,22 +1036,47 @@ function workload(s, users = s.users) {
   const perSec = users * s.reqPerDay / (s.workHours * 3600) * s.peak;
   return { reqMonth: reqPerMonth(s, users), ...tk, inPeakPerSec: perSec * tk.inTok, outPeakPerSec: perSec * tk.outTok };
 }
-const modelThinks = (m, s) => s.thinking || m.alwaysThinks;
+const modelThinks = (m, s) => Boolean(s.thinking || m.alwaysThinks);
 function modelRates(m, s, inTok) {
-  let pin = m.pin, pout = m.pout, tiered = false;
+  let pin = m.pin;
+  let pout = m.pout;
+  let tiered = false;
   if (s.offPeak && m.offPeak) { pin = m.offPeak.pin; pout = m.offPeak.pout; }
-  const thinkIn = s.thinking && m.thinkingIn;
-  if (thinkIn) pin = m.thinkingIn.pin;
-  if (m.tier && inTok > m.tier.above) { pin = thinkIn ? m.thinkingIn.tierPin : m.tier.pin; pout = m.tier.pout; tiered = true; }
+  if (m.tier && inTok > m.tier.above) {
+    pin = m.tier.pin;
+    pout = m.tier.pout;
+    tiered = true;
+  }
   return { pin, pout, tiered };
 }
 function apiCost(m, s, users = s.users) {
   const reqMonth = reqPerMonth(s, users);
   const tk = reqTokens(m.family, s, modelThinks(m, s));
   const r = modelRates(m, s, tk.inTok);
-  const inPerReq = tk.inTok * r.pin / 1e6 * s.fx, outPerReq = tk.outTok * r.pout / 1e6 * s.fx;
+  const inPerReq = tk.inTok * r.pin / 1e6 * s.fx;
+  const outPerReq = tk.outTok * r.pout / 1e6 * s.fx;
   const perReq = inPerReq + outPerReq;
-  return { ...tk, ...r, perReq, inMonthly: inPerReq * reqMonth, outMonthly: outPerReq * reqMonth, monthly: perReq * reqMonth, reqMonth };
+  const monthly = perReq * reqMonth;
+  if (![inPerReq, outPerReq, perReq, monthly].every(Number.isFinite)) throw new Error('API cost is not finite');
+  const ctxLimit = Number.isFinite(m.ctx) ? m.ctx : Infinity;
+  const outputLimit = Number.isFinite(m.maxOutput) ? m.maxOutput : Infinity;
+  const ctxOver = tk.inTok + tk.outTok > ctxLimit;
+  const outputOver = tk.outTok > outputLimit;
+  const reason = ctxOver ? 'ctxOver' : outputOver ? 'outputOver' : null;
+  return {
+    ...tk,
+    ...r,
+    maxOutput: outputLimit,
+    ctxOver,
+    outputOver,
+    eligible: !ctxOver && !outputOver,
+    reason,
+    perReq,
+    inMonthly: inPerReq * reqMonth,
+    outMonthly: outPerReq * reqMonth,
+    monthly,
+    reqMonth,
+  };
 }
 function gpuUnits(w, prefill, decode) {
   const load = w.inPeakPerSec / prefill + w.outPeakPerSec / decode;
@@ -853,35 +1087,160 @@ function cloudCost(s, users = s.users) {
   const w = workload(s, users);
   const g = gpuUnits(w, s.cloudPrefill, s.cloudDecode);
   const hours = cloudHours(s);
-  const monthly = g.units * s.cloudPrice * hours / HOURS_MONTH;
-  return { ...g, hours, monthly, perReq: w.reqMonth ? monthly / w.reqMonth : 0 };
+  const gpuMonthly = g.units * s.cloudPrice * hours / HOURS_MONTH;
+  const cloudOps = Number.isFinite(s.cloudOps) ? s.cloudOps : 0;
+  const monthly = gpuMonthly + cloudOps;
+  return { ...g, hours, gpuMonthly, cloudOps, monthly, perReq: w.reqMonth ? monthly / w.reqMonth : 0 };
 }
 function ownCost(s, users = s.users) {
   const w = workload(s, users);
   const g = gpuUnits(w, s.ownPrefill, s.ownDecode);
   const energy = g.units * s.ownPower / 1000 * 24 * 30.4 * s.kwh;
   const amort = g.units * s.ownCapex / s.ownAmort;
-  const running = energy + s.ownOps;
+  const ownOps = s.ownOps;
+  const running = energy + ownOps;
   const monthly = amort + running;
-  return { ...g, energy, amort, running, capex: g.units * s.ownCapex, monthly, perReq: w.reqMonth ? monthly / w.reqMonth : 0 };
+  const replacementMonths = Number.isFinite(s.ownReplace) ? s.ownReplace : s.ownAmort;
+  return { ...g, energy, amort, running, ownOps, capex: g.units * s.ownCapex, replacementMonths, monthly, perReq: w.reqMonth ? monthly / w.reqMonth : 0 };
 }
-const currentModel = () => state.models.find((m) => m.name === state.model) || state.models[0];
+function cumulativeCost(path, cost, month) {
+  if (!Number.isFinite(month) || month < 0) throw new Error('Month must be a nonnegative finite number');
+  if (!cost || !Number.isFinite(cost.monthly)) throw new Error('Cost must be finite');
+  if (path === 'api' || path === 'cloud') return cost.monthly * month;
+  if (path !== 'own') throw new Error(`Unknown cost path: ${path}`);
+  const replacementMonths = cost.replacementMonths;
+  if (!Number.isFinite(replacementMonths) || replacementMonths <= 0) throw new Error('Replacement period must be positive');
+  const purchases = Math.max(1, Math.ceil(month / replacementMonths));
+  return cost.capex * purchases + cost.running * month;
+}
 
-function breakEvenUsers(costA, costB, max) {
+function breakEvenUsers(costA, costB, max = 20000) {
+  const limit = Math.min(20000, Math.max(0, Math.floor(Number(max) || 0)));
   let last = 0;
-  for (let u = 1; u <= max; u++) { if (costA(u) <= costB(u)) last = u; else if (last) break; }
+  for (let users = 1; users <= limit; users++) {
+    let a;
+    let b;
+    try { a = costA(users); b = costB(users); } catch (_) { a = Infinity; b = 0; }
+    if (Number.isFinite(a) && Number.isFinite(b) && a <= b) last = users;
+    else if (users === 1 || last) break;
+  }
   return last;
 }
-function paybackMonth(own, other, horizon) {
-  for (let m = 0; m <= horizon; m++) if (own.capex + own.running * m <= other * m) return m;
+function paybackMonth(own, otherMonthly, horizon) {
+  const other = typeof otherMonthly === 'number' ? otherMonthly : otherMonthly && otherMonthly.monthly;
+  if (!Number.isFinite(other) || other < 0) throw new Error('Other monthly cost must be nonnegative and finite');
+  if (!Number.isFinite(horizon) || horizon < 0) throw new Error('Payback horizon must be nonnegative and finite');
+  for (let month = 0; month <= Math.floor(horizon); month++) {
+    if (cumulativeCost('own', own, month) <= other * month) return month;
+  }
   return null;
 }
 
+function calculationStateError(s) {
+  const errors = validateState(s);
+  if (s && typeof s === 'object') {
+    for (const id of NUM_FIELDS) if (typeof s[id] !== 'number') errors[id] = 'number';
+  }
+  if (!s || (s.docLang !== 'pl' && s.docLang !== 'en')) errors.docLang = 'range';
+  if (!s || (s.cloudMode !== '247' && s.cloudMode !== 'work')) errors.cloudMode = 'range';
+  if (!s || typeof s.thinking !== 'boolean') errors.thinking = 'range';
+  if (!s || typeof s.offPeak !== 'boolean') errors.offPeak = 'range';
+  return errors;
+}
+function computeResults(s, models) {
+  const errors = calculationStateError(s);
+  if (Object.keys(errors).length) {
+    const error = new Error('Invalid calculator state');
+    error.code = 'invalid_state';
+    error.errors = errors;
+    throw error;
+  }
+  if (!Array.isArray(models) || !models.length) throw new Error('At least one model is required');
+  const model = models.find((item) => item && item.name === s.model) || models[0];
+  if (!model) throw new Error('Selected model is unavailable');
+  const w = workload(s);
+  const base = reqTokens(BASE_FAMILY, s, false);
+  const api = apiCost(model, s);
+  const cloud = cloudCost(s);
+  const own = ownCost(s);
+  const modelRows = models.map((m) => ({ m, c: apiCost(m, s) })).sort((a, b) => {
+    if (a.c.eligible !== b.c.eligible) return a.c.eligible ? -1 : 1;
+    return a.c.monthly - b.c.monthly || a.m.name.localeCompare(b.m.name);
+  });
+  const candidates = { api: api.eligible ? api.monthly : Infinity, cloud: cloud.monthly, own: own.monthly };
+  const winner = Object.keys(candidates).reduce((a, b) => candidates[a] <= candidates[b] ? a : b);
+  const apiAtUsers = (users) => {
+    try { const value = apiCost(model, s, users); return value.eligible ? value.monthly : Infinity; } catch (_) { return Infinity; }
+  };
+  const cloudAtUsers = (users) => cloudCost(s, users).monthly;
+  const ownAtUsers = (users) => ownCost(s, users).monthly;
+  return {
+    model,
+    workload: w,
+    base,
+    api,
+    cloud,
+    own,
+    winner,
+    modelRows,
+    breakEvenCloud: breakEvenUsers(apiAtUsers, cloudAtUsers, 20000),
+    breakEvenOwn: breakEvenUsers(apiAtUsers, ownAtUsers, 20000),
+    payback: paybackMonth(own, cloud.monthly, 120),
+  };
+}
+
+function regressionFixtureModels() {
+  return [
+    { name: 'Regression Terra', id: 'regression-terra', family: 'openai', pin: 2, pout: 12, ctx: 1050000, maxOutput: 128000, alwaysThinks: false, tier: { above: 272000, pin: 4, pout: 18 }, offPeak: null },
+    { name: 'Regression Fable', id: 'regression-fable', family: 'claudeNew', pin: 10, pout: 50, ctx: 1000000, maxOutput: 128000, alwaysThinks: true, tier: null, offPeak: null },
+  ];
+}
+function runRegressionChecks(models = []) {
+  const sourceModels = Array.isArray(models) && models.length ? models : regressionFixtureModels();
+  const terra = sourceModels.find((item) => item.id === 'gpt-5.6-terra' || item.id === 'regression-terra') || sourceModels[0];
+  const fable = sourceModels.find((item) => item.id === 'claude-fable-5-1' || item.id === 'regression-fable') || sourceModels[0];
+  const s = { ...DEFAULTS, model: terra.name, cloudOps: 0, ownReplace: DEFAULTS.ownAmort };
+  const checks = [];
+  const add = (name, pass, detail) => checks.push({ name, pass: Boolean(pass), detail: String(detail) });
+  try {
+    const api = apiCost(terra, s);
+    const cloud = cloudCost(s);
+    const own = ownCost(s);
+    add('baseline API', Math.abs(api.monthly - 839.25) < 1e-6, api.monthly.toFixed(6));
+    add('baseline cloud', Math.abs(cloud.monthly - 10000) < 1e-6, cloud.monthly.toFixed(6));
+    add('baseline own', Math.abs(own.monthly - 8601.084444444445) < 1e-6, own.monthly.toFixed(6));
+    const exact = apiCost(terra, { ...s, chunks: 1, chunkTok: 272000, promptTok: 0, outTok: 0 });
+    const above = apiCost(terra, { ...s, chunks: 1, chunkTok: 272001, promptTok: 0, outTok: 0 });
+    add('long-context threshold', exact.tiered === false && above.tiered === true, `${exact.pin}/${above.pin}`);
+    add('Fable reasoning', fable.alwaysThinks === true && modelThinks(fable, { ...s, thinking: false }), String(fable.alwaysThinks));
+    const workCloud = cloudCost({ ...s, cloudMode: 'work', cloudOps: 700 });
+    add('fixed cloud support', Math.abs(workCloud.monthly - (workCloud.gpuMonthly + 700)) < 1e-9, workCloud.monthly.toFixed(6));
+    const replaced = ownCost({ ...s, ownReplace: 6 });
+    add('replacement schedule', cumulativeCost('own', replaced, 0) === replaced.capex && cumulativeCost('own', replaced, 7) > cumulativeCost('own', replaced, 6), String(replaced.replacementMonths));
+    add('replacement payback', paybackMonth(replaced, 7000, 120) === null, String(paybackMonth(replaced, 7000, 120)));
+    const zeroInvalid = Object.entries(FIELD_SCHEMA).filter(([, rule]) => rule.min > 0).every(([id]) => validateField(id, 0).error === 'range');
+    const maxValid = Object.entries(FIELD_SCHEMA).every(([id, rule]) => validateField(id, rule.max).valid);
+    add('field bounds', zeroInvalid && maxValid && validateField('horizon', FIELD_SCHEMA.horizon.max + 1).error === 'range', JSON.stringify(validateField('horizon', FIELD_SCHEMA.horizon.max + 1)));
+    const contextModel = sourceModels.find((item) => item.ctx) || terra;
+    const contextOver = apiCost(contextModel, { ...s, model: contextModel.name, chunks: 1, chunkTok: contextModel.ctx + 1, promptTok: 0, outTok: 0 });
+    const outputOver = apiCost(contextModel, { ...s, model: contextModel.name, chunks: 1, chunkTok: 0, promptTok: 0, outTok: contextModel.maxOutput + 1 });
+    add('context and output limits', contextOver.ctxOver && !contextOver.eligible && outputOver.outputOver && !outputOver.eligible, `${contextOver.reason}/${outputOver.reason}`);
+    const malformed = `${CSV_REQUIRED_COLUMNS.join(',')}\nBad,-1,1,1,mini,,bad,openai,1,false,,,,,,2026-01-01,source`;
+    let rejected = false;
+    try { modelsFromCsv(malformed); } catch (_) { rejected = true; }
+    add('strict CSV rejection', rejected, String(rejected));
+  } catch (error) {
+    add('regression execution', false, error.message);
+  }
+  return checks;
+}
+
+const currentModel = () => state.models.find((m) => m.name === state.model) || state.models[0];
 // ─── Render ───
 function applyI18n() {
   document.documentElement.lang = state.lang;
   document.querySelectorAll('[data-t]').forEach((n) => { n.textContent = t(n.dataset.t); });
-  document.querySelectorAll('[data-lang]').forEach((b) => b.classList.toggle('active', b.dataset.lang === state.lang));
+  document.querySelectorAll('[data-lang]').forEach((b) => { const active = b.dataset.lang === state.lang; b.classList.toggle('active', active); b.setAttribute('aria-pressed', String(active)); });
   document.title = state.lang === 'pl' ? 'Kalkulator kosztów AI – API, chmura, własny serwer' : 'AI cost calculator – API, cloud, own server';
 }
 function renderPresets() {
@@ -890,6 +1249,7 @@ function renderPresets() {
     const active = PRESET_FIELDS.every((f) => state[f] === PRESETS[k][f]);
     const b = el('button', { type: 'button', 'data-preset': k, title: String(i + 1) }, t('preset' + k));
     b.classList.toggle('active', active);
+    b.setAttribute('aria-pressed', String(active));
     box.append(b);
   });
 }
@@ -899,27 +1259,30 @@ function renderModelSelect() {
   modelSel.value = state.model;
   $('csvSrc').textContent = state.csvSource || t('csvBuiltIn');
 }
-function syncInputs() {
-  [...NUM_FIELDS, ...TEXT_FIELDS].forEach((f) => { const n = $(f); if (document.activeElement !== n) n.value = state[f]; });
+function syncInputs(force = false) {
+  [...NUM_FIELDS, ...TEXT_FIELDS].forEach((f) => { const n = $(f); if (!App.invalidFields.has(f) && (force || document.activeElement !== n)) n.value = state[f]; });
   $('offPeak').checked = state.offPeak;
   $('thinking').checked = state.thinking;
   modelSel.value = state.model;
 }
 function syncSegs() {
-  document.querySelectorAll('[data-doclang]').forEach((b) => b.classList.toggle('active', b.dataset.doclang === state.docLang));
-  document.querySelectorAll('[data-cloudmode]').forEach((b) => b.classList.toggle('active', b.dataset.cloudmode === state.cloudMode));
+  for (const [attr, value] of [['doclang', state.docLang], ['cloudmode', state.cloudMode]]) {
+    document.querySelectorAll(`[data-${attr}]`).forEach((b) => { const active = b.dataset[attr] === value; b.classList.toggle('active', active); b.setAttribute('aria-pressed', String(active)); });
+  }
 }
 
-function renderOption(node, { monthly, win, lines, extra, warn }) {
+function renderOption(node, { monthly, win, lines, extra, warn, eligible = true }) {
   node.classList.toggle('winner', win);
-  node.dataset.monthly = monthly.toFixed(2); node.dataset.winner = String(win);
+  node.dataset.monthly = eligible ? monthly.toFixed(2) : ''; node.dataset.winner = String(win); node.dataset.eligible = String(eligible);
   const slot = node.querySelector('.chip-slot');
   slot.replaceChildren(); if (win) slot.append(el('span', { class: 'edu-chip chip-win' }, t('cheapest')));
-  node.querySelector('.opt-total .big').textContent = money(monthly, 0);
+  node.querySelector('.opt-total .big').textContent = eligible ? money(monthly, 0) : t('unavailable');
   const box = node.querySelector('.opt-lines'); box.replaceChildren();
-  lines.forEach(([l, v]) => { const d = el('div', { class: 'line' }); d.append(el('span', {}, l), el('b', {}, v)); box.append(d); });
-  const sum = el('div', { class: 'line line-total' }); sum.append(el('span', {}, P('Razem miesięcznie', 'Total per month')), el('b', {}, money(monthly, 0))); box.append(sum);
-  extra.forEach(([l, v]) => { const d = el('div', { class: 'line line-muted' }); d.append(el('span', {}, l), el('b', {}, v)); box.append(d); });
+  if (eligible) {
+    lines.forEach(([l, v]) => { const d = el('div', { class: 'line' }); d.append(el('span', {}, l), el('b', {}, v)); box.append(d); });
+    const sum = el('div', { class: 'line line-total' }); sum.append(el('span', {}, P('Razem miesięcznie', 'Total per month')), el('b', {}, money(monthly, 0))); box.append(sum);
+    extra.forEach(([l, v]) => { const d = el('div', { class: 'line line-muted' }); d.append(el('span', {}, l), el('b', {}, v)); box.append(d); });
+  }
   if (warn) { const w = el('p', { class: 'hint warn-line' }); w.append(el('span', { class: 'edu-chip chip-warn' }, '!'), document.createTextNode(' ' + warn)); box.append(w); }
 }
 
@@ -941,36 +1304,33 @@ function renderBars(items) {
 
 function render() {
   const s = state;
-  const m = currentModel();
-  if (!m) return;
+  if (!renderValidation()) return;
+  const result = computeResults(s, s.models);
+  App.results = result;
+  const { model: m, workload: w, base, api, cloud, own, winner } = result;
   syncSegs();
   renderPresets();
-  const w = workload(s);
-  const api = apiCost(m, s), cloud = cloudCost(s), own = ownCost(s);
-  const costs = { api: api.monthly, cloud: cloud.monthly, own: own.monthly };
-  const winner = Object.keys(costs).reduce((a, b) => costs[a] <= costs[b] ? a : b);
 
   // workload summary (base tokenizer)
-  const base = reqTokens(BASE_FAMILY, s, false);
   $('kvTokens').textContent = pair(base.inTok, base.outTok);
   $('kvReqMonth').textContent = fmtNum(api.reqMonth);
 
   // options
   const fam = TOK_PER_WORD[m.family];
   $('modelNote').textContent = `${api.pin} / ${api.pout} USD / 1M · ${fam.label} · ${P('tokeny', 'tokens')} ${pair(api.inTok, api.outTok)}` +
-    (modelThinks(m, s) ? ` · ${P('wyjście', 'output')} ×${fmtNum(s.thinkMult, 1)}` : '');
+    (modelThinks(m, s) ? ` · ${P('wyjście', 'output')} ×${fmtNum(s.thinkMult, 1)}` : '') + (m.alwaysThinks ? ' · ' + t('forcedThinking') : '');
   let apiWarn = null;
-  if (api.inTok + api.outTok > m.ctx) apiWarn = t('ctxOver');
+  if (!api.eligible) apiWarn = t(api.reason);
   else if (api.tiered) apiWarn = t('tierNote', { k: m.tier.above / 1000 });
-  renderOption($('optApi'), { monthly: api.monthly, win: winner === 'api', warn: apiWarn,
+  renderOption($('optApi'), { monthly: api.monthly, win: winner === 'api', warn: apiWarn, eligible: api.eligible,
     lines: [[t('lInput'), money(api.inMonthly, 0)], [t('lOutput'), money(api.outMonthly, 0)]],
     extra: [[t('lYear'), money(api.monthly * 12, 0)], [t('lPerReq'), money(api.perReq, 4)]] });
   renderOption($('optCloud'), { monthly: cloud.monthly, win: winner === 'cloud',
-    lines: [[t('lGpu') + ` (${cloud.units} × ${fmtNum(cloud.hours, 0)} h)`, money(cloud.monthly, 0)]],
+    lines: [[t('lGpu') + ` (${cloud.units} × ${fmtNum(cloud.hours, 0)} h)`, money(cloud.monthly - s.cloudOps, 0)], [t('lOps'), money(s.cloudOps, 0)]],
     extra: [[t('lYear'), money(cloud.monthly * 12, 0)], [t('lPerReq'), money(cloud.perReq, 4)], [t('lUtil'), cloud.units + ' GPU · ' + pct(cloud.load / cloud.units)]] });
   renderOption($('optOwn'), { monthly: own.monthly, win: winner === 'own',
     lines: [[t('lAmort'), money(own.amort, 0)], [t('lEnergy'), money(own.energy, 0)], [t('lOps'), money(s.ownOps, 0)]],
-    extra: [[t('lYear'), money(own.monthly * 12, 0)], [t('lFirstYear'), money(own.capex + own.running * 12, 0)], [t('lPerReq'), money(own.perReq, 4)],
+    extra: [[t('lYear'), money(own.monthly * 12, 0)], [t('lFirstYear'), money(cumulativeCost('own', own, 12), 0)], [t('lPerReq'), money(own.perReq, 4)],
       [t('lUtil'), own.units + ' GPU · ' + pct(own.load / own.units)]] });
 
   // summary
@@ -978,54 +1338,55 @@ function render() {
     { key: 'api', label: t('apiPath') + ' · ' + m.name, value: api.monthly, color: COLORS.api },
     { key: 'cloud', label: t('cloudPath'), value: cloud.monthly, color: COLORS.cloud },
     { key: 'own', label: t('ownPath'), value: own.monthly, color: COLORS.own },
-  ]);
-  const maxU = Math.max(20000, s.users * 20);
-  const beCloud = breakEvenUsers((u) => apiCost(m, s, u).monthly, (u) => cloudCost(s, u).monthly, maxU);
-  const beOwn = breakEvenUsers((u) => apiCost(m, s, u).monthly, (u) => ownCost(s, u).monthly, maxU);
-  const beTxt = (n) => n === 0 ? t('apiNever') : n >= maxU ? '> ' + fmtNum(maxU) + ' ' + t('usersUnit') : '~' + fmtNum(n) + ' ' + t('usersUnit');
-  const pbCloud = paybackMonth(own, cloud.monthly, 120);
+  ].filter((i) => i.key !== 'api' || api.eligible));
+  const maxU = 20000;
+  const beCloud = result.breakEvenCloud, beOwn = result.breakEvenOwn;
+  const beTxt = (n) => !api.eligible ? t('unavailable') : n === 0 ? t('apiNever') : n >= maxU ? '≥ ' + fmtNum(maxU) + ' ' + t('usersUnit') : '~' + fmtNum(n) + ' ' + t('usersUnit');
+  const pbCloud = result.payback;
   const minuteRatio = api.perReq / MINUTE_OF_WORK;
   const answers = [
     [t('aApiVsCloud'), beTxt(beCloud)],
     [t('aApiVsOwn'), beTxt(beOwn)],
     [t('aPayback'), pbCloud == null ? t('never') : pbCloud + ' ' + t('monthsUnit')],
-    [t('aMinute'), money(api.perReq, 4) + ' · ' + (minuteRatio < 0.01 ? '<1%' : pct(minuteRatio))],
+    [t('aMinute'), api.eligible ? money(api.perReq, 4) + ' · ' + (minuteRatio < 0.01 ? '<1%' : pct(minuteRatio)) : t('unavailable')],
   ];
   $('answers').replaceChildren(...answers.map(([l, v]) => { const li = el('li'); li.append(el('span', {}, l), el('b', {}, v)); return li; }));
+  $('answers').append(el('li', { class: 'hint' }, t('firstCrossNote')));
 
-  renderModelTable(cloud.monthly, own.monthly);
+  renderModelTable(result.modelRows, cloud.monthly, own.monthly);
   renderCharts(m, api, cloud, own);
   if (dialogEl.open) renderAssumptions();
 
   // DOM contract
   Object.assign(appEl.dataset, {
-    state: 'ready', model: m.name, modelFamily: m.family, modelsLoaded: String(state.models.length), winner, docLang: s.docLang,
+    state: 'ready', model: m.name, modelFamily: m.family, modelsLoaded: String(state.models.length), winner, docLang: s.docLang, apiEligible: String(api.eligible), apiReason: api.reason || '',
     thinking: String(s.thinking), cloudMode: s.cloudMode, reqMonth: api.reqMonth.toFixed(0),
     baseInTokens: base.inTok.toFixed(0), baseOutTokens: base.outTok.toFixed(0), inTokens: api.inTok.toFixed(0), outTokens: api.outTok.toFixed(0),
     ossInTokens: w.inTok.toFixed(0), ossOutTokens: w.outTok.toFixed(0),
-    apiMonthly: api.monthly.toFixed(2), cloudMonthly: cloud.monthly.toFixed(2), ownMonthly: own.monthly.toFixed(2),
-    ownAmort: own.amort.toFixed(2), ownEnergy: own.energy.toFixed(2), apiPerReq: api.perReq.toFixed(6),
+    apiMonthly: api.eligible ? api.monthly.toFixed(2) : '', cloudMonthly: cloud.monthly.toFixed(2), ownMonthly: own.monthly.toFixed(2),
+    ownAmort: own.amort.toFixed(2), ownEnergy: own.energy.toFixed(2), apiPerReq: api.eligible ? api.perReq.toFixed(6) : '',
     cloudUnits: String(cloud.units), ownUnits: String(own.units),
-    breakEvenCloudUsers: String(beCloud), breakEvenOwnUsers: String(beOwn), paybackVsCloud: String(pbCloud ?? ''), lang: state.lang,
+    breakEvenCloudUsers: api.eligible ? String(beCloud) : '', breakEvenOwnUsers: api.eligible ? String(beOwn) : '', paybackVsCloud: String(pbCloud ?? ''), lang: state.lang,
+    effectiveThinking: String(modelThinks(m, s)), ownReplacementMonths: String(s.ownReplace), ownFirstYear: cumulativeCost('own', own, 12).toFixed(2),
     assumptionsOpen: String(dialogEl.open),
   });
-  $('live').textContent = t('live', { api: money(api.monthly, 0), cloud: money(cloud.monthly, 0), own: money(own.monthly, 0) });
+  $('live').textContent = t('live', { api: api.eligible ? money(api.monthly, 0) : t('unavailable'), cloud: money(cloud.monthly, 0), own: money(own.monthly, 0) });
 }
 
-function renderModelTable(cloudM, ownM) {
-  const rows = state.models.map((m) => ({ m, c: apiCost(m, state) })).sort((a, b) => a.c.monthly - b.c.monthly);
+function renderModelTable(rows, cloudM, ownM) {
   const cheapest = Math.min(cloudM, ownM);
   modelTbody.replaceChildren(...rows.map(({ m, c }) => {
-    const tr = el('tr', { tabindex: '0', 'data-model': m.name, 'data-monthly': c.monthly.toFixed(2) });
+    const tr = el('tr', { tabindex: '0', 'data-model': m.name, 'data-monthly': c.eligible ? c.monthly.toFixed(2) : '', 'data-eligible': String(c.eligible), 'aria-selected': String(m.name === state.model) });
     tr.classList.toggle('selected', m.name === state.model);
     let vs;
-    if (c.monthly <= cheapest) vs = el('span', { class: 'edu-chip chip-win' }, t('vsCheaper'));
+    if (!c.eligible) vs = el('span', { class: 'edu-chip chip-warn', title: t(c.reason) }, t('unavailable'));
+    else if (c.monthly <= cheapest) vs = el('span', { class: 'edu-chip chip-win' }, t('vsCheaper'));
     else if (c.monthly > Math.max(cloudM, ownM)) vs = el('span', { class: 'edu-chip chip-warn' }, t('vsDearer'));
     else vs = el('span', { class: 'edu-chip chip-mini' }, t('vsMid'));
     const tdVs = el('td'); tdVs.append(vs);
     tr.append(el('td', { class: 'name' }, m.name), el('td', { class: 'num' }, pair(c.inTok, c.outTok)),
       el('td', { class: 'num' }, fmtNum(c.pin, 2)), el('td', { class: 'num' }, fmtNum(c.pout, 2)),
-      el('td', { class: 'num' }, money(c.perReq, 4)), el('td', { class: 'num' }, money(c.monthly, 0)), tdVs);
+      el('td', { class: 'num' }, c.eligible ? money(c.perReq, 4) : t('unavailable')), el('td', { class: 'num' }, c.eligible ? money(c.monthly, 0) : t('unavailable')), tdVs);
     return tr;
   }));
 }
@@ -1039,9 +1400,9 @@ function renderCharts(m, api, cloud, own) {
   ];
   const hz = Math.max(6, Math.round(s.horizon));
   const ms = Array.from({ length: hz + 1 }, (_, i) => i);
-  const series = base.map((b) => ({ ...b,
-    ys: ms.map((mo) => b.key === 'api' ? api.monthly * mo : b.key === 'cloud' ? cloud.monthly * mo
-      : own.capex * Math.max(1, Math.ceil(mo / s.ownAmort)) + own.running * mo) }));
+  const costs = { api, cloud, own };
+  const series = base.filter((b) => b.key !== 'api' || api.eligible).map((b) => ({ ...b,
+    ys: ms.map((mo) => cumulativeCost(b.key, costs[b.key], mo)) }));
   renderLegend($('legendTime'), series);
   lineChart($('chartTime'), { xs: ms, series, xFmt: (v) => String(v), xHead: t('monthLabel') });
   dataTable($('tableTime'), ms, series, t('monthLabel'), (v) => String(v));
@@ -1052,58 +1413,86 @@ function buildAssumptions() {
   const s = state;
   const now = (v) => P('obecnie: ', 'currently: ') + v;
   const b = reqTokens(BASE_FAMILY, s, false);
+  const fx = Number(s.fx) > 0 ? Number(s.fx) : 1;
+  const cloudGpuPrice = Number(s.cloudPrice) >= 0 ? Number(s.cloudPrice) : 0;
+  const cloudSupport = Number(s.cloudOps) >= 0 ? Number(s.cloudOps) : 0;
+  const cloudRunHours = typeof cloudHours === 'function' ? cloudHours(s) : HOURS_MONTH;
+  const ownReplace = Number(s.ownReplace) > 0 ? Number(s.ownReplace) : Number(s.ownAmort);
+  const tokenRows = Object.entries(TOK_PER_WORD).map(([family, f]) => {
+    const label = P(f.label + ' – szacunek', f.label + ' – estimate');
+    let note = P(
+      'Wartość orientacyjna z próbki; repozytorium nie zawiera reproduktora prywatnego zbioru, więc nie jest to niezależnie zweryfikowany pomiar tokenizera.',
+      'Illustrative sample value; the repository has no reproducer for the private dataset, so this is not an independently verified tokenizer measurement.',
+    );
+    if (family === 'deepseek') note = P(
+      'DeepSeek V3 jest tu proxy dla V4. Wartość jest wyraźnie szacunkowa i nie wynika z uruchomienia tokenizera V4.',
+      'DeepSeek V3 is used here as a proxy for V4. This is explicitly an estimate, not a run of a V4 tokenizer.',
+    );
+    if (family === 'claude') note = P(
+      'Tokenizer Claude nie jest publiczny. To przybliżenie względem o200k, nie pomiar tokenizera Claude.',
+      'Claude’s tokenizer is not public. This is an approximation relative to o200k, not a Claude tokenizer measurement.',
+    );
+    if (family === 'claudeNew') note = P(
+      '„+30%” oznacza relację do wcześniejszego przybliżenia Claude w tym kalkulatorze, a nie znaną relację do OpenAI. To szacunek.',
+      '“+30%” is relative to the calculator’s earlier Claude approximation, not a known ratio to OpenAI. It is an estimate.',
+    );
+    return [label, 'PL ≈' + fmtNum(f.pl, 2) + ' · EN ≈' + fmtNum(f.en, 2) + ' tok/' + P('słowo', 'word'), note];
+  });
   return [
     { title: P('Model użycia: asystent RAG', 'Usage model: RAG assistant'), rows: [
-      [P('Zapytanie', 'Request'), now(`${s.chunks} × ${fmtNum(s.chunkTok)} + ${fmtNum(s.promptTok)} → ${fmtNum(s.outTok)} tok.`),
-        P('Każde zapytanie wysyła do modelu znalezione fragmenty dokumentów oraz instrukcje z pytaniem. Tokeny podane dla polskiego tekstu w tokenizerze OpenAI o200k.', 'Each request sends retrieved document chunks plus instructions and the question. Tokens given for Polish text in the OpenAI o200k tokenizer.')],
-      [P('Fragmenty', 'Chunks'), '5 × 2000 ' + P('tokenów', 'tokens'),
-        P('Duże fragmenty (np. cała strona umowy lub karta produktu). Typowy RAG używa 256–512 tokenów i top-k 3–5, więc to wariant bogaty w kontekst.', 'Large chunks (e.g. a whole contract page or product sheet). Typical RAG uses 256–512 tokens and top-k 3–5, so this is a context-rich variant.'), 'rag'],
-      [P('Odpowiedź', 'Answer'), '500 ' + P('tokenów', 'tokens'), P('Około 215 polskich słów. Bez historii rozmowy.', 'About 215 Polish words. No conversation history.')],
-      [P('Bieżące zapytanie', 'Current request'), pair(b.inTok, b.outTok) + ' tok.', P('W innych tokenizerach i po angielsku liczba tokenów się zmienia (sekcja niżej).', 'Other tokenizers and English change the token count (see below).')],
+      [P('Zapytanie', 'Request'), now(fmtNum(s.chunks) + ' × ' + fmtNum(s.chunkTok) + ' + ' + fmtNum(s.promptTok) + ' → ' + fmtNum(s.outTok) + ' tok.'),
+        P('Każde zapytanie wysyła znalezione fragmenty dokumentów oraz instrukcje z pytaniem. Wartości tokenów są parametrami scenariusza, nie wynikiem uruchomienia prywatnego tokenizera.', 'Each request sends retrieved document chunks plus instructions and the question. Token values are scenario parameters, not the result of running a private tokenizer.')],
+      [P('Fragmenty', 'Chunks'), now(fmtNum(s.chunks) + ' × ' + fmtNum(s.chunkTok) + ' ' + P('tokenów', 'tokens')),
+        P('Rozmiar fragmentu i liczba top-k są edytowalne. Zakres 256–512 tokenów i top-k 3–5 to tylko punkt odniesienia, nie reguła dla każdego RAG.', 'Chunk size and top-k are editable. The 256–512 token and top-k 3–5 range is only a reference, not a rule for every RAG.'), 'rag'],
+      [P('Odpowiedź', 'Answer'), now(fmtNum(s.outTok) + ' ' + P('tokenów', 'tokens')), P('Limit odpowiedzi jest edytowalnym parametrem scenariusza. Bez historii rozmowy.', 'The answer limit is an editable scenario parameter. No conversation history.')],
+      [P('Bieżące zapytanie', 'Current request'), now(pair(b.inTok, b.outTok) + ' tok.'), P('Liczba zmienia się między rodzinami tokenizerów i dla języka angielskiego (szacunki w sekcji niżej).', 'The count varies across tokenizer families and for English (estimates below).')],
       [P('Nie liczymy', 'Not counted'), P('embeddingi, indeksowanie', 'embeddings, indexing'),
-        P('Embedding zapytań i indeksowanie dokumentów kosztują grosze wobec generowania.', 'Query embeddings and document indexing cost pennies compared with generation.')],
+        P('Nie obejmujemy budowy aplikacji, wdrożenia RAG, embeddingów, indeksowania, licencji, redundancji ani pracy operacyjnej. Ich koszt zależy od projektu, więc nie zakładamy, że zawsze wynosi grosze.', 'We exclude app build, RAG implementation, embeddings, indexing, licences, redundancy and operations. Their cost is project-dependent, so we do not assume they always cost pennies.')],
     ]},
     { title: P('Tokeny i język', 'Tokens and language'), rows: [
-      ...Object.values(TOK_PER_WORD).map((f, i) => [f.label, `PL ${fmtNum(f.pl, 2)} · EN ${fmtNum(f.en, 2)} tok/${P('słowo', 'word')}`,
-        i ? P(`×${fmtNum(f.pl / TOK_PER_WORD.openai.pl, 2)} względem o200k dla polskiego`, `×${fmtNum(f.pl / TOK_PER_WORD.openai.pl, 2)} vs o200k for Polish`)
-          : P('Zmierzone 13.09.2026 na 45,8 tys. polskich słów z danych warsztatu i równoległym tekście PL/EN. Ta sama treść po polsku to 1,42–1,52× więcej tokenów niż po angielsku.', 'Measured on 13 Sep 2026 on 45.8K Polish words from the workshop data and a parallel PL/EN text. The same content in Polish is 1.42–1.52× more tokens than in English.'),
-        i ? null : 'bielik']),
-      [P('Claude', 'Claude'), P('Sonnet 5 / Opus 5 / Fable +30%', 'Sonnet 5 / Opus 5 / Fable +30%'),
-        P('Tokenizer Claude nie jest publiczny. Anthropic podaje ok. 30% więcej tokenów w modelach 4.7+. Szacunek.', 'The Claude tokenizer is not public. Anthropic states about 30% more tokens in 4.7+ models. An estimate.'), 'anthropic'],
+      ...tokenRows,
+      [P('Relacja słów PL/EN', 'PL/EN word ratio'), 'EN ≈×' + fmtNum(EN_WORD_FACTOR, 2) + ' PL',
+        P('Ilustracyjny stosunek słów z pojedynczej próbki tekstu, nie uniwersalna reguła dla każdego dokumentu.', 'Illustrative word ratio from a single text sample, not a universal rule for every document.')],
       [P('Tokeny myślenia', 'Thinking tokens'), now((s.thinking ? P('włączone', 'on') : P('wyłączone', 'off')) + ' · ×' + fmtNum(s.thinkMult, 1)),
         P('Tokeny rozumowania są płatne jak wyjście i nie są widoczne w odpowiedzi.', 'Reasoning tokens are billed as output and are not visible in the answer.')],
     ]},
     { title: P('API', 'API'), rows: [
-      [P('Cennik', 'Price list'), `${state.models.length} ` + P('modeli', 'models'),
-        P('Stawki standardowe bez cache i Batch, sprawdzone 13.09.2026. Batch obniża koszt o 50%, cache wejścia o 75–90% (przy RAG te same fragmenty wracają często).', 'Standard rates without cache or Batch, checked 13 Sep 2026. Batch halves the cost, input caching cuts 75–90% (RAG often reuses the same chunks).'), 'openai'],
-      [P('Kurs USD/PLN', 'USD/PLN rate'), now(fmtNum(s.fx, 2)), P('Kurs średni NBP z 11.09.2026: 3,7267.', 'NBP mid rate on 11 Sep 2026: 3.7267.'), 'nbp'],
+      [P('Cennik', 'Price list'), String(state.models.length) + ' ' + P('modeli', 'models'),
+        P('Stawki standardowe, bez założenia cache i Batch, sprawdzone 14.09.2026. Cache zależy od dostawcy, hit rate i zgodności prefiksu; Batch jest trybem asynchronicznym, więc nie zakładamy rabatu dla interaktywnego RAG.', 'Standard rates, without assuming cache or Batch, checked on 14 Sep 2026. Caching depends on the provider, hit rate and prefix match; Batch is asynchronous, so we do not assume a discount for interactive RAG.'), 'openai'],
+      [P('Kurs USD/PLN', 'USD/PLN rate'), now(fmtNum(s.fx, 2)), P('Źródło zewnętrzne sprawdzone 14.09.2026; kurs w polu jest edytowalną wartością scenariusza.', 'External source checked on 14 Sep 2026; the field is an editable scenario value.'), 'nbp'],
       [P('Długi kontekst', 'Long context'), 'OpenAI > 272K', P('Powyżej progu droższa stawka dla całego żądania.', 'Above the threshold the whole request uses a higher rate.')],
       [P('DeepSeek', 'DeepSeek'), P('szczyt pon.–pt. 01–04 i 06–10 UTC', 'peak Mon–Fri 01–04 and 06–10 UTC'), P('Poza szczytem połowa ceny.', 'Half price off-peak.'), 'deepseek'],
     ]},
     { title: P('Chmura GPU', 'Cloud GPU'), rows: [
-      [P('Cena z obsługą', 'Price incl. support'), now(money(s.cloudPrice, 0) + P(' / mies.', ' / month')),
-        P(`Cena zawiera utrzymanie. Odpowiada ${fmtNum(s.cloudPrice / s.fx / HOURS_MONTH, 2)} USD/h za 1× H100 24/7. Mediana rynkowa samego GPU 3,37 USD/h, w UE 2,99–3,85 USD/h.`, `The price includes support. Equals ${fmtNum(s.cloudPrice / s.fx / HOURS_MONTH, 2)} USD/h for 1× H100 24/7. Market median for the GPU alone is 3.37 USD/h, 2.99–3.85 USD/h in the EU.`), 'h100'],
+      [P('Cena GPU', 'GPU price'), now(money(cloudGpuPrice, 0) + P(' / mies. bez obsługi', ' / month excl. support')),
+        P('To wyłącznie edytowalna cena GPU. Przy 24/7 odpowiada ' + fmtNum(cloudGpuPrice / fx / HOURS_MONTH, 2) + ' USD/h; kalkulator skaluje koszt GPU do ' + fmtNum(cloudRunHours, 0) + ' h, a obsługę dolicza osobno.', 'This is an editable GPU-only price. At 24/7 it equals ' + fmtNum(cloudGpuPrice / fx / HOURS_MONTH, 2) + ' USD/h; the calculator scales GPU cost to ' + fmtNum(cloudRunHours, 0) + ' h and adds support separately.'), 'h100'],
+      [P('Stała obsługa', 'Fixed support'), now(money(cloudSupport, 0) + P(' / mies.', ' / month')),
+        P('Stały koszt scenariusza, niezależny od liczby godzin GPU. Domyślnie 0 PLN, jeśli nie wpiszesz własnego wsparcia.', 'Fixed scenario cost, independent of GPU hours. Defaults to PLN 0 unless you enter support.')],
       [P('Czas pracy GPU', 'GPU running time'), now(s.cloudMode === 'work' ? t('modeWork') : '24/7'),
-        P('W trybie godzin pracy cena skaluje się do dni roboczych × godzin (ok. 167 h zamiast 730 h).', 'In working-hours mode the price scales to working days × hours (about 167 h instead of 730 h).')],
+        P('W trybie godzin pracy GPU koszt skaluje się do dni roboczych × godzin (' + fmtNum(cloudRunHours, 0) + ' h zamiast ' + fmtNum(HOURS_MONTH, 0) + ' h przy 24/7).', 'In working-hours mode GPU cost scales to working days × hours (' + fmtNum(cloudRunHours, 0) + ' h instead of ' + fmtNum(HOURS_MONTH, 0) + ' h at 24/7).')],
     ]},
     { title: P('Własny serwer', 'Own server'), rows: [
       [P('Zakup', 'Purchase'), now(money(s.ownCapex, 0)),
-        P('1× RTX PRO 6000 96GB z serwerem, UPS i wdrożeniem. Sama karta 16–20 tys. USD.', '1× RTX PRO 6000 96GB with server, UPS and setup. The card alone is 16–20K USD.'), 'pro6000'],
-      [P('Amortyzacja', 'Depreciation'), now(s.ownAmort + ' ' + t('monthsUnit')), P('Po tym okresie wykres dolicza wymianę sprzętu.', 'After that the chart adds a hardware replacement.')],
-      [P('Obsługa', 'Support'), now(money(s.ownOps, 0) + P(' / mies.', ' / month')), P('Drobna administracja i części. Bez etatu MLOps i bez drugiej karty na wypadek awarii.', 'Light administration and parts. No MLOps role and no failover card.')],
-      [P('Prąd', 'Power'), now(`${fmtNum(s.ownPower)} W · ${fmtNum(s.kwh, 2)} PLN/kWh · 24/7`),
-        P('Pełna moc przez całą dobę, więc górna granica. Firmy płacą 0,95–1,18 PLN/kWh brutto z dystrybucją.', 'Full power around the clock, so an upper bound. Businesses pay 0.95–1.18 PLN/kWh gross incl. distribution.'), 'power'],
+        P('Domyślna kwota oznacza ilustracyjny pakiet z GPU, serwerem, UPS i wdrożeniem. Wymaga indywidualnej wyceny i nie jest ofertą ani gwarancją kompletności.', 'The default is an illustrative bundle with GPU, server, UPS and setup. It requires an individual quote and is not an offer or completeness guarantee.'), 'pro6000'],
+      [P('Amortyzacja', 'Depreciation'), now(s.ownAmort + ' ' + t('monthsUnit')), P('Amortyzacja jest osobnym rozliczeniem zakupu. Nie wyznacza terminu wymiany sprzętu.', 'Depreciation is a separate purchase accounting period. It does not set the replacement date.')],
+      [P('Wymiana sprzętu', 'Hardware replacement'), now(ownReplace + ' ' + t('monthsUnit')), P('Osobny okres wymiany używany na wykresie; nie jest utożsamiany z amortyzacją.', 'A separate replacement period used by the chart; it is not the depreciation period.')],
+      [P('Obsługa', 'Support'), now(money(s.ownOps, 0) + P(' / mies.', ' / month')), P('Stały koszt scenariusza na drobną administrację i części. Bez etatu MLOps i bez drugiej karty na wypadek awarii.', 'Fixed scenario cost for light administration and parts. No MLOps role and no failover card.')],
+      [P('Prąd netto', 'Net power'), now(fmtNum(s.ownPower) + ' W · ' + fmtNum(s.kwh, 2) + ' PLN/kWh netto · 24/7'),
+        P('Pełna moc przez całą dobę to górna granica. Stawka PLN/kWh jest edytowalnym kosztem netto; źródło nie kalibruje tu brutto ani dystrybucji.', 'Full power around the clock is an upper bound. PLN/kWh is an editable net input; the source is not used to calibrate gross price or distribution.'), 'power'],
     ]},
     { title: P('Przepustowość', 'Throughput'), rows: [
-      [P('Obie karty', 'Both cards'), now(`${fmtNum(s.cloudPrefill)} / ${fmtNum(s.cloudDecode)} tok/s`),
-        P('Gęsty model 32B przy 300 równoczesnych zapytaniach: RTX PRO 6000 1 655, H100 1 482 tok/s wyjścia. Liczone w tokenach Qwen.', 'Dense 32B model at 300 concurrent requests: RTX PRO 6000 1,655, H100 1,482 tok/s output. Counted in Qwen tokens.'), 'bench'],
+      [P('Pola wejście / wyjście', 'Input / output fields'), now(fmtNum(s.cloudPrefill) + ' / ' + fmtNum(s.cloudDecode) + ' tok/s'),
+        P('Domyślne 10 000 / 1 500 tok/s są edytowalne i ilustracyjne: to niezależne wartości wejścia i wyjścia, bez walidacji dla kontekstu RAG ani opóźnienia.', 'The default 10,000 / 1,500 tok/s values are editable illustrations: independent input and output values, not validated for RAG context or latency.')],
+      [P('Benchmark stres-testu', 'Stress-test benchmark'), P('RTX PRO 6000: 1 655 · H100: 1 482 tok/s', 'RTX PRO 6000: 1,655 · H100: 1,482 tok/s'),
+        P('To łączna przepustowość w konkretnym teście obciążeniowym dla modelu DeepSeek-R1-Distill-Qwen32B, a nie uniwersalna szybkość wyjścia dla każdej konfiguracji.', 'This is total throughput in a specific load test for DeepSeek-R1-Distill-Qwen32B, not universal output speed for every configuration.'), 'bench'],
+      [P('Model i zakres', 'Model and scope'), 'DeepSeek-R1-Distill-Qwen32B',
+        P('Aplikacja nie sprawdza faktycznego modelu, VRAM ani jakości odpowiedzi. Porównanie dotyczy kosztu, nie gwarancji jakości, pojemności ani opóźnienia.', 'The app does not check the actual model, VRAM or answer quality. This is a cost comparison, not a quality, capacity or latency guarantee.'), 'bench'],
       [P('Szczyt', 'Peak'), now('×' + fmtNum(s.peak, 1) + ' · ' + s.workHours + ' h'), P('Ruch dzienny rozłożony na godziny pracy i pomnożony przez mnożnik szczytu.', 'Daily traffic spread over working hours and multiplied by the peak multiplier.')],
-      [P('Szybkość dla użytkownika', 'Speed per user'), P('ok. 30–35 tok/s pod obciążeniem', 'about 30–35 tok/s under load'), P('Wysoka łączna przepustowość oznacza wolniejsze odpowiedzi dla jednej osoby.', 'High total throughput means slower answers per person.'), 'bench2'],
     ]},
     { title: P('Nie tylko koszt', 'Not just cost'), rows: [
       [P('Minuta pracy', 'Minute of work'), fmtNum(MINUTE_OF_WORK, 2) + ' PLN', P('15 000 PLN / 168 h / 60 min.', '15,000 PLN / 168 h / 60 min.')],
       [P('API', 'API'), P('dane poza firmą', 'data leaves the company'), P('RODO i umowa powierzenia, zależność od dostawcy.', 'GDPR and a data processing agreement, vendor lock-in.')],
-      [P('GPU', 'GPU'), P('jakość i utrzymanie', 'quality and upkeep'), P('Model open-source bywa słabszy po polsku; ktoś musi go aktualizować i zabezpieczać.', 'Open-source models can be weaker in Polish; someone must update and secure them.')],
+      [P('GPU', 'GPU'), P('jakość i utrzymanie', 'quality and upkeep'), P('Model open-source może różnić się jakością po polsku; ktoś musi go aktualizować i zabezpieczać. Kalkulator nie ocenia jakości ani pojemności.', 'Open-source models can vary in Polish quality; someone must update and secure them. The calculator does not assess quality or capacity.')],
       [P('Pominięte', 'Left out'), P('budowa aplikacji, VAT', 'app build, VAT'), P('Bez budowy aplikacji i wdrożenia RAG, licencji, redundancji i spadku cen API w czasie.', 'No app build or RAG implementation, licences, redundancy or API price drops over time.')],
     ]},
   ];
@@ -1164,14 +1553,14 @@ function lineChart(wrap, { xs, series, xFmt, xHead, height = 280 }) {
   for (let i = 0; i <= 4; i++) {
     const v = yMax * i / 4, y = Y(v);
     svg.append(svgEl('line', { x1: pad.l, x2: pad.l + iw, y1: y, y2: y, stroke: COLORS.line, 'stroke-width': 1 }));
-    const tx = svgEl('text', { x: pad.l - 8, y: y + 4, 'text-anchor': 'end', 'font-size': 11, fill: COLORS.ink3, 'font-family': 'Roboto Mono, monospace' });
+    const tx = svgEl('text', { x: pad.l - 8, y: y + 4, 'text-anchor': CHART_TYPE.tickAlign, 'font-size': CHART_TYPE.tickSize, fill: COLORS.ink3, 'font-family': CHART_TYPE.mono });
     tx.textContent = moneyShort(v); svg.append(tx);
   }
   // x ticks
   const ticks = 5;
   for (let i = 0; i <= ticks; i++) {
     const v = xMin + (xMax - xMin) * i / ticks;
-    const tx = svgEl('text', { x: X(v), y: H - 8, 'text-anchor': 'middle', 'font-size': 11, fill: COLORS.ink3, 'font-family': 'Roboto Mono, monospace' });
+    const tx = svgEl('text', { x: X(v), y: H - 8, 'text-anchor': CHART_TYPE.xAlign, 'font-size': CHART_TYPE.tickSize, fill: COLORS.ink3, 'font-family': CHART_TYPE.mono });
     tx.textContent = xFmt(Math.round(v)); svg.append(tx);
   }
   // lines
@@ -1183,7 +1572,7 @@ function lineChart(wrap, { xs, series, xFmt, xHead, height = 280 }) {
   const ends = series.map((s) => ({ s, y: Y(s.ys[s.ys.length - 1]) })).sort((a, b) => a.y - b.y);
   for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 15) ends[i].y = ends[i - 1].y + 15;
   ends.forEach(({ s, y }) => {
-    const tx = svgEl('text', { x: pad.l + iw + 8, y: y + 4, 'font-size': 12, fill: COLORS.ink, 'font-family': 'IBM Plex Sans, sans-serif' });
+    const tx = svgEl('text', { x: pad.l + iw + 8, y: y + 4, 'font-size': CHART_TYPE.labelSize, fill: COLORS.ink, 'font-family': CHART_TYPE.sans });
     tx.textContent = s.short; svg.append(tx);
   });
   // hover layer
@@ -1240,24 +1629,161 @@ function dataTable(box, xs, series, xHead, xFmt) {
   });
   const th = el('thead'); th.append(hr); table.append(th, tb); box.replaceChildren(table);
 }
+// ─── Scenario helpers ───
+const LS_SCENARIO = 'edulab-aicalc-scenario-v1';
+const MAX_SCENARIO_BYTES = 1024 * 1024;
+function serializeScenario(s) {
+  const values = Object.fromEntries([...Object.keys(DEFAULTS), 'lang'].map((key) => [key, s[key]]));
+  return { version: 1, values, csvText: s.csvText, csvSource: s.csvSource || null };
+}
+function parseScenario(text) {
+  if (typeof text !== 'string' || utf8ByteLength(text) > MAX_SCENARIO_BYTES) throw new Error('size');
+  const parsed = JSON.parse(text);
+  if (!parsed || parsed.version !== 1 || !parsed.values || typeof parsed.values !== 'object' || Array.isArray(parsed.values)) throw new Error('version / values');
+  const values = Object.fromEntries([...Object.keys(DEFAULTS), 'lang'].map((key) => [key, parsed.values[key]]));
+  if (NUM_FIELDS.some((key) => typeof values[key] !== 'number')) throw new Error('numeric settings');
+  if (Object.keys(validateState(values)).length) throw new Error('invalid settings');
+  if (!['pl', 'en'].includes(values.lang) || !['pl', 'en'].includes(values.docLang) || !['work', '247'].includes(values.cloudMode)) throw new Error('language / mode');
+  if (typeof values.thinking !== 'boolean' || typeof values.offPeak !== 'boolean') throw new Error('boolean');
+  if (TEXT_FIELDS.some((key) => typeof values[key] !== 'string' || values[key].length > 200)) throw new Error('GPU label');
+  if (typeof parsed.csvText !== 'string') throw new Error('CSV');
+  const models = modelsFromCsv(parsed.csvText);
+  if (!models.some((m) => m.name === values.model)) throw new Error('model');
+  if (parsed.csvSource !== null && (typeof parsed.csvSource !== 'string' || parsed.csvSource.length > 255)) throw new Error('source');
+  computeResults(values, models);
+  return { values, models, csvText: parsed.csvText, csvSource: parsed.csvSource };
+}
+
+function markDirty() {
+  App.dirty = true;
+  appEl.dataset.dirty = 'true';
+  $('scenarioStatus').textContent = t('scenarioUnsaved');
+}
+function renderValidation() {
+  const errors = new Set([...App.invalidFields, ...Object.keys(validateState(state))]);
+  NUM_FIELDS.forEach((id) => {
+    const n = $(id), rule = FIELD_SCHEMA[id];
+    const invalid = errors.has(id);
+    const msg = t(rule.integer ? 'invalidInteger' : 'invalidNumber', { min: rule.min, max: rule.max });
+    n.setAttribute('aria-invalid', String(invalid));
+    n.setCustomValidity(invalid ? msg : '');
+    let hint = $(id + 'Error');
+    if (!hint) { hint = el('span', { id: id + 'Error', class: 'hint' }); n.after(hint); n.setAttribute('aria-describedby', hint.id); }
+    hint.hidden = !invalid; hint.textContent = invalid ? msg : '';
+  });
+  const invalid = errors.size > 0;
+  const status = $('validationStatus'); status.hidden = !invalid;
+  status.textContent = invalid ? t('invalidFields', { fields: [...errors].map((id) => document.querySelector(`label[for="${id}"]`)?.textContent || id).join(', ') }) : '';
+  $('scenarioSave').disabled = invalid || App.fileBusy;
+  $('scenarioExport').disabled = invalid || App.fileBusy;
+  if (invalid) {
+    App.results = null;
+    for (const key of Object.keys(appEl.dataset)) delete appEl.dataset[key];
+    appEl.dataset.state = 'invalid'; appEl.dataset.invalidFields = [...errors].join(',');
+    document.querySelectorAll('.option').forEach((n) => { n.dataset.winner = 'false'; n.dataset.monthly = ''; n.classList.remove('winner'); n.querySelector('.chip-slot').replaceChildren(); });
+    $('modelsPanel').hidden = true;
+  } else { appEl.dataset.invalidFields = ''; $('modelsPanel').hidden = false; }
+  return !invalid;
+}
+function applyScenario(loaded) {
+  Object.assign(state, loaded.values, { lang: state.lang, models: loaded.models, csvText: loaded.csvText, csvSource: loaded.csvSource });
+  App.invalidFields.clear();
+  applyI18n(); renderModelSelect(); syncInputs(true); render(); markDirty();
+  $('scenarioStatus').textContent = t('scenarioLoaded');
+}
+function saveScenario() {
+  if (App.fileBusy || !renderValidation()) return false;
+  try {
+    const text = JSON.stringify(serializeScenario(state));
+    parseScenario(text);
+    localStorage.setItem(LS_SCENARIO, text);
+    App.dirty = false; appEl.dataset.dirty = 'false';
+    $('scenarioStatus').textContent = t('scenarioSaved');
+    return true;
+  } catch (_) { $('scenarioStatus').textContent = t('storageError'); return false; }
+}
+function downloadText(text, filename, type) {
+  const url = URL.createObjectURL(new Blob([text], { type }));
+  const link = el('a', { href: url, download: filename }); document.body.append(link); link.click(); link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+async function readLocalFile(file, accept, errorNode, onError) {
+  if (!file || App.fileBusy) return;
+  const revision = ++App.fileRevision;
+  if (file.size > MAX_SCENARIO_BYTES) {
+    errorNode.hidden = false; errorNode.textContent = t('fileError');
+    $('scenarioStatus').textContent = t('fileError'); return;
+  }
+  App.fileBusy = true; $('fileProgress').hidden = false; $('fileProgress').removeAttribute('value');
+  $('scenarioStatus').textContent = t('importBusy');
+  document.querySelectorAll('#scenarioSave, #scenarioExport, #scenarioImport, #scenarioReset, #csvBtn, #csvReset').forEach((n) => n.disabled = true);
+  try {
+    const text = await file.text();
+    if (revision !== App.fileRevision) return;
+    accept(text, file.name);
+  } catch (error) {
+    if (revision !== App.fileRevision) return;
+    errorNode.hidden = false;
+    errorNode.textContent = onError(error);
+    if (errorNode !== $('scenarioStatus')) $('scenarioStatus').textContent = t('fileError');
+  } finally {
+    if (revision === App.fileRevision) {
+      App.fileBusy = false; $('fileProgress').hidden = true;
+      document.querySelectorAll('#scenarioImport, #scenarioReset, #csvBtn, #csvReset').forEach((n) => n.disabled = false);
+      renderValidation();
+    }
+  }
+}
+function checkDomContract(doc, result) {
+  const checks = [];
+  const probe = (name, fn) => { try { const pass = Boolean(fn()); checks.push({ name, pass, detail: pass ? '' : 'contract mismatch' }); } catch (error) { checks.push({ name, pass: false, detail: error.message }); } };
+  probe('DOM: ready state', () => doc.querySelector('#app')?.dataset.state === 'ready' && result);
+  for (const key of ['api', 'cloud', 'own']) {
+    probe('DOM: ' + key + ' monthly cost', () => {
+      const node = doc.querySelector('#opt' + key[0].toUpperCase() + key.slice(1));
+      const expected = key === 'api' && !result.api.eligible ? '' : result[key].monthly.toFixed(2);
+      return node && node.dataset.monthly === expected && node.dataset.winner === String(result.winner === key);
+    });
+  }
+  probe('DOM: model rows', () => doc.querySelectorAll('#modelTable tbody tr').length === state.models.length);
+  probe('DOM: no nonfinite chart coordinates', () => {
+    const paths = [...doc.querySelectorAll('#chartTime path[data-series]')];
+    return paths.length === (result.api.eligible ? 3 : 2) && paths.every((p) => !/NaN|Infinity/.test(p.getAttribute('d')));
+  });
+  return checks;
+}
+function showChecks() {
+  let checks;
+  try { checks = runRegressionChecks(modelsFromCsv($('csvData').textContent)); }
+  catch (error) { checks = [{ name: 'built-in price list', pass: false, detail: error.message }]; }
+  checks.push(...checkDomContract(document, App.results));
+  const passed = checks.filter((c) => c.pass).length;
+  $('checksStatus').textContent = t('checksResult', { passed, total: checks.length });
+  $('checksPanel').dataset.passed = String(passed); $('checksPanel').dataset.total = String(checks.length); $('checksPanel').dataset.state = passed === checks.length ? 'pass' : 'fail';
+  $('checksResults').replaceChildren(...checks.map((c) => el('li', { 'data-check': c.name, 'data-pass': String(c.pass) }, `${c.pass ? '✓' : '✗'} ${c.name}${c.detail ? ': ' + c.detail : ''}`)));
+}
+
 // ─── Listeners ───
 function onInput(e) {
   const id = e.target.id;
-  if (NUM_FIELDS.includes(id)) { const v = numOf(e.target.value); if (!isFinite(v) || v < 0) return; state[id] = v; }
-  else if (TEXT_FIELDS.includes(id)) state[id] = e.target.value;
+  if (NUM_FIELDS.includes(id)) {
+    const checked = validateField(id, e.target.value);
+    if (!checked.valid) App.invalidFields.add(id);
+    else { App.invalidFields.delete(id); state[id] = checked.value; }
+  }
+  else if (TEXT_FIELDS.includes(id)) state[id] = e.target.value.slice(0, 200);
   else if (id === 'offPeak' || id === 'thinking') state[id] = e.target.checked;
   else if (id === 'model') state.model = e.target.value;
   else return;
-  render();
+  markDirty(); render();
 }
 document.addEventListener('input', onInput);
-document.addEventListener('change', (e) => { if (['offPeak', 'thinking', 'model'].includes(e.target.id)) onInput(e); });
 
-function applyPreset(k) { Object.assign(state, PRESETS[k]); syncInputs(); render(); }
+function applyPreset(k) { Object.assign(state, PRESETS[k]); PRESET_FIELDS.forEach((id) => App.invalidFields.delete(id)); syncInputs(true); markDirty(); render(); }
 $('presets').addEventListener('click', (e) => { const b = e.target.closest('[data-preset]'); if (b) applyPreset(b.dataset.preset); });
 document.addEventListener('click', (e) => {
-  const dl = e.target.closest('[data-doclang]'); if (dl) { state.docLang = dl.dataset.doclang; render(); }
-  const cm = e.target.closest('[data-cloudmode]'); if (cm) { state.cloudMode = cm.dataset.cloudmode; render(); }
+  const dl = e.target.closest('[data-doclang]'); if (dl) { state.docLang = dl.dataset.doclang; markDirty(); render(); }
+  const cm = e.target.closest('[data-cloudmode]'); if (cm) { state.cloudMode = cm.dataset.cloudmode; markDirty(); render(); }
   if (e.target.closest('.js-assump')) openAssumptions();
 });
 
@@ -1265,7 +1791,7 @@ document.querySelectorAll('[data-lang]').forEach((b) => b.addEventListener('clic
 function setLang(l) {
   state.lang = l;
   try { localStorage.setItem(LS_LANG, l); } catch (_) {}
-  applyI18n(); renderModelSelect(); render();
+  applyI18n(); renderModelSelect(); markDirty(); render();
 }
 
 $('assumpClose').addEventListener('click', () => dialogEl.close());
@@ -1283,25 +1809,58 @@ modelTbody.addEventListener('keydown', (e) => {
   }
 });
 function selectModel(name) {
-  state.model = name; modelSel.value = name; render();
+  state.model = name; modelSel.value = name; markDirty(); render();
   const row = modelTbody.querySelector(`tr[data-model="${CSS.escape(name)}"]`); if (row) row.focus();
 }
 
 function loadCsvText(text, source) {
-  const models = modelsFromCsv(text);
-  if (!models || !models.length) { $('csvSrc').textContent = t('csvError'); return false; }
-  state.models = models; state.csvSource = source;
-  renderModelSelect(); render();
-  return true;
+  try {
+    const models = modelsFromCsv(text);
+    const model = models.some((m) => m.name === state.model) ? state.model : models[0].name;
+    computeResults({ ...state, model }, models);
+    state.models = models; state.csvSource = source; state.csvText = text;
+    $('csvError').hidden = true;
+    renderModelSelect(); markDirty(); render();
+    $('scenarioStatus').textContent = t('csvLoaded');
+    return true;
+  } catch (error) {
+    $('csvError').hidden = false;
+    $('csvError').textContent = t('csvLoadError', { error: error.message });
+    $('scenarioStatus').textContent = t('fileError');
+    return false;
+  }
 }
-$('csvFile').addEventListener('change', (e) => { const f = e.target.files[0]; if (f) f.text().then((txt) => loadCsvText(txt, f.name)); e.target.value = ''; });
-$('csvBtn').addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('csvFile').click(); } });
+$('csvFile').addEventListener('change', (e) => { readLocalFile(e.target.files[0], loadCsvText, $('csvError'), (error) => t('csvLoadError', { error: error.message })); e.target.value = ''; });
+$('csvBtn').addEventListener('click', () => $('csvFile').click());
 $('csvReset').addEventListener('click', () => loadCsvText($('csvData').textContent, null));
+$('csvTemplate').addEventListener('click', () => downloadText($('csvData').textContent, 'aicalc-prices.csv', 'text/csv;charset=utf-8'));
 ['dragenter', 'dragover'].forEach((ev) => dropEl.addEventListener(ev, (e) => { e.preventDefault(); dropEl.classList.add('over'); }));
 ['dragleave', 'drop'].forEach((ev) => dropEl.addEventListener(ev, (e) => { e.preventDefault(); dropEl.classList.remove('over'); }));
-dropEl.addEventListener('drop', (e) => { const f = e.dataTransfer.files[0]; if (f) f.text().then((txt) => loadCsvText(txt, f.name)); });
+dropEl.addEventListener('drop', (e) => readLocalFile(e.dataTransfer.files[0], loadCsvText, $('csvError'), (error) => t('csvLoadError', { error: error.message })));
+
+$('scenarioSave').addEventListener('click', saveScenario);
+$('scenarioExport').addEventListener('click', () => {
+  if (!renderValidation()) return;
+  try {
+    const text = JSON.stringify(serializeScenario(state), null, 2);
+    parseScenario(text);
+    downloadText(text, 'aicalc-scenario.json', 'application/json');
+  } catch (error) { $('scenarioStatus').textContent = t('scenarioError', { error: error.message }); }
+});
+$('scenarioImport').addEventListener('click', () => $('scenarioFile').click());
+$('scenarioFile').addEventListener('change', (e) => {
+  readLocalFile(e.target.files[0], (text) => applyScenario(parseScenario(text)), $('scenarioStatus'), (error) => t('scenarioError', { error: error.message }));
+  e.target.value = '';
+});
+$('scenarioReset').addEventListener('click', () => {
+  Object.assign(state, DEFAULTS); App.invalidFields.clear();
+  renderModelSelect(); syncInputs(true); render();
+  if (saveScenario()) $('scenarioStatus').textContent = t('scenarioResetDone');
+});
+$('runChecks').addEventListener('click', showChecks);
 
 document.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); saveScenario(); return; }
   if (e.ctrlKey || e.metaKey || e.altKey) return;
   if (e.target.closest?.('input, select, textarea')) return;
   if (dialogEl.open) return;
@@ -1316,12 +1875,30 @@ window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer
 
 // ─── Init ───
 (function init() {
-  try { const l = localStorage.getItem(LS_LANG); if (l === 'pl' || l === 'en') state.lang = l; } catch (_) {}
-  state.models = modelsFromCsv($('csvData').textContent) || [];
+  const css = getComputedStyle(document.documentElement);
+  const token = (name) => css.getPropertyValue(name).trim();
+  for (const [key, name] of Object.entries({ api: '--blue', cloud: '--green', own: '--play-grape', ink: '--ink', ink3: '--ink-3', line: '--line', surface: '--surface' })) COLORS[key] = token(name);
+  Object.assign(CHART_TYPE, { mono: token('--font-mono'), sans: token('--font-sans'), tickSize: token('--chart-tick-size'), labelSize: token('--chart-label-size'), tickAlign: token('--chart-tick-align'), xAlign: token('--chart-x-align') });
+  for (const [id, rule] of Object.entries(FIELD_SCHEMA)) {
+    const input = $(id); input.min = rule.min; input.max = rule.max; input.step = rule.integer ? '1' : 'any';
+  }
+  TEXT_FIELDS.forEach((id) => $(id).maxLength = 200);
+  let preferredLang;
+  try { const l = localStorage.getItem(LS_LANG); if (l === 'pl' || l === 'en') preferredLang = l; } catch (_) {}
+  state.csvText = $('csvData').textContent;
+  state.models = modelsFromCsv(state.csvText);
+  let restoreError = false;
+  try {
+    const saved = localStorage.getItem(LS_SCENARIO);
+    if (saved) { const loaded = parseScenario(saved); Object.assign(state, loaded.values, { models: loaded.models, csvText: loaded.csvText, csvSource: loaded.csvSource }); }
+  } catch (_) { restoreError = true; }
+  if (preferredLang) state.lang = preferredLang;
   applyI18n();
   renderModelSelect();
   syncInputs();
   render();
+  if (restoreError) $('scenarioStatus').textContent = t('scenarioError', { error: 'local storage' });
+  if (new URLSearchParams(location.search).has('verify')) { $('checksPanel').open = true; showChecks(); }
 })();
 </script>
 </body>
