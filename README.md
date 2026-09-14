@@ -40,6 +40,22 @@ Wersja online: <https://workszop.github.io/aicalc/>.
   dostarczoną z aplikacją. Jeśli ma być zachowana po ponownym uruchomieniu,
   zapisz scenariusz lokalnie.
 
+## Układ interfejsu
+
+Na dużym ekranie ustawienia są zebrane w niezależnie przewijanym panelu po
+lewej stronie. Panel obejmuje obciążenie, wybór modelu, parametry GPU i serwera,
+ustawienia zaawansowane oraz operacje scenariusza. Po prawej stronie pozostają
+wyniki, wykresy i porównanie modeli, więc zmiana parametrów nie wypycha
+wyników poza ekran.
+
+Karty wyników pokazują od razu kwoty miesięczne. Przycisk **Szczegóły kosztów**
+rozwija rozbicie kosztów, dzięki czemu wykresy pozostają wyżej na stronie.
+
+Na ekranach o szerokości do 768 px panel staje się wysuwanym panelem ustawień.
+Otwiera go przycisk **Ustawienia**; można go zamknąć przyciskiem w nagłówku,
+kliknięciem tła albo klawiszem `Escape`. Stan panelu nie zmienia obliczeń i nie
+jest zapisywany w scenariuszu.
+
 Import cennika zastępuje całą listę modeli. Plik może mieć najwyżej **100
 modeli** i **1 MiB**. Nie zapisujemy kluczy API ani danych poza przeglądarką.
 
@@ -107,6 +123,7 @@ Regresja obliczeń i scenariuszy nie wymaga zależności:
 ```bash
 node tests/core.test.cjs
 node tests/scenario.test.cjs
+node tests/layout.test.cjs
 python3 tests/browser-smoke.py
 ```
 
@@ -123,3 +140,6 @@ inference costs across model API, cloud GPU, and own-server options. It is an
 estimate, not a quote or a capacity guarantee. Open `index.html` directly or
 serve the directory with Python. Prices were checked on 14 Sep 2026; token
 factors are illustrative and hardware throughput is not production-verified.
+On desktop, editable inputs live in a left settings sidebar; on small screens,
+use the Settings button and close it with the close control, backdrop, or
+`Escape`.

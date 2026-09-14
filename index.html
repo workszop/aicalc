@@ -110,8 +110,10 @@
   --align-end: right;
   --font-code-size: .92em;
   --wordmark-size: 22px;
-  --title-size: clamp(2rem, 4.5vw, 2.85rem);
-  --lead-size: 1.0625rem;
+  --title-size: clamp(1.6rem, 2.4vw, 2rem);
+  --lead-size: 0.9375rem;
+  --sidebar-width: 320px;
+  --header-height: 64px;
   --label-size: 11px;
   --small-size: 12.5px;
   --tiny-size: 12px;
@@ -163,15 +165,15 @@ body.edu {
 
 /* ─── Layout ─── */
 * { box-sizing: border-box; }
-body { margin: 0; padding: 0; }
+body { margin: 0; padding: 0; height: 100dvh; overflow: hidden; }
 .edu-header { position: sticky; top: 0; z-index: 50; width: 100%; background: var(--header-bg);
   backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
-.edu-header-inner { max-width: 1100px; margin: 0 auto; padding: 8px 30px; display: flex; align-items: center; gap: 12px; }
-.edu-logo { width: 64px; height: 64px; display: block; margin-right: -6px; }
+.edu-header-inner { height: var(--header-height); padding: 0 var(--sp-6); display: flex; align-items: center; gap: 12px; }
+.edu-logo { width: 48px; height: 48px; display: block; margin-right: -6px; }
 .edu-wordmark { font-family: var(--font-display); font-weight: 700; font-size: var(--wordmark-size); letter-spacing: -.02em; color: var(--ink); }
 .header-spacer { flex: 1; }
-main { max-width: 1100px; margin: 0 auto; padding: 34px 30px 70px; }
-.page-head { text-align: var(--align-center); margin-bottom: var(--sp-10); }
+main { display: grid; grid-template-columns: var(--sidebar-width) minmax(0, 1fr); height: calc(100dvh - var(--header-height)); }
+.page-head { text-align: var(--align-start); margin-bottom: var(--sp-5); }
 .app-title { font-family: var(--font-display); font-weight: 800; font-size: var(--title-size);
   letter-spacing: -.025em; line-height: 1.05; color: var(--ink); margin: 0 0 var(--sp-3); }
 .edu-lead { font-size: var(--lead-size); color: var(--ink-2); margin: 0; }
@@ -340,7 +342,7 @@ progress#fileProgress { accent-color: var(--yellow); }
 .line-muted b { color: var(--ink-2); }
 .line-total + .line-muted { border-top: 1px dashed var(--line-2); margin-top: 6px; padding-top: 8px; }
 .warn-line { margin: 8px 0 2px; }
-.opt-settings { margin-top: auto; }
+.opt-settings { min-width: 0; }
 .bars { display: flex; flex-direction: column; gap: var(--sp-3); margin: var(--sp-3) 0 var(--sp-5); }
 .bar-row { display: grid; grid-template-columns: minmax(90px, 34%) 1fr auto; align-items: center; gap: 10px; font-size: var(--body-sm); }
 .bar-label { color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -362,6 +364,78 @@ details.panel[open] { padding-bottom: 20px; }
 .adv-grid h4 { font-family: var(--font-mono); font-weight: 500; font-size: var(--label-size); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); margin: 4px 0 var(--sp-3); }
 @media (max-width: 1000px) { .fields-grid { grid-template-columns: repeat(3, 1fr); } .adv-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 768px) { .fields-grid, .adv-grid { grid-template-columns: repeat(2, 1fr); } .bar-row { grid-template-columns: 1fr auto; } .bar-track { grid-column: 1 / -1; grid-row: 2; } }
+
+/* ─── Settings sidebar and results workspace ─── */
+#settingsPanel { min-height: 0; overflow-y: auto; overscroll-behavior: contain; border-right: 1px solid var(--line); background: var(--surface); scrollbar-gutter: stable; }
+.settings-head { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2); padding: var(--sp-4) var(--sp-5); background: var(--surface); border-bottom: 1px solid var(--line); }
+.settings-head h2 { margin: 0; font: 600 var(--h4)/var(--line-height-tight) var(--font-display); }
+.settings-body { padding: var(--sp-5) var(--sp-4) var(--sp-8); }
+.settings-body section { margin-bottom: var(--sp-5); }
+.settings-body .sec-title { font-size: var(--body); }
+.settings-body .sec-row { display: block; }
+.settings-body #presets { display: flex; border-radius: var(--r-md); margin-top: var(--sp-3); }
+.settings-body #presets button { flex: 1 1 100%; text-align: var(--align-start); padding: var(--sp-2) var(--sp-3); }
+.settings-body .card { padding: 0; border: 0; border-radius: 0; box-shadow: none; }
+.settings-body .fields-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2) var(--sp-3); }
+.settings-body .field { min-width: 0; margin-bottom: var(--sp-2); }
+.settings-body .field input, .settings-body .field select { font-size: var(--body-sm); padding: var(--sp-2) 10px; }
+.settings-body .field label { letter-spacing: .03em; }
+.settings-body .workload-foot { padding-top: var(--sp-3); }
+.settings-body .edu-seg button { padding: 6px 10px; }
+.settings-body .adv-grid { grid-template-columns: minmax(0, 1fr); gap: var(--sp-5); }
+.settings-body .field-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.settings-body .hint, .settings-body .src { overflow-wrap: anywhere; }
+details.settings-section { border: 0; border-top: 1px solid var(--line); border-radius: 0; box-shadow: none; margin-bottom: 0; }
+details.settings-section > summary { padding: var(--sp-4) 0; font-size: var(--body); }
+details.settings-section > :not(summary) { margin-left: 0; margin-right: 0; }
+details.settings-section[open] { padding-bottom: var(--sp-4); }
+#scenarioPanel .toolbar { gap: var(--sp-2); margin: 0; }
+#scenarioPanel .ghost-btn { flex: 1 1 42%; font-size: var(--small-size); padding: 10px; }
+#scenarioStatus { flex-basis: 100%; }
+#resultsPanel { min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: var(--sp-6) clamp(20px, 2.5vw, 40px) var(--sp-8); scrollbar-gutter: stable; }
+.results-context { display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-4) var(--sp-6); padding: var(--sp-3) var(--sp-4); margin-bottom: var(--sp-5); background: var(--paper-2); border-radius: var(--r-md); }
+.results-context .hint { flex: 1 1 200px; }
+.results-context .stat b { font-size: var(--body-lg); }
+#resultsPanel .sec-title { font-size: var(--h4); margin-bottom: var(--sp-3); }
+#resultsPanel > section { margin-bottom: var(--sp-5); }
+#options { gap: var(--sp-4); }
+#options .card { padding: var(--sp-4); }
+#options .card-head { flex-wrap: wrap; gap: var(--sp-2); margin-bottom: var(--sp-3); }
+#options .opt-total { flex-wrap: wrap; }
+#options .opt-lines { margin-bottom: 0; padding: var(--sp-2) var(--sp-3); }
+#options .line { padding: 4px 0; gap: var(--sp-2); }
+#options .line b { white-space: normal; overflow-wrap: anywhere; }
+.cost-breakdown { margin-top: var(--sp-4); }
+.cost-breakdown > summary { cursor: pointer; font-size: var(--small-size); color: var(--ink-2); padding: var(--sp-2) 0; }
+#app[data-state="invalid"] .cost-breakdown { display: none; }
+#resultsPanel .two-col { grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); }
+#settingsToggle, #settingsClose, #settingsBackdrop { display: none; }
+summary:focus-visible, #resultsPanel:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
+@media (min-width: 769px) and (max-width: 1200px) {
+  :root { --sidebar-width: 290px; --total-size: 28px; }
+  #resultsPanel .two-col { grid-template-columns: minmax(0, 1fr); }
+  #options { gap: var(--sp-2); }
+  #options .card { padding: var(--sp-3); }
+  #options .card-head .chip-slot { margin-left: 0; }
+}
+@media (max-width: 768px) {
+  :root { --title-size: 1.6rem; --total-size: 32px; }
+  main { display: block; padding: 0; }
+  .edu-header-inner { padding: 0 var(--sp-3); gap: var(--sp-2); }
+  .edu-header .edu-logo { width: 36px; height: 36px; }
+  .edu-header .edu-wordmark { display: none; }
+  .edu-header .ghost-btn, .edu-header .edu-seg button { font-size: var(--small-size); padding: 8px 10px; }
+  #settingsToggle, #settingsClose { display: inline-flex; }
+  #settingsToggle { background: var(--yellow); color: var(--yellow-ink); }
+  #settingsPanel { display: none; position: fixed; inset: 0 auto 0 0; z-index: 80; width: min(360px, calc(100% - 32px)); box-shadow: var(--shadow-lg); }
+  #app[data-settings="open"] #settingsPanel { display: block; animation: fadeIn .18s ease-out; }
+  #app[data-settings="open"] #settingsBackdrop:not([hidden]) { display: block; position: fixed; inset: 0; z-index: 70; width: 100%; height: 100%; padding: 0; border: 0; background: var(--dialog-backdrop); }
+  #resultsPanel { height: 100%; padding: var(--sp-5) var(--sp-4) var(--sp-8); }
+  #resultsPanel .two-col, #options { grid-template-columns: minmax(0, 1fr); }
+  .results-context { gap: var(--sp-3); }
+  .results-context .hint { flex-basis: 100%; }
+}
+@media (prefers-reduced-motion: reduce) { #app[data-settings="open"] #settingsPanel { animation: none; } }
 </style>
 </head>
 <body class="edu">
@@ -369,6 +443,7 @@ details.panel[open] { padding-bottom: 20px; }
   <img class="edu-logo" alt="edulab" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPoAAAD6CAYAAACI7Fo9AAAcIElEQVR4Xu1dTXIcR3bOLACUFzMkvRVHYpOSIxyhhaATCDoBwaXDC4InIHQCgScgdAKBO+8EHsCh1gkGs5sIi2CDIrg1OB5HjAmyyi+ru4Hq6qrKn8qsyp8PEfYw1Pnz3vfeVy/z5R9n+AMCQCB6BHj0GkJBIAAEGIgOJwACCSAAoidgZKgIBEB0+AAQSAABED0BI0NFIACiwweAQAIIgOgBG7koitJ+nHP65/zfyz/x30xUq7ezbN+kLdTxBwEQ3R9bNEoiiGdKWteqVT80rvtC+/0QANH74We9dsjkqY4GfP04WTdYIA2C6B4YyueobQOe2PWzgZHrNkB01wg3tJ+y44c8YhnBVax1CaJbg7K5ITh2O8Apf/Acu91a8yC6I8ThxHrA4oOoh5duaRBdFzGUd44APpL2IQbRe2KKSNQTQEl1kN4OviC6IY5wQEPgDKvhg2oI3KIaiK6JHwiuCZjl4sDfDFAQXRE3OJgiUAMWg03UwQbRMUdU9xaUDBYBED1Y00FwIKCOAIhewwrDQXXnQclwEADRw7EVJNVEAB/ta8CSJzqcQZM9gRWHfecGS5rocILAWNtD3NRtnSTRUzd6D76gaqAIJEd0kDxQT7Uodoo+kAzRUzSuRW6gqcARSILoIHngXupQ/FR8I2qip2JEhzxIoukU/CRaoqdgvCRYCCWtIBAd0XGc0YpfJNtIrAEiOqIn66FQ3BoCMZI9GqLHaBxrnouGtBGIzZ+iIbq2JVEBCCggEAvhgyd6LIZQ8DkUAQLGCARLdBDc2OaoaIBA6P4WLNENbIUqQKAXAiGTHUTvZXpUTg2BUMkOoqfmqdC3NwIhkj0YoocIbm+PQgPeIhCaPwZB9NBA9dY7IViyCHhPdJA8Wd+E4hYR8J7oFnVFU0DACQIhBCNviR4CeE68Bo0GiYDv/uol0X0HLUhPhNDOEfDZb70kunOLoAMg4AgBX8kOojsyOJpNFwEfyQ6ip+uP0NwhAr6RHUR3aGw0DQR8QcALovv29fPFOJADCNhCYHSig+S2TIl2fETAF/8eneg+GgcyAYHYEADRY7Mo9AECDQiA6HALIJAAAqMQ3Zd5SwL2hYpAoERgFKIDeyAABIZFAEQfFm/0BgTYGCPaQYk+hoLwKyAABDB0hw8AgVEQGDroDRrRR0EUnQIBTxEYkuyDEH1IhTy1KcQCAqMiMAjRR9UQnQMBjxEYKgg6J/pQinhsS4gGBDoRGIIjzokOGwMBIDA+AiD6+DaABEDA+dq6M6IPMRyBfwABIKCGgDOiq3WPUkAACAyBgBOiI5oPYTr0AQTUEXBCdPXuURIIAIEhELBOdETzIcyGPoCAHgLWia7XPUoDAca+nHz2IM/znYKzbcJjm1LQtxnnU4EN5/z4Jtt8fjKbXaSClYtgaZXoLgRMxbgp6vnF5M6jvCgOWMEmMv0540enr88fy8rF8rttLlkjum3BYjEY9FhHYHsyuf234v1PRcF2dfDhGf/+dHZ+qFMn1LK2+QSih+oJgcotSP6uuPyFhudimK71x7Ps6enszYFWJRQuEbBGdOAJBFQQuHf3jiD5TmNZzn+lYfyMIveMItqTcq5e+dvIsu9+m72ZqvQTQxmbUd0K0W0KFIOBoEMzAvcnfzoo8vyHhl9ffJLd2P/rbDYTv305+dPOxzz/ZaUcfQRenZ03fyAAuBQBK0SX9oICySOwGLK/qkfppnl3U9RPLZovHcZWEO1NdFuCJM+EyACgqPxtVaU8L3YLVuxX/xtl0n+kTPrKf0M0d+MIvYnuRiy0GhIC/zK5s/0xLx4UnO+qJtloffzdTb41qa+PI5q7sXwvoiOauzFKKK3qrIPXdUI0V7eyDZ71Irq6qCgZEwJfTD7bzYuPz1Q2urTp3TTnRjR35yUgujtso2z5/ud3ntXn2iaK1okuhv8f8uLPtUz7xSd865tlNt6kn1jq9I3qIHosnuBYD6WNLpyd8YIfs4zNMsZPliLlrNgu8uJZVcQ60RuTcKIC5xc0nz+gjTI/OlYx6uZB9KjNa0c5Ocn580+yrYOmyNs2j28Zup9QMu/rRqnpkAtF98cpR/c+UR1Et8OFqFuhufOfW7LpKxtdqiDIEnWbGf/mv2bnV1Ff1C33wOeXBzQ1eNJC9qSj++BE79Nh1IyIULm23WxNWXOhvlKijvO/0C631r3u5TC+yI8o2Xe3CVLsedd3NER0fcySqdGYICPts4w/fjk7P6oCsRje/9y6j/2qMH9+K9val50vl0X3LNt4+HL2+3EyxlgoahpkQfTUPEVD3+YhO3/+6vX5XgPJJSfS2ufxXSK1RndK0m1y9l19+K+hXpBFByO6aUdBopqw0OUQPP/48woEDQdL+iTqVOFd9DFdS9RxfnKLb30nGx2o9hNzOUT0mK3bQ7d7n38qhsUPqk00Zcrv3/3058YLJOijQFnyPVtZ8vllFZfi+Oqtqkycs+PTs7cPe6gaXFWTYAuiB2dm9wL/62Qy+b/8/ataTy9evX67ciNM29q3q5tg2nIGSM7JfQJEl2OUXIn7kzv79Q0uTcmvpi2rTYk6mwDSst0enYT7qd5mqsk5VWy1iG4yZFAVBOX8QYC2uR5W17LFSbPTs/OV214ao/5Al0Pc+/zOEWPFo1r+IMnknKrXaBFdtVGUCxsBitQi8XV9nryBwE2RdcioSjKu76JLKDmnG3SVia7bcNiunrb0lIgrVhJeDZcyNkVVmsMr+1NfhFNPzunycTDD9DUs6g+HwDrR169ZVon6JhJ/9dVXf/jH/178+0rdDf6fL1+++a3eHpJz6giD6OpYJVGyKZPefADlU7r/rfrwwvpGGhPA7t+//3nx4R9n1bpZxv7t5eztfzS1h+ScGsoguhpOyZRSJrrC8N4ENF2iiz6QnJMjDaLLMUqqRFOEvJXd+Ofq7rOmjLutZTUTopdkTzA5pzNPVyK6ToNJsSJCZZtOq9WTbKpR3wQeU6KnnpyTYQ2iyxCi34UT/Z19+Fq8+Elv22wXjNOacjG5mqNyNqOrUGacFRf0306yLJvSiyK/KjTtXZE60ZvW0JuiPj3AcM/Wdlci+8o219PT03cqQCE5146SEtFVQI6tjCD3/7DLBzSa2dV9DHCJhdiHLZ79pSOdz0PBRyWbrhL1x9IXyblm5EH0Gi7zc9Dvn9Ad5fv1V0WMnVfce1YUhzezGz/6ftJKhehryS+6K+7V2duJMT6WKyI5tw4oiF7BZH79ETu0RvA63kT4jLN9nyP8vbury2ZNN8mofAwsc1e7uVSSc6r5MynRVRvStoRHFdRvRyGh6Rok+v8XQnwalk/F/xJGOwt1brdebljRVwzpb/Ibj32M7kq74mofA0Ji7TKKsc1b2jR//9/r39r0jrWWviozSOxELxM4BRO3o6wc2qjh8oKWj4632NZUlnASS0/v2eUunf4S5F85z73Spqc3pCjtinO0hi7zRdnvX04+e0AJ092CEqZdT0OleKxVSnQZuCH/XiZuCkYvjrSRXO1+szYM5uvNlwdrJ62WFYjsG5w/9OXNb5VlM5dr6Ca+JGSmY6uP6LTdnk79IQ/g6MjlqmyyRG/Lzi6Abr3G2MQQC3IctkV4W5tNTGSr1lEhukqZvnKo1J/fJUePQhRF622yne3QRzalV2CSJHoXyV2Sbqx+VYgjyqjsinO9hi6TtfxoFpc/yW+blbUk5q3rzzbLa4VZIjmit5FNbAzZ4GzH9a2i5VCzKI7rd5+F6T5zqYc6nkrr90+KPBcjo+4/Oj/PaeMSzcWnYhPTJtuc/RMlUNfunBvoogyZuEP8nhTRxyb50qDle+IFm0ZB9gHW0JVWRYi0tHR59Ee2ddy2mhHCsqAJ6VUS5skQ3SbJ55n1Dw9YTo8H8vlRTYogM5bxkxts84UsMy/KR0N2zai4eJjhmcCNEpFPZYlI6XXS1D+1cyBrR2AeK9FVPg5JEH0xrxPvh60soekO10uC55c/SDO8tL6u4sRRkF2T6PVHIbpyIp1LnzSS2ODZngrBl0QA0Vs+CSpDApWvydhl2q4l1km8yZfi1rWkr+jB6eu3T7v0X+yp36WDMuXIYPlXbsKp3tsmRg10pdPYWBZFvrfyJpou0Wtr8EKfjieeWl5/MVv2BNEjJ3oZiYvLk7U5seKmFclSXCf3KLN7dPr6/LEuQX09ONKXLPUNOUtcqmTvGq7rfJzrmPeVXdeGPpXvHLrHEtEF4K1klZBdSnKKaKJ9AnK7LblmQvbUiF6N7HTd9E9N06M+JBftg+g+fXocyqJL9q4EHu1XF4dTjqriLjZxiEMxX9fV0CV7ikSffzD5kQuSg+gOieVj06pk7yj3F3rYb6dtCWd+mOKS1nprDwwsnFh1GJ8q0Zt8xtbe9Jgjumz0nUTWve48MrLnNAxvevZHnFzrInm1n8Yz0RpkB9EXaGom+7qCS8xElwXVJIkum7M3HnLRIPkS9Dayb2b8G9kOvFSILrah0pq6WGFYn+7QbsWbfGti6zgviC77HET6uzTRttTbgORdZFcZiiZDdFoyvMk2D98Vl+vvnxOIfRNwSzss1uTFHvnrQzAWRwtjUwRDd4kFpGTvQfJrssufOKqLmRLRT2dvDhZLatbIXm5GYvxbVuQ7tEdBjBjW7xsA0cf+Pg3bv2niTVVKlVtbUie60L8P2ZWIvW6wtTffVW3qWzlEdEWLrJHdQiS3HdHrDykoqma1mMlHazVJ2T26USW7IbFXsEjp8olkk3FN3r9wnl1aGru4ybaOrCWBDK5e+mLy2W6ef/y5KifP1h87tMpi6TSnv0wqH4oustPKx1QEf9MLPMX5Bop+UyL50cvZ78dD4jdmXyD6AOirOHddjMbLDRW37LpQqe2Aie7DDapYdJJdQ8ElsekjOd1gbCpb7dBo2quiGLp7YA5V566L2rEWfyguqxxKNdpTIC5cpMMs9YSW/u2vOliYkD0VYtdtD6IPxYaOfnScu9pM23tiHqgkrrp+d4NvbaucvdeZozeObFqW3kTZVIkNovvAgpoMpkQXzfh6Zt00kWWCxSKyH4tjuyC2mYNjjm6Gm1YtE+eudjCfHxfk6OyuVscOCute1rE+HdHfU+BAjeiaxNDdA5P2JbpQoRzGsw/7axc/DKUf3ejCeXYkdrH1WY2wgcVQKsfUDyL6ANa07dwiws+fbh7mT9ykaitbbRuLYRAIvxcQfQAbwrmvQQYWAzhcQxfJ3DAzDrzzXuHcIPqY/if6RkQfwAIgOog+gJt1doGIPoAFQHQQfQA3Myf62MLF0j+IDqKP7csYug9gARAdRB/AzRDRxwYZRAfRXfqgbLMMknEu0a+0PRbR6frpb+nq5EmRFxMhTsHpppXFX/lWHCvovbjsImPshF4cPdPdt24C31hYmMgaSh0Q3RNLDeXc5b74nD1aXLZ4fTeaKg6czXjB6ax2dvzb7PcXqtV0yg2FhY5MKZSVztFVvhYpANVHR5fOPX+d9P2T+THS+cuuVv7o7DtF/eMb2dZTm5HeJRZW9I60ESnRI9V7ULVcOPfi+eEfms+JW1ZP8XVYlV5dYKHSb+plQPQBPMC2c9MNsU9opHWgdZ0S3YFHql6sqFt7rVUGhXgu6Wa29T0OtciQ8u93EH0Am9gi+uKd959X7iZvkp9ITcPuKd0fP91iGyddQ28xMvg7+7BNr9PsND3VvNY8Dekznj02vW/NFhYDmC2ILlSn1iC6BXMKAn5kl7fbTnjZcG7Z++zinDjN0Y82MnbU56TZ8r32vGD7Ta+nLOGi6H5I0f2pbnRXxUKGqQWzRdEEiD6QGVeuiaa5LL3N9rDu/KrO3Sby/c8//aFg7KA5ePN34mXXP7KtY13SySBavA4rpgjfNpbl/IT0/U6nXxUs6NnkZ7QsuF/22YKpTHb8voqAUkRX/WqkBm7jww8Nzq/i3O0kb34rvOQAvVtGUfVAh2gmNhJ6FgU7bHz/XZPsMiwa30bX7MNEx9jrgOiGFu58yonWozc5f7gcQsucW5fkYpiecb772+zN1FB87WrVe9sa5u3Kkb0Li0aSX80V9EcP2kpGXEGJ6BHrb6Sa9L22+ZDzYoPILshoQvRWp7f4goyJ8iTXIQ2rn5iSvQmLxSOLvygkGZU/KCa6hVZHZ6QNomtaV4nklTbFa6D1t9Zlr6m2Rzb+/Fa2te96qC6DpOOtOikR60Snvl7QHORr5c0+GMZfmccJ0XUalTlKqL93PcZICbEjctaDxnlsTeEuoneR/NXr8z1fsDMlewPRW1Tiz+c/FI9MRw++YOWDHIjoilZQeXFV9Q72NqKHQvIlZCZkVyF69Y25ttdqaGokHT0omjaJYiC6gpmbHjwsqzXMl1WeEWoiemgkNyV7F9FFkpGulN6rb8ZpfZqKs+PTs7cPFUyYfBEQXcEFyDnFO2cPVopSso3WkO81zZcXDyQerdVZNkDRaJOzx8usfKgk1yH71d785fp4HXe6N55WKnY7Nh2t24DaePX6bZI+rDuVThIkBW6vFKG95QdFnv+w7pvde7/vT+7s01nwZ239id1l9NttymLvrZfRf8BQVy+b5buG8Rlnh7TT7rBjb/4Levt9ry3J2N42O3t19nZiU49Y29Iiuu5XJBbQJO91d84VF88NU6Ku+Fodj7BILo3sLYq3DdWrxVd2yVV+6Ps0lLot/CtpwkMtovun8rAStSeGVjfINEnVNioIPZLX5VdefuT810/41l7bgZvFUF9shV0f7UiG+cN6xfC9gegDYN6RBb7aINMmxmLvuBjCtkf3+YUP4nDK8z6HUwaAYqWLxdtwj+htODoM034BRnn4hrOD09m5mLY0/i1GUM0baEbeMDQ0rk39gegDWaErOot59+nr8++7RJmfRBPnySWvo1LSTsxv6cDKi7E3yXR9vGhD0KPmPMNqLbHaIHuksVzhKPKfGufzILmxh2Pobghd91731ax6UxfL11HJoemF1OJWpxiLa514xqY+kF5cOknk3i14sau2o40//4QO38jOxf8tv2weqpfghJm3MHSv1mom0bxEz0QQ085M+vK5jhiKU2Q+biMqRbD909mbH7t00CL8siGK9Jz6pUscp7SX/lfXGImz4e/ZhwesyOlyCrar3h9/vpHxI9nhm/mURkTx5iG/bMuwujzplgTRe9q+81RX+SnlU0o6PZZdsHh94YPCkL4usyC+uLq5YCdZtkH/zs9M5veC0B/Yh7t5nu+Q4BO6j25CIw76t/rf8gIMulTyUEVniuJ01n5x9rzWzRin9NQ1DaukEdHDUnEYaWVZdZ0bWRY78fZI8tVNOqaq0IeAqq7eF7dsS5PIrSKI66tov/9NtnWkkk+gqc+jPmvrplCEXK/PSBpEt2j5+Zp5cdyaZCvn2gUl694+Ven2KsrTfNga6VU6Vi2zIPcNut1GFr2XTcqG6eUgKOPfd2XlVcVDuWsEjIne5+sSswHm218vaemo4dTVUnG6mIIujjh4OTtfnNCSI3JNerbDOA2nZRl7eZPaJcRQmuxOl07yqQ65RUeLjUPPOqcC9OGgrcF7JtMObWUCq9CXb8ZEDwynwcVVWzOnl1F4dkhLTs9VhrtVJebE/7hDW3N3aC69TYbclmbvdVGgTS30QZlllO0XzzaZEPDLyWcPKNEmLprcaeteZW1dV3SUX0UARHfsEZ33rV1F+PkmGUpg/ag6BG4TW0TOgvHb4vrmZZny7TWRWGv4I5JNrwcaZVLv4g9s80T3w7P+Ebp8sNgr0Nhvpc9B7r1zbGbvmwfRBzDRYjvnQeMVTLX+KaF1TOQ79mG9XBcaEb0pY0/r67QEVxS3O+vTaIGG6fsmowRduUIv33fYLvQH0Qf0gvIBhvzyoHP+XpEnBNJrkbv0OP4r3aV3IFtbH9AsSXTVm+g2vjZJIF1RcrEBhR5FVNgVdz28n1LGXrx0Osgmma6pwUfGv2V5sa0Uua8aUts8k5ovyPS1xa/eRJcJit/bEVjuiqODIOIl1LtaWNHcmub1tEEmm9II4cLFDrnFfP9WuYGGEn4096dsv2RIvqaEfPurlt6JFQbRIzP4fJNMvkvD9V3j7Dmt0xMstD2WzYj89H/zP7FbTnwMmiCb74K7GjbcFhl8Kks74tpPoEmhp+E5HcY5cvF6jLRvFGhEABHdQ8dYHJjxc5NMG14Gm2c8hD5akawR3dYQI1qkDRRb3SRDkVbrlhqDDjWq9Nk8o9ENilpCwBrRLcmDZjoQqG2SEfNljeupekJLt7qwgvICGTvZYGyKZbGeeA5c3SrREdUHth51t7JBJi+qc2y95B61VUZpmuOL3XC0zXVGB3HKDTRYChverrZ7tEp028KhPXsILD8I1Rb77oCzJx1aqiLgImBaJ7oLIeEGQAAI9EPAOtH7iYPaQCBtBFwFSidEdyVs2i4A7YGAOQJOiG4uDmoCgXQRcBkgnRHdpdDpugI0jxUB13xxRnRhENfCx2p06AUEbCPglOi2hUV7QCBGBIYIiM6JPoQSMRofOgEBmwg4J7pNYdEWEIgNgaEC4SBEH0qZ2JwA+sSNwJC8GIToSMzF7bDQzn8EBiO6/1BAQiAQLwKDEn3IoUq8JoNmoSMwBg8GJTqG8KG7KOQPFYHBiQ6yh+oqkNsGAmNEcyH3KES3ARjaAAKhITAWyUH00DwF8gaLwJgkH53oYysfrNdAcCCgicDoQ3eQXdNiKA4EDBAYnegGMqMKEAgGAV8CmRdE9wWMYLwHggaBgE9+7QXRseQWhN9CyIAR8IboIHvAXgTRvUfAK6KD7N77CwQMFAHviA6yB+pJENtrBLwkOsjutc9AuBYEfEq+1UX0luggO/gUEgI+k1zg6DXRQzI0ZAUCPiMAovtsHcjmPQK+R/IlgCC6964EAX1FIBSSBzd0DwlYX50TcqWJQHARHWRP01GhdT8EgiM6svH9DI7a/RAINdAESXSQvZ+zorYZAqGSPLg5et08IQNv5mqoNQYCMfhZsBF9DIOjTyAQKgIgeqiWg9zOEYghkke5jh6TYZx7MTpICoHoIjrInpT/OlE2Rh+KjuhOLI9Gk0AgRoJHOXRPwhuhpBMEYiZ58MtrKhaP3YAqGKBMOwKp+AeG7mBBsgikQvIkInrVi1MybLLsVVQ8NV9ARFd0DBSLA4HUCJ58Mi5Vg8dBVzMtUrY5IrqZz6BWQAikTPDkIzrm7gEx1VBUQfAyEcV5YdhENNUQ0SumxJc/Dr+GHdftCKLXMEEUiIPs0GIVARC9xSNA+LCogijebS8QXeLPcCC/CQ/7qNkHRFfDicGhFIEaqBjsoQc0iK6HV0l4ZHI1QbNUHNibAwmim2OHmgMhAIL3BxpE748hWnCAAMhtF1QQ3S6eZWuYPzoAFU32QgBE7wUfKttAANHbBopYXnOPokIPiPKrIAEPBaexWAQR3SKYaKodAUTtcb0DRB8X/6s5vfhHTIcvQGwPHKsiAojulz2upAmNKKHJ66nZnYkFojuD1n7Dy3ntWPPbar9jyWAf1TRaBNEjtnP9w1CNust/xzZliNicvVQD0XvBh8pAIAwEQPQw7AQpgUAvBED0XvChMhAIAwEQPQw7QUog0AsBEL0XfKgMBMJAAEQPw06QEgj0QgBE7wUfKgOBMBD4f4fKYfp9jVxvAAAAEGRlQkcxNTk4NUQ2OTcwRjYzNDExig0y6AAAAABJRU5ErkJggg==">
   <span class="edu-wordmark">edulab</span>
   <span class="header-spacer"></span>
+  <button type="button" class="ghost-btn" id="settingsToggle" aria-controls="settingsPanel" aria-expanded="false" data-t="settingsTitle"></button>
   <button type="button" class="ghost-btn js-assump" data-t="assumpBtn"></button>
   <div class="edu-seg" role="group" aria-label="Język / Language">
     <button type="button" data-lang="pl">PL</button>
@@ -376,25 +451,15 @@ details.panel[open] { padding-bottom: 20px; }
   </div>
 </div></header>
 
-<main id="app" data-state="loading">
-  <p id="validationStatus" role="alert" hidden></p>
-  <div class="page-head">
-    <h1 class="app-title" data-t="title"></h1>
-    <p class="edu-lead" data-t="lead"></p>
-    <p class="hint" data-t="estimateNotice"></p>
-  </div>
-  <div class="toolbar" role="group" aria-label="Scenariusz / Scenario">
-    <button class="ghost-btn" id="scenarioSave" type="button" data-t="scenarioSave"></button>
-    <button class="ghost-btn" id="scenarioExport" type="button" data-t="scenarioExport"></button>
-    <button class="ghost-btn" id="scenarioImport" type="button" data-t="scenarioImport"></button>
-    <button class="ghost-btn" id="scenarioReset" type="button" data-t="scenarioReset"></button>
-    <input id="scenarioFile" type="file" accept=".json,application/json" hidden>
-    <span id="scenarioStatus" class="hint" role="status" aria-live="polite"></span>
-    <progress id="fileProgress" hidden aria-label="Import" max="1"></progress>
-  </div>
-
-  <!-- ─── Workload ─── -->
-  <section>
+<main id="app" data-state="loading" data-settings="closed">
+  <button type="button" id="settingsBackdrop" tabindex="-1" aria-label="Close settings" hidden></button>
+  <aside id="settingsPanel" aria-labelledby="settingsTitle">
+    <div class="settings-head">
+      <h2 id="settingsTitle" data-t="settingsTitle"></h2>
+      <button type="button" class="ghost-btn" id="settingsClose" data-t="settingsDone"></button>
+    </div>
+    <div class="settings-body">
+      <section>
     <div class="sec-row">
       <h2 class="sec-title" id="workloadTitle" data-t="secWorkload"></h2>
       <div class="edu-seg" id="presets" role="group" aria-labelledby="workloadTitle"></div>
@@ -415,29 +480,18 @@ details.panel[open] { padding-bottom: 20px; }
             <button type="button" data-doclang="en" data-t="langEn"></button>
           </div>
         </div>
-        <div class="stat"><span data-t="kvTokens"></span><b id="kvTokens"></b></div>
-        <div class="stat"><span data-t="kvReqMonth"></span><b id="kvReqMonth"></b></div>
       </div>
     </div>
   </section>
-
-  <!-- ─── Options ─── -->
-  <section>
-    <h2 class="sec-title" data-t="secOptions"></h2>
-    <div class="grid-3" id="options" aria-live="polite">
-      <div class="card option" id="optApi" data-path="api">
-        <div class="card-head"><span class="dot" style="background:var(--blue)"></span><h3 data-t="apiPath"></h3><span class="chip-slot"></span></div>
-        <div class="opt-total"><span class="big"></span><span class="per" data-t="monthly"></span></div>
-        <div class="opt-lines"></div>
+      <details class="panel settings-section" id="apiSettings" open>
+        <summary data-t="apiPath"></summary>
         <div class="opt-settings">
           <div class="field"><label for="model" data-t="model"></label><select id="model"></select></div>
           <p class="hint" id="modelNote"></p>
         </div>
-      </div>
-      <div class="card option" id="optCloud" data-path="cloud">
-        <div class="card-head"><span class="dot" style="background:var(--green)"></span><h3 data-t="cloudPath"></h3><span class="chip-slot"></span></div>
-        <div class="opt-total"><span class="big"></span><span class="per" data-t="monthly"></span></div>
-        <div class="opt-lines"></div>
+      </details>
+      <details class="panel settings-section" id="cloudSettings">
+        <summary data-t="cloudPath"></summary>
         <div class="opt-settings">
           <div class="field"><label for="cloudGpu" data-t="gpu"></label><input id="cloudGpu" type="text"></div>
           <div class="field"><label for="cloudPrice" data-t="cloudPrice"></label><input id="cloudPrice" type="number" min="0" step="500"></div>
@@ -449,11 +503,9 @@ details.panel[open] { padding-bottom: 20px; }
             </div>
           </div>
         </div>
-      </div>
-      <div class="card option" id="optOwn" data-path="own">
-        <div class="card-head"><span class="dot" style="background:var(--play-grape)"></span><h3 data-t="ownPath"></h3><span class="chip-slot"></span></div>
-        <div class="opt-total"><span class="big"></span><span class="per" data-t="monthly"></span></div>
-        <div class="opt-lines"></div>
+      </details>
+      <details class="panel settings-section" id="ownSettings">
+        <summary data-t="ownPath"></summary>
         <div class="opt-settings">
           <div class="field"><label for="ownGpu" data-t="gpu"></label><input id="ownGpu" type="text"></div>
           <div class="field-row">
@@ -465,43 +517,8 @@ details.panel[open] { padding-bottom: 20px; }
             <div class="field"><label for="kwh" data-t="kwh"></label><input id="kwh" type="number" min="0" step="0.05"></div>
           </div>
         </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ─── Summary ─── -->
-  <section class="two-col">
-    <div class="card">
-      <h3 class="chart-title" data-t="summaryTitle"></h3>
-      <p class="chart-sub" data-t="summarySub"></p>
-      <div id="bars" class="bars"></div>
-      <ul id="answers" class="answers"></ul>
-    </div>
-    <div class="card chart-card">
-      <h3 class="chart-title" data-t="chartTime"></h3>
-      <p class="chart-sub" data-t="chartTimeSub"></p>
-      <div class="legend" id="legendTime"></div>
-      <div class="chart-wrap" id="chartTime"></div>
-      <details class="data-table"><summary data-t="showData"></summary><div class="table-wrap" id="tableTime"></div></details>
-    </div>
-  </section>
-
-  <!-- ─── More ─── -->
-  <details class="panel" id="modelsPanel">
-    <summary><span data-t="secModels"></span></summary>
-    <p class="sec-note" data-t="modelsNote"></p>
-    <div class="table-wrap">
-      <table id="modelTable">
-        <thead><tr>
-          <th data-t="thModel"></th><th class="num" data-t="thTok"></th><th class="num" data-t="thIn"></th><th class="num" data-t="thOut"></th>
-          <th class="num" data-t="thReq"></th><th class="num" data-t="thMonth"></th><th data-t="thVs"></th>
-        </tr></thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </details>
-
-  <details class="panel" id="advancedPanel">
+      </details>
+      <details class="panel settings-section" id="advancedPanel">
     <summary><span data-t="secAdvanced"></span></summary>
     <div class="adv-grid">
       <div>
@@ -549,15 +566,89 @@ details.panel[open] { padding-bottom: 20px; }
       </div>
     </div>
   </details>
+      <details class="panel settings-section" id="scenarioPanel">
+        <summary data-t="scenarioTitle"></summary>
+        <div class="toolbar" role="group" aria-label="Scenariusz / Scenario">
+    <button class="ghost-btn" id="scenarioSave" type="button" data-t="scenarioSave"></button>
+    <button class="ghost-btn" id="scenarioExport" type="button" data-t="scenarioExport"></button>
+    <button class="ghost-btn" id="scenarioImport" type="button" data-t="scenarioImport"></button>
+    <button class="ghost-btn" id="scenarioReset" type="button" data-t="scenarioReset"></button>
+    <input id="scenarioFile" type="file" accept=".json,application/json" hidden>
+    <span id="scenarioStatus" class="hint" role="status" aria-live="polite"></span>
+    <progress id="fileProgress" hidden aria-label="Import" max="1"></progress>
+  </div>
+      </details>
+    </div>
+  </aside>
+  <div id="resultsPanel" aria-labelledby="appTitle" tabindex="-1">
+    <div class="page-head">
+    <h1 id="appTitle" class="app-title" data-t="title"></h1>
+    <p class="edu-lead" data-t="dashboardLead"></p>
 
-  <details class="panel" id="checksPanel">
+  </div>
+    <p id="validationStatus" role="alert" hidden></p>
+    <div class="results-context">
+      <div class="stat"><span data-t="kvTokens"></span><b id="kvTokens"></b></div>
+      <div class="stat"><span data-t="kvReqMonth"></span><b id="kvReqMonth"></b></div>
+      <p class="hint" data-t="estimateNotice"></p>
+    </div>
+    <section>
+    <h2 class="sec-title" data-t="secOptions"></h2>
+    <div class="grid-3" id="options" aria-live="polite">
+      <div class="card option" id="optApi" data-path="api">
+        <div class="card-head"><span class="dot" style="background:var(--blue)"></span><h3 data-t="apiPath"></h3><span class="chip-slot"></span></div>
+        <div class="opt-total"><span class="big"></span><span class="per" data-t="monthly"></span></div>
+        <details class="cost-breakdown"><summary data-t="costBreakdown"></summary><div class="opt-lines"></div></details>
+      </div>
+      <div class="card option" id="optCloud" data-path="cloud">
+        <div class="card-head"><span class="dot" style="background:var(--green)"></span><h3 data-t="cloudPath"></h3><span class="chip-slot"></span></div>
+        <div class="opt-total"><span class="big"></span><span class="per" data-t="monthly"></span></div>
+        <details class="cost-breakdown"><summary data-t="costBreakdown"></summary><div class="opt-lines"></div></details>
+      </div>
+      <div class="card option" id="optOwn" data-path="own">
+        <div class="card-head"><span class="dot" style="background:var(--play-grape)"></span><h3 data-t="ownPath"></h3><span class="chip-slot"></span></div>
+        <div class="opt-total"><span class="big"></span><span class="per" data-t="monthly"></span></div>
+        <details class="cost-breakdown"><summary data-t="costBreakdown"></summary><div class="opt-lines"></div></details>
+      </div>
+    </div>
+  </section>
+    <section class="two-col">
+    <div class="card">
+      <h3 class="chart-title" data-t="summaryTitle"></h3>
+      <p class="chart-sub" data-t="summarySub"></p>
+      <div id="bars" class="bars"></div>
+      <ul id="answers" class="answers"></ul>
+    </div>
+    <div class="card chart-card">
+      <h3 class="chart-title" data-t="chartTime"></h3>
+      <p class="chart-sub" data-t="chartTimeSub"></p>
+      <div class="legend" id="legendTime"></div>
+      <div class="chart-wrap" id="chartTime"></div>
+      <details class="data-table"><summary data-t="showData"></summary><div class="table-wrap" id="tableTime"></div></details>
+    </div>
+  </section>
+    <details class="panel" id="modelsPanel">
+    <summary><span data-t="secModels"></span></summary>
+    <p class="sec-note" data-t="modelsNote"></p>
+    <div class="table-wrap">
+      <table id="modelTable">
+        <thead><tr>
+          <th data-t="thModel"></th><th class="num" data-t="thTok"></th><th class="num" data-t="thIn"></th><th class="num" data-t="thOut"></th>
+          <th class="num" data-t="thReq"></th><th class="num" data-t="thMonth"></th><th data-t="thVs"></th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </details>
+    <details class="panel" id="checksPanel">
     <summary data-t="checksTitle"></summary>
     <button class="ghost-btn" id="runChecks" type="button" data-t="runChecks"></button>
     <p id="checksStatus" role="status"></p>
     <ul id="checksResults"></ul>
   </details>
-  <footer class="shortcuts" data-t="shortcuts"></footer>
-  <div class="sr-only" aria-live="polite" id="live"></div>
+    <footer class="shortcuts" data-t="shortcuts"></footer>
+    <div class="sr-only" aria-live="polite" id="live"></div>
+  </div>
   <dialog class="assump" id="assumptions" aria-labelledby="assumpTitle">
     <div class="assump-head">
       <h2 id="assumpTitle" data-t="assumpTitle"></h2>
@@ -732,6 +823,8 @@ const T = {
 };
 
 Object.assign(T.pl, {
+  dashboardLead: 'Asystent RAG w firmie: porównaj API, chmurę GPU i własny serwer.', costBreakdown: 'Szczegóły kosztów',
+  settingsTitle: 'Ustawienia', settingsDone: 'Pokaż wyniki', settingsClose: 'Zamknij ustawienia', scenarioTitle: 'Zapis i pliki',
   estimateNotice: 'Szacunek kosztów inferencji, nie oferta ani gwarancja jakości i wydajności. Kwoty netto.',
   cloudOps: 'Stała obsługa chmury / mies. (PLN)', ownReplace: 'Wymiana sprzętu co (mies.)',
   scenarioSave: 'Zapisz lokalnie', scenarioExport: 'Eksport JSON', scenarioImport: 'Import JSON', scenarioReset: 'Reset scenariusza',
@@ -747,6 +840,8 @@ Object.assign(T.pl, {
   importBusy: 'Wczytywanie pliku…', csvLoaded: 'Cennik wczytany. Zapisz scenariusz, aby zachować zmiany.',
 });
 Object.assign(T.en, {
+  dashboardLead: 'A company RAG assistant: compare API, cloud GPU and your own server.', costBreakdown: 'Cost breakdown',
+  settingsTitle: 'Settings', settingsDone: 'Show results', settingsClose: 'Close settings', scenarioTitle: 'Save and files',
   estimateNotice: 'Inference cost estimate, not a quote or a quality/capacity guarantee. Net amounts.',
   cloudOps: 'Fixed cloud support / month (PLN)', ownReplace: 'Replace hardware every (months)',
   scenarioSave: 'Save locally', scenarioExport: 'Export JSON', scenarioImport: 'Import JSON', scenarioReset: 'Reset scenario',
@@ -764,7 +859,7 @@ Object.assign(T.en, {
 
 // ─── State ───
 const state = { ...DEFAULTS, lang: 'pl', models: [], csvSource: null };
-const App = { state, results: null, invalidFields: new Set(), fileBusy: false, fileRevision: 0, dirty: false };
+const App = { state, results: null, invalidFields: new Set(), fileBusy: false, fileRevision: 0, dirty: false, settingsOpen: false };
 
 // ─── DOM refs ───
 const $ = (id) => document.getElementById(id);
@@ -773,6 +868,11 @@ const modelSel = $('model');
 const modelTbody = document.querySelector('#modelTable tbody');
 const dropEl = $('drop');
 const dialogEl = $('assumptions');
+const settingsPanel = $('settingsPanel');
+const resultsPanel = $('resultsPanel');
+const settingsToggle = $('settingsToggle');
+const headerEl = document.querySelector('.edu-header');
+const mobileSettings = window.matchMedia('(max-width: 768px)');
 
 // ─── Helpers ───
 function t(key, vars) {
@@ -1242,6 +1342,7 @@ function applyI18n() {
   document.querySelectorAll('[data-t]').forEach((n) => { n.textContent = t(n.dataset.t); });
   document.querySelectorAll('[data-lang]').forEach((b) => { const active = b.dataset.lang === state.lang; b.classList.toggle('active', active); b.setAttribute('aria-pressed', String(active)); });
   document.title = state.lang === 'pl' ? 'Kalkulator kosztów AI – API, chmura, własny serwer' : 'AI cost calculator – API, cloud, own server';
+  $('settingsBackdrop').setAttribute('aria-label', t('settingsClose'));
 }
 function renderPresets() {
   const box = $('presets'); box.replaceChildren();
@@ -1629,6 +1730,38 @@ function dataTable(box, xs, series, xHead, xFmt) {
   });
   const th = el('thead'); th.append(hr); table.append(th, tb); box.replaceChildren(table);
 }
+// ─── Settings drawer ───
+function syncSettingsPanel() {
+  const open = mobileSettings.matches && App.settingsOpen;
+  appEl.dataset.settings = open ? 'open' : 'closed';
+  settingsToggle.setAttribute('aria-expanded', String(open));
+  $('settingsBackdrop').hidden = !open;
+  resultsPanel.inert = open;
+  headerEl.inert = open;
+  if (open) { settingsPanel.setAttribute('role', 'dialog'); settingsPanel.setAttribute('aria-modal', 'true'); }
+  else { settingsPanel.removeAttribute('role'); settingsPanel.removeAttribute('aria-modal'); }
+}
+function setSettingsOpen(open, restoreFocus = true) {
+  App.settingsOpen = Boolean(open && mobileSettings.matches);
+  syncSettingsPanel();
+  if (App.settingsOpen) $('settingsClose').focus();
+  else if (restoreFocus && mobileSettings.matches) settingsToggle.focus();
+}
+function onSettingsKeydown(e) {
+  if (!App.settingsOpen || dialogEl.open) return;
+  if (e.key === 'Escape') { e.preventDefault(); setSettingsOpen(false); return; }
+  if (e.key !== 'Tab') return;
+  const items = [...settingsPanel.querySelectorAll('button, input, select, summary, a[href], [tabindex="0"]')]
+    .filter((n) => {
+      const closed = n.closest('details:not([open])');
+      return !n.disabled && !n.hidden && n.getClientRects().length > 0 && (!closed || (n.tagName === 'SUMMARY' && n.parentElement === closed));
+    });
+  const first = items[0], last = items[items.length - 1];
+  if (!first) { e.preventDefault(); return; }
+  if (e.shiftKey && (document.activeElement === first || !settingsPanel.contains(document.activeElement))) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && (document.activeElement === last || !settingsPanel.contains(document.activeElement))) { e.preventDefault(); first.focus(); }
+}
+
 // ─── Scenario helpers ───
 const LS_SCENARIO = 'edulab-aicalc-scenario-v1';
 const MAX_SCENARIO_BYTES = 1024 * 1024;
@@ -1678,7 +1811,7 @@ function renderValidation() {
   $('scenarioExport').disabled = invalid || App.fileBusy;
   if (invalid) {
     App.results = null;
-    for (const key of Object.keys(appEl.dataset)) delete appEl.dataset[key];
+    for (const key of Object.keys(appEl.dataset)) if (key !== 'settings') delete appEl.dataset[key];
     appEl.dataset.state = 'invalid'; appEl.dataset.invalidFields = [...errors].join(',');
     document.querySelectorAll('.option').forEach((n) => { n.dataset.winner = 'false'; n.dataset.monthly = ''; n.classList.remove('winner'); n.querySelector('.chip-slot').replaceChildren(); });
     $('modelsPanel').hidden = true;
@@ -1738,6 +1871,18 @@ function checkDomContract(doc, result) {
   const checks = [];
   const probe = (name, fn) => { try { const pass = Boolean(fn()); checks.push({ name, pass, detail: pass ? '' : 'contract mismatch' }); } catch (error) { checks.push({ name, pass: false, detail: error.message }); } };
   probe('DOM: ready state', () => doc.querySelector('#app')?.dataset.state === 'ready' && result);
+  probe('DOM: settings containment', () => {
+    const sidebar = doc.querySelector('#settingsPanel');
+    return sidebar && [...NUM_FIELDS, ...TEXT_FIELDS, 'model', 'thinking', 'offPeak', 'presets', 'scenarioSave', 'advancedPanel'].every((id) => sidebar.contains(doc.querySelector('#' + id)));
+  });
+  probe('DOM: results without settings', () => {
+    const results = doc.querySelector('#resultsPanel');
+    return results && results.contains(doc.querySelector('#options')) && results.querySelectorAll('input, select').length === 0;
+  });
+  probe('DOM: settings toggle state', () => {
+    const open = doc.querySelector('#app')?.dataset.settings === 'open';
+    return doc.querySelector('#settingsToggle')?.getAttribute('aria-expanded') === String(open) && doc.querySelector('#resultsPanel')?.inert === open;
+  });
   for (const key of ['api', 'cloud', 'own']) {
     probe('DOM: ' + key + ' monthly cost', () => {
       const node = doc.querySelector('#opt' + key[0].toUpperCase() + key.slice(1));
@@ -1764,6 +1909,15 @@ function showChecks() {
 }
 
 // ─── Listeners ───
+settingsToggle.addEventListener('click', () => setSettingsOpen(!App.settingsOpen));
+$('settingsClose').addEventListener('click', () => setSettingsOpen(false));
+$('settingsBackdrop').addEventListener('click', () => setSettingsOpen(false));
+document.addEventListener('keydown', onSettingsKeydown);
+mobileSettings.addEventListener('change', () => {
+  const inSidebar = settingsPanel.contains(document.activeElement);
+  setSettingsOpen(false, false);
+  if (mobileSettings.matches && inSidebar) settingsToggle.focus();
+});
 function onInput(e) {
   const id = e.target.id;
   if (NUM_FIELDS.includes(id)) {
@@ -1896,6 +2050,7 @@ window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer
   applyI18n();
   renderModelSelect();
   syncInputs();
+  syncSettingsPanel();
   render();
   if (restoreError) $('scenarioStatus').textContent = t('scenarioError', { error: 'local storage' });
   if (new URLSearchParams(location.search).has('verify')) { $('checksPanel').open = true; showChecks(); }

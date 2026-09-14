@@ -46,17 +46,74 @@ class BrowserUnavailable(SmokeFailure):
 class ContractParser(HTMLParser):
     """Collect only the attributes needed by the DOM contract."""
 
-    TARGET_IDS = {"app", "checksPanel"}
+    TARGET_IDS = {
+        "app",
+        "checksPanel",
+        "settingsPanel",
+        "resultsPanel",
+        "options",
+        "presets",
+        "advancedPanel",
+        "settingsToggle",
+        "settingsClose",
+        "settingsBackdrop",
+        "scenarioSave",
+        "scenarioExport",
+        "scenarioImport",
+        "scenarioReset",
+    }
+    VOID_TAGS = {
+        "area",
+        "base",
+        "br",
+        "col",
+        "embed",
+        "hr",
+        "img",
+        "input",
+        "link",
+        "meta",
+        "param",
+        "source",
+        "track",
+        "wbr",
+    }
 
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
         self.nodes: dict[str, dict[str, str]] = {}
+        self.records: list[dict[str, object]] = []
+        self.stack: list[dict[str, object]] = []
 
-    def handle_starttag(self, _tag: str, attrs: list[tuple[str, str | None]]) -> None:
+    def _start(self, tag: str, attrs: list[tuple[str, str | None]], self_closing: bool = False) -> None:
         attributes = {name: value or "" for name, value in attrs}
+        record: dict[str, object] = {
+            "tag": tag.lower(),
+            "attrs": attributes,
+            "ancestors": tuple(self.stack),
+        }
+        self.records.append(record)
         node_id = attributes.get("id")
-        if node_id in self.TARGET_IDS and node_id not in self.nodes:
-            self.nodes[node_id] = attributes
+        if node_id and node_id not in self.nodes:
+            self.nodes[node_id] = {
+                **attributes,
+                "__tag": tag.lower(),
+            }
+        if not self_closing and tag.lower() not in self.VOID_TAGS:
+            self.stack.append(record)
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        self._start(tag, attrs)
+
+    def handle_startendtag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        self._start(tag, attrs, self_closing=True)
+
+    def handle_endtag(self, tag: str) -> None:
+        tag = tag.lower()
+        for index in range(len(self.stack) - 1, -1, -1):
+            if self.stack[index]["tag"] == tag:
+                del self.stack[index:]
+                break
 
 
 class QuietHandler(SimpleHTTPRequestHandler):
@@ -246,7 +303,114 @@ def check_dom_contract(dom: str, label: str) -> tuple[int, int]:
             f"{label}: calculator checks failed ({passed}/{total}); "
             "expected equal values and total > 0"
         )
+
+    check_layout_contract(parser, label)
     return passed, total
+
+
+def check_layout_contract(parser: ContractParser, label: str) -> None:
+    """Validate the sidebar/results containment and mobile drawer contract."""
+
+    def required(node_id: str) -> dict[str, str]:
+        node = parser.nodes.get(node_id)
+        if not node:
+            raise SmokeFailure(f"{label}: dumped DOM has no #{node_id} element")
+        return node
+
+    def records_with_id(node_id: str) -> list[dict[str, object]]:
+        return [
+            record
+            for record in parser.records
+            if (record["attrs"] or {}).get("id") == node_id
+        ]
+
+    def is_descendant(record: dict[str, object], ancestor_id: str) -> bool:
+        return any(
+            (ancestor["attrs"] or {}).get("id") == ancestor_id
+            for ancestor in record["ancestors"]  # type: ignore[index]
+        )
+
+    def tag(node: dict[str, str]) -> str:
+        return node.get("__tag", "")
+
+    settings = required("settingsPanel")
+    results = required("resultsPanel")
+    options = required("options")
+    if tag(settings) != "aside":
+        raise SmokeFailure(f"{label}: #settingsPanel must be an <aside>")
+    if not results or not options:
+        raise SmokeFailure(f"{label}: results layout contract is incomplete")
+
+    option_records = records_with_id("options")
+    if len(option_records) != 1 or not is_descendant(option_records[0], "resultsPanel"):
+        raise SmokeFailure(f"{label}: #resultsPanel must contain #options")
+
+    editable = [
+        record
+        for record in parser.records
+        if record["tag"] in {"input", "select"}
+    ]
+    outside_settings = [
+        (record["attrs"] or {}).get("id") or record["tag"]
+        for record in editable
+        if not is_descendant(record, "settingsPanel")
+    ]
+    if outside_settings:
+        raise SmokeFailure(
+            f"{label}: input/select controls outside #settingsPanel: "
+            + ", ".join(str(value) for value in outside_settings)
+        )
+
+    option_controls = [
+        (record["attrs"] or {}).get("id") or record["tag"]
+        for record in editable
+        if is_descendant(record, "options")
+    ]
+    if option_controls:
+        raise SmokeFailure(
+            f"{label}: result cards contain editable controls: "
+            + ", ".join(str(value) for value in option_controls)
+        )
+
+    for node_id in ("presets", "advancedPanel"):
+        records = records_with_id(node_id)
+        if len(records) != 1 or not is_descendant(records[0], "settingsPanel"):
+            raise SmokeFailure(f"{label}: #{node_id} must be inside #settingsPanel")
+
+    for node_id in ("scenarioSave", "scenarioExport", "scenarioImport", "scenarioReset"):
+        records = records_with_id(node_id)
+        if len(records) != 1 or not is_descendant(records[0], "settingsPanel"):
+            raise SmokeFailure(f"{label}: #{node_id} must be inside #settingsPanel")
+
+    page_heads = [
+        record
+        for record in parser.records
+        if "page-head" in str((record["attrs"] or {}).get("class", "")).split()
+    ]
+    if len(page_heads) != 1:
+        raise SmokeFailure(f"{label}: expected one compact .page-head")
+
+    toggle = required("settingsToggle")
+    if tag(toggle) != "button" or toggle.get("type") != "button":
+        raise SmokeFailure(f"{label}: #settingsToggle must be a type=button control")
+    if toggle.get("aria-controls") != "settingsPanel":
+        raise SmokeFailure(f"{label}: #settingsToggle must control #settingsPanel")
+    if toggle.get("aria-expanded") not in {"true", "false"}:
+        raise SmokeFailure(f"{label}: #settingsToggle needs aria-expanded")
+
+    for node_id in ("settingsClose", "settingsBackdrop"):
+        control = required(node_id)
+        if tag(control) != "button" or control.get("type") != "button":
+            raise SmokeFailure(f"{label}: #{node_id} must be a type=button control")
+
+    app = required("app")
+    if app.get("data-settings") not in {"open", "closed"}:
+        raise SmokeFailure(f"{label}: #app data-settings must be open or closed")
+    expected_expanded = "true" if app.get("data-settings") == "open" else "false"
+    if toggle.get("aria-expanded") != expected_expanded:
+        raise SmokeFailure(
+            f"{label}: #app data-settings and #settingsToggle aria-expanded disagree"
+        )
 
 
 def probe_http(url: str) -> None:
