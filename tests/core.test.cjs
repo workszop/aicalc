@@ -80,13 +80,18 @@ assert.deepEqual(JSON.parse(JSON.stringify(steps)), [true, true, true], 'break-e
 const fixedInfra = run(`(() => {
   const s = { ...DEFAULTS }, m = models.find((model) => model.id === 'gpt-5.6-terra');
   const r = computeResults(s, models);
-  return { api: r.api.monthly - apiCost(m, s).monthly, cloud: r.cloud.monthly - cloudCost(s).monthly, own: r.own.monthly - ownCost(s).monthly, small: r.small.monthly - smallCost(s).monthly,
-    rowFixed: r.modelRows[0].c.fixed, api12: cumulativeCost('api', r.api, 12) - r.api.monthly * 12 };
+  return { api: r.api.monthly - apiCost(m, s).monthly - s.apiOps, cloud: r.cloud.monthly - cloudCost(s).monthly, own: r.own.monthly - ownCost(s).monthly, small: r.small.monthly - smallCost(s).monthly,
+    rowFixed: r.modelRows[0].c.fixed, rowSoft: r.modelRows[0].c.software.saas, api12: cumulativeCost('api', r.api, 12) - r.api.monthly * 12,
+    small0: cumulativeCost('small', r.small, 0), small12: cumulativeCost('small', r.small, 12), fixedOnly: r.cloud.fixed + r.own.fixed + r.small.fixed };
 })()`);
-assert.ok(Math.abs(fixedInfra.api - 1000) < 1e-9, 'API total adds 1 000 PLN/month infrastructure');
-assert.ok(fixedInfra.cloud === 0 && fixedInfra.own === 0 && fixedInfra.small === 0, 'fixed infrastructure applies to the API path only');
-assert.equal(fixedInfra.rowFixed, 1000, 'model table rows include the API infrastructure');
+assert.equal(fixedInfra.rowFixed, 1000, 'model table rows include the 1 000 PLN/month API infrastructure');
+assert.equal(fixedInfra.fixedOnly, 0, 'fixed infrastructure applies to the API path only');
 assert.equal(fixedInfra.api12, 0, 'API cumulative cost is linear');
+assert.ok(Math.abs(fixedInfra.api - 5000) < 1e-9 && Math.abs(fixedInfra.cloud - 5000) < 1e-9, 'Zagłoba RAG SaaS: 5 000 with API and with cloud');
+assert.ok(Math.abs(fixedInfra.own - (150000 / 36 + 20000 / 12)) < 1e-9 && Math.abs(fixedInfra.small - fixedInfra.own) < 1e-9, 'Zagłoba RAG licence 150 000 + 20 000/year on hardware paths');
+assert.equal(fixedInfra.small0, 35000 + 150000, 'GB10 cumulative cost starts at hardware + licence');
+assert.ok(Math.abs(fixedInfra.small12 - (185000 + 12 * (175.104 + 20000 / 12))) < 1e-9, 'GB10 first year adds support but not the licence again');
+assert.equal(fixedInfra.rowSoft, 5000, 'model table rows include the SaaS fee');
 assert.throws(() => run('computeResults({ ...DEFAULTS, users: 0 }, models)'), /invalid|state/i, 'invalid state blocks results');
 
 const tierRates = run(`(() => {

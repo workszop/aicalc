@@ -8,6 +8,14 @@ czterech wariantach:
 3. **małe wdrożenie na Dell Pro Max GB10** – pakiet wyceniony na **35 000 PLN**,
 4. własny serwer (RTX PRO 6000).
 
+Nad infrastrukturą liczona jest warstwa oprogramowania **Quantica Zagłoba RAG**:
+przy API i chmurze jako SaaS (domyślnie 5 000 PLN / mies. w obu), przy Dell
+GB10 i własnym serwerze jako sprzedaż licencji (150 000 PLN jednorazowo,
+amortyzowane przez 36 mies.) z rocznym kontraktem wsparcia (20 000 PLN / rok).
+Każda karta pokazuje sumę oraz podział „Oprogramowanie · Infrastruktura”;
+na wykresie narastającym licencja płatna jest w miesiącu 0 i nie powtarza się
+przy wymianie sprzętu.
+
 To **szacunek kosztu inferencji**, a nie oferta, wycena wdrożenia ani gwarancja
 jakości lub przepustowości. Wszystkie kwoty są netto, bez VAT.
 
@@ -36,7 +44,7 @@ Domyślne parametry są edytowalne w panelu ustawień:
 | --- | --- | --- |
 | `smallCapex` | 35 000 PLN | cena pakietu Dell GB10 z konfiguracją |
 | `smallAmort` / `smallReplace` | 36 mies. | amortyzacja i wymiana rozliczane osobno |
-| `smallOps` | 0 PLN / mies. | utrzymanie sprzętu domyślnie nie jest liczone |
+| `smallOps` | 0 PLN / mies. | utrzymanie sprzętu nie jest liczone (wsparcie jest w kontrakcie Zagłoba RAG) |
 | `smallPower` | 240 W | pobór stacji GB10, pełna moc 24/7 jako górna granica |
 | `smallPrefill` / `smallDecode` | 3 000 / 250 tok/s | ilustracyjne; pamięć ~273 GB/s ogranicza generowanie |
 
@@ -46,9 +54,12 @@ udziału w porównaniu, paskach ani wykresie. Poniżej limitu, gdy szczyt
 przekracza przepustowość, kalkulator dolicza kolejne sztuki GB10. Wartości
 przepustowości trzeba zmierzyć na własnym modelu przed decyzją.
 
-Przy API doliczana jest stała infrastruktura `apiOps` (domyślnie 1 000 PLN /
-mies.: hosting aplikacji, baza wektorowa, sieć); kwoty w tabeli modeli też ją
-zawierają. Koszty obsługi sprzętu (`cloudOps`, `ownOps`, `smallOps`) domyślnie
+Parametry oprogramowania (sekcja „Oprogramowanie: Quantica Zagłoba RAG”):
+`softApi` 5 000, `softCloud` 5 000 PLN / mies., `softLicense` 150 000 PLN,
+`softSupport` 20 000 PLN / rok, `softAmort` 36 mies. Przy API doliczana jest
+stała infrastruktura `apiOps` (domyślnie 1 000 PLN / mies.: hosting aplikacji,
+baza wektorowa, sieć); kwoty w tabeli modeli zawierają SaaS i tę
+infrastrukturę. Koszty obsługi sprzętu (`cloudOps`, `ownOps`, `smallOps`) domyślnie
 wynoszą 0.
 
 ## Scenariusze i cennik
@@ -72,7 +83,8 @@ wynoszą 0.
 
 Na dużym ekranie ustawienia są zebrane w niezależnie przewijanym panelu po
 lewej stronie. Panel obejmuje obciążenie (widoczne są trzy scenariusze,
-szczegóły zwinięte), model API, chmurę GPU, Dell GB10, własny serwer,
+szczegóły zwinięte), oprogramowanie Zagłoba RAG, model API, chmurę GPU,
+Dell GB10, własny serwer,
 ustawienia zaawansowane oraz operacje scenariusza. Po prawej stronie pozostają
 wyniki, wykresy i porównanie modeli, więc zmiana parametrów nie wypycha
 wyników poza ekran.
@@ -160,9 +172,11 @@ python3 tests/browser-smoke.py
 
 Ostatni test uruchamia lokalny serwer na losowym porcie i świeży profil
 Google Chrome/Chromium, a następnie sprawdza tryb `?verify=1` zarówno przez
-`http://`, jak i `file://` (24 sprawdzenia, w tym kontrakt DOM dla czterech
+`http://`, jak i `file://` (25 sprawdzeń, w tym kontrakt DOM dla czterech
 kart: `data-small-monthly`, `data-small-units`, `data-small-eligible`,
-`data-break-even-small-users`, `data-payback-small-vs-cloud`). Jeśli
+`data-break-even-small-users`, `data-payback-small-vs-cloud`,
+`data-api-software`, `data-own-software`; każda karta publikuje
+`data-software` i `data-infra`). Jeśli
 przeglądarka nie jest zainstalowana, test
 kończy się czytelnym komunikatem z instrukcją instalacji. Skrypt niczego nie
 instaluje.
@@ -172,8 +186,10 @@ instaluje.
 `aicalc` is a dependency-free, single-file educational estimator for RAG
 inference costs across model API (plus PLN 1,000 per month of fixed
 infrastructure), cloud GPU, a small Dell Pro Max GB10 deployment priced at
-PLN 35,000 (available up to 199 users), and own-server options. It is an
-estimate, not a quote or a capacity guarantee. Open `index.html` directly or
+PLN 35,000 (available up to 199 users), and own-server options, plus a
+Quantica Zagłoba RAG software layer (SaaS 5,000 PLN per month with API/cloud;
+a 150,000 PLN licence with a 20,000 PLN yearly support contract on hardware).
+It is an estimate, not a quote or a capacity guarantee. Open `index.html` directly or
 serve the directory with Python. Prices were checked on 14 Sep 2026; token
 factors are illustrative and hardware throughput is not production-verified.
 On desktop, editable inputs live in a left settings sidebar; on small screens,
