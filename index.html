@@ -193,6 +193,8 @@ section { margin-bottom: var(--sp-8); }
 
 .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
 .grid-3 > * { min-width: 0; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.grid-4 > * { min-width: 0; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--shadow-sm); padding: 22px 24px; }
 .card-head { display: flex; align-items: center; gap: var(--sp-3); margin-bottom: var(--sp-4); }
 .card-head h3 { font-family: var(--font-display); font-weight: 600; font-size: var(--h4); margin: 0; color: var(--ink); }
@@ -316,7 +318,7 @@ progress#fileProgress { accent-color: var(--yellow); }
   .edu-header-inner { padding: 6px 16px; }
   .edu-logo { width: 48px; height: 48px; }
   main { padding: 24px 16px 50px; }
-  .grid-3, .two-col { grid-template-columns: 1fr; }
+  .grid-3, .grid-4, .two-col { grid-template-columns: 1fr; }
 }
 
 /* ─── v3: simplified layout ─── */
@@ -389,6 +391,8 @@ details.settings-section { border: 0; border-top: 1px solid var(--line); border-
 details.settings-section > summary { padding: var(--sp-4) 0; font-size: var(--body); }
 details.settings-section > :not(summary) { margin-left: 0; margin-right: 0; }
 details.settings-section[open] { padding-bottom: var(--sp-4); }
+.settings-body #workloadDetails { border-top: 0; }
+.settings-body #workloadDetails > summary { padding-top: var(--sp-2); font-size: var(--body-sm); }
 #scenarioPanel .toolbar { gap: var(--sp-2); margin: 0; }
 #scenarioPanel .ghost-btn { flex: 1 1 42%; font-size: var(--small-size); padding: 10px; }
 #scenarioStatus { flex-basis: 100%; }
@@ -411,6 +415,9 @@ details.settings-section[open] { padding-bottom: var(--sp-4); }
 #resultsPanel .two-col { grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); }
 #settingsToggle, #settingsClose, #settingsBackdrop { display: none; }
 summary:focus-visible, #resultsPanel:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
+@media (min-width: 769px) and (max-width: 1400px) {
+  #options.grid-4 { grid-template-columns: repeat(2, 1fr); }
+}
 @media (min-width: 769px) and (max-width: 1200px) {
   :root { --sidebar-width: 290px; --total-size: 28px; }
   #resultsPanel .two-col { grid-template-columns: minmax(0, 1fr); }
@@ -464,6 +471,8 @@ summary:focus-visible, #resultsPanel:focus-visible { outline: 2px solid var(--ye
       <h2 class="sec-title" id="workloadTitle" data-t="secWorkload"></h2>
       <div class="edu-seg" id="presets" role="group" aria-labelledby="workloadTitle"></div>
     </div>
+    <details class="panel settings-section" id="workloadDetails">
+    <summary data-t="workloadDetails"></summary>
     <div class="card">
       <div class="fields-grid">
         <div class="field"><label for="users" data-t="users"></label><input id="users" type="number" min="1" step="1"></div>
@@ -482,12 +491,14 @@ summary:focus-visible, #resultsPanel:focus-visible { outline: 2px solid var(--ye
         </div>
       </div>
     </div>
+    </details>
   </section>
       <details class="panel settings-section" id="apiSettings" open>
         <summary data-t="apiPath"></summary>
         <div class="opt-settings">
           <div class="field"><label for="model" data-t="model"></label><select id="model"></select></div>
           <p class="hint" id="modelNote"></p>
+          <div class="field"><label for="apiOps" data-t="apiOps"></label><input id="apiOps" type="number" min="0" step="100"></div>
         </div>
       </details>
       <details class="panel settings-section" id="cloudSettings">
@@ -501,6 +512,20 @@ summary:focus-visible, #resultsPanel:focus-visible { outline: 2px solid var(--ye
               <button type="button" data-cloudmode="247" data-t="mode247"></button>
               <button type="button" data-cloudmode="work" data-t="modeWork"></button>
             </div>
+          </div>
+        </div>
+      </details>
+      <details class="panel settings-section" id="smallSettings">
+        <summary data-t="smallPath"></summary>
+        <div class="opt-settings">
+          <div class="field"><label for="smallGpu" data-t="smallGpu"></label><input id="smallGpu" type="text"></div>
+          <div class="field-row">
+            <div class="field"><label for="smallCapex" data-t="capex"></label><input id="smallCapex" type="number" min="0" step="1000"></div>
+            <div class="field"><label for="smallAmort" data-t="amort"></label><input id="smallAmort" type="number" min="1" step="6"></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label for="smallOps" data-t="ops"></label><input id="smallOps" type="number" min="0" step="100"></div>
+            <div class="field"><label for="smallMaxUsers" data-t="smallMaxUsers"></label><input id="smallMaxUsers" type="number" min="1" step="1"></div>
           </div>
         </div>
       </details>
@@ -540,6 +565,8 @@ summary:focus-visible, #resultsPanel:focus-visible { outline: 2px solid var(--ye
         </div>
         <div class="field"><label for="ownPower" data-t="power"></label><input id="ownPower" type="number" min="0" step="50"></div>
         <div class="field"><label for="ownReplace" data-t="ownReplace"></label><input id="ownReplace" type="number" min="1" max="240" step="1"></div>
+        <div class="field"><label for="smallPower" data-t="smallPower"></label><input id="smallPower" type="number" min="0" step="10"></div>
+        <div class="field"><label for="smallReplace" data-t="smallReplace"></label><input id="smallReplace" type="number" min="1" max="240" step="1"></div>
       </div>
       <div>
         <h4 data-t="advGpu"></h4>
@@ -550,6 +577,10 @@ summary:focus-visible, #resultsPanel:focus-visible { outline: 2px solid var(--ye
         <div class="field-row">
           <div class="field"><label for="ownPrefill" data-t="ownPrefill"></label><input id="ownPrefill" type="number" min="1" step="500"></div>
           <div class="field"><label for="ownDecode" data-t="ownDecode"></label><input id="ownDecode" type="number" min="1" step="100"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label for="smallPrefill" data-t="smallPrefill"></label><input id="smallPrefill" type="number" min="1" step="100"></div>
+          <div class="field"><label for="smallDecode" data-t="smallDecode"></label><input id="smallDecode" type="number" min="1" step="10"></div>
         </div>
       </div>
       <div>
@@ -594,7 +625,7 @@ summary:focus-visible, #resultsPanel:focus-visible { outline: 2px solid var(--ye
     </div>
     <section>
     <h2 class="sec-title" data-t="secOptions"></h2>
-    <div class="grid-3" id="options" aria-live="polite">
+    <div class="grid-4" id="options" aria-live="polite">
       <div class="card option" id="optApi" data-path="api">
         <div class="card-head"><span class="dot" style="background:var(--blue)"></span><h3 data-t="apiPath"></h3><span class="chip-slot"></span></div>
         <div class="opt-total"><span class="big"></span><span class="per" data-t="monthly"></span></div>
@@ -602,6 +633,11 @@ summary:focus-visible, #resultsPanel:focus-visible { outline: 2px solid var(--ye
       </div>
       <div class="card option" id="optCloud" data-path="cloud">
         <div class="card-head"><span class="dot" style="background:var(--green)"></span><h3 data-t="cloudPath"></h3><span class="chip-slot"></span></div>
+        <div class="opt-total"><span class="big"></span><span class="per" data-t="monthly"></span></div>
+        <details class="cost-breakdown"><summary data-t="costBreakdown"></summary><div class="opt-lines"></div></details>
+      </div>
+      <div class="card option" id="optSmall" data-path="small">
+        <div class="card-head"><span class="dot" style="background:var(--play-berry)"></span><h3 data-t="smallPath"></h3><span class="chip-slot"></span></div>
         <div class="opt-total"><span class="big"></span><span class="per" data-t="monthly"></span></div>
         <details class="cost-breakdown"><summary data-t="costBreakdown"></summary><div class="opt-lines"></div></details>
       </div>
@@ -697,11 +733,13 @@ const PRESETS = {
   S3: { users: 300, reqPerDay: 20 },
 };
 const PRESET_FIELDS = Object.keys(PRESETS.S1);
+const SMALL_BASELINE = 1147.3262222222222; // Dell GB10 at scenario S1: 35 000 / 36 + 240 W × 24 h × 30.4 d × 1 PLN/kWh
 const DEFAULTS = {
   ...PRESETS.S1, chunks: 5, chunkTok: 2000, promptTok: 500, outTok: 500, docLang: 'pl', workDays: 250, workHours: 8,
-  model: 'OpenAI GPT-5.6 Terra', fx: 3.73, offPeak: false, thinking: false, thinkMult: 3,
+  model: 'OpenAI GPT-5.6 Terra', apiOps: 1000, fx: 3.73, offPeak: false, thinking: false, thinkMult: 3,
   cloudGpu: '1× NVIDIA H100 80GB', cloudPrice: 10000, cloudOps: 0, cloudMode: '247', cloudPrefill: 10000, cloudDecode: 1500,
-  ownGpu: '1× RTX PRO 6000 96GB', ownCapex: 250000, ownAmort: 36, ownReplace: 36, ownOps: 1000, ownPower: 900, kwh: 1.0, ownPrefill: 10000, ownDecode: 1500,
+  ownGpu: '1× RTX PRO 6000 96GB', ownCapex: 250000, ownAmort: 36, ownReplace: 36, ownOps: 0, ownPower: 900, kwh: 1.0, ownPrefill: 10000, ownDecode: 1500,
+  smallGpu: 'Dell Pro Max GB10 (128 GB)', smallCapex: 35000, smallAmort: 36, smallReplace: 36, smallOps: 0, smallPower: 240, smallPrefill: 3000, smallDecode: 250, smallMaxUsers: 199,
   peak: 2, horizon: 36,
 };
 const FIELD_SCHEMA = {
@@ -713,6 +751,7 @@ const FIELD_SCHEMA = {
   outTok:      { min: 0,     max: 1000000,  integer: true },
   workDays:    { min: 1,     max: 365,      integer: true },
   workHours:   { min: 1,     max: 24,       integer: true },
+  apiOps:      { min: 0,     max: 100000000, integer: false },
   fx:          { min: 0.1,   max: 100,      integer: false },
   thinkMult:   { min: 1,     max: 20,       integer: false },
   cloudPrice:  { min: 0,     max: 100000000, integer: false },
@@ -727,11 +766,19 @@ const FIELD_SCHEMA = {
   kwh:         { min: 0,     max: 100,      integer: false },
   ownPrefill:  { min: 1,     max: 100000000, integer: false },
   ownDecode:   { min: 1,     max: 100000000, integer: false },
+  smallCapex:  { min: 0,     max: 100000000, integer: true },
+  smallAmort:  { min: 1,     max: 240,      integer: true },
+  smallReplace:{ min: 1,     max: 240,      integer: true },
+  smallOps:    { min: 0,     max: 100000000, integer: false },
+  smallPower:  { min: 0,     max: 1000000,   integer: true },
+  smallPrefill:{ min: 1,     max: 100000000, integer: false },
+  smallDecode: { min: 1,     max: 100000000, integer: false },
+  smallMaxUsers:{ min: 1,    max: 20000,    integer: true },
   peak:        { min: 1,     max: 100,      integer: false },
   horizon:     { min: 6,     max: 120,      integer: true },
 };
 const NUM_FIELDS = Object.keys(FIELD_SCHEMA);
-const TEXT_FIELDS = ['cloudGpu','ownGpu'];
+const TEXT_FIELDS = ['cloudGpu','ownGpu','smallGpu'];
 const LS_LANG = 'edulab-token-cost-lang';
 const SOURCES = {
   openai: 'https://developers.openai.com/api/docs/pricing',
@@ -745,12 +792,13 @@ const SOURCES = {
   power: 'https://onmedia.com.pl/cena-pradu-dla-firm-czerwiec-2026/',
   rag: 'https://www.premai.io/blog/rag-chunking-strategies-the-2026-benchmark-guide/',
   bielik: 'https://arxiv.org/html/2410.18565v1',
+  gb10: 'https://www.nvidia.com/en-us/products/workstations/dgx-spark/',
 };
 
 const T = {
   pl: {
     title: 'Ile kosztuje AI w firmie?',
-    lead: 'Asystent RAG odpowiada na podstawie firmowych dokumentów. Porównaj miesięczny koszt trzech opcji: płatne API modelu, GPU w chmurze i własny serwer.',
+    lead: 'Asystent RAG odpowiada na podstawie firmowych dokumentów. Porównaj miesięczny koszt czterech opcji: płatne API modelu, GPU w chmurze, małe wdrożenie na Dell GB10 i własny serwer.',
     assumpBtn: 'Założenia i źródła', assumpTitle: 'Założenia kalkulatora', close: 'Zamknij',
     assumpLead: 'Źródła stawek zewnętrznych sprawdzone 14.09.2026. Domyślne obciążenie, parametry GPU i sprzętu są edytowalne i ilustracyjne. Koszty netto, bez VAT.',
     thAssump: 'Założenie', thValue: 'Wartość', thSource: 'Uzasadnienie i źródło',
@@ -759,8 +807,8 @@ const T = {
     promptTok: 'Instrukcje + pytanie (tok.)', outTok: 'Odpowiedź (tok.)',
     docLang: 'Język treści', langPl: 'Polski', langEn: 'Angielski',
     kvTokens: 'Tokeny / zapytanie (we / wy)', kvReqMonth: 'Zapytań / mies.',
-    secOptions: 'Trzy opcje – koszt miesięczny',
-    apiPath: 'API', cloudPath: 'Chmura GPU', ownPath: 'Własny serwer', monthly: '/ mies.',
+    secOptions: 'Cztery opcje – koszt miesięczny',
+    apiPath: 'API', cloudPath: 'Chmura GPU', ownPath: 'Własny serwer', smallPath: 'Małe wdrożenie · Dell GB10', monthly: '/ mies.',
     model: 'Model', gpu: 'GPU', cloudPrice: 'Cena GPU / mies. bez obsługi (PLN)', cloudMode: 'Czas pracy GPU', mode247: '24/7', modeWork: 'Godziny pracy',
     capex: 'Zakup (PLN)', amort: 'Amortyzacja (mies.)', ops: 'Stała obsługa / mies. (PLN)', kwh: 'Prąd netto PLN / kWh',
     lInput: 'Tokeny wejścia', lOutput: 'Tokeny wyjścia', lGpu: 'GPU bez obsługi', lAmort: 'Amortyzacja zakupu', lEnergy: 'Prąd netto', lOps: 'Obsługa',
@@ -768,11 +816,12 @@ const T = {
     cheapest: 'Najtańsze', tierNote: 'Prompt powyżej {k}K tokenów: droższa stawka.', ctxOver: 'Prompt nie mieści się w oknie kontekstu modelu!',
     summaryTitle: 'Podsumowanie miesięczne', summarySub: 'Koszt każdej opcji przy bieżącym obciążeniu.',
     aApiVsCloud: 'Pierwszy zakres przewagi API nad chmurą kończy się przy', aApiVsOwn: 'Pierwszy zakres przewagi API nad własnym serwerem kończy się przy',
+    aApiVsSmall: 'Pierwszy zakres przewagi API nad Dell GB10 kończy się przy', aPaybackSmall: 'Pierwsze przecięcie kosztów gotówkowych Dell GB10 z chmurą po',
     aPayback: 'Pierwsze przecięcie kosztów gotówkowych serwera z chmurą po', aMinute: 'Zapytanie API a minuta pracy (1,49 zł)',
     usersUnit: 'użytk.', monthsUnit: 'mies.', never: 'nie w ciągu 10 lat', apiNever: 'nigdy (już 1 osoba)',
-    chartTime: 'Koszt narastająco w czasie', chartTimeSub: 'Własny serwer startuje od ceny zakupu. Co okres wymiany sprzętu doliczamy kolejny zakup.',
+    chartTime: 'Koszt narastająco w czasie', chartTimeSub: 'Dell GB10 i własny serwer startują od ceny zakupu. Co okres wymiany sprzętu doliczamy kolejny zakup.',
     showData: 'Pokaż dane', monthLabel: 'Miesiąc',
-    secModels: 'Porównaj wszystkie modele API', modelsNote: 'Tokeny są szacowane dla rodziny modelu, nie liczone uruchomieniem tokenizerów. Kliknij wiersz, aby wybrać model.',
+    secModels: 'Porównaj wszystkie modele API', modelsNote: 'Kwoty miesięczne zawierają stałą infrastrukturę API. Tokeny są szacowane dla rodziny modelu, nie liczone uruchomieniem tokenizerów. Kliknij wiersz, aby wybrać model.',
     thModel: 'Model', thTok: 'Tokeny we / wy', thIn: 'We $/1M', thOut: 'Wy $/1M', thReq: 'Zapytanie', thMonth: 'Miesięcznie', thVs: 'Na tle GPU',
     vsCheaper: 'tańsze niż GPU', vsDearer: 'droższe niż oba GPU', vsMid: 'pomiędzy',
     secAdvanced: 'Ustawienia zaawansowane', advApi: 'API', advTime: 'Czas i obciążenie', advGpu: 'Przepustowość GPU (tok/s)',
@@ -782,11 +831,11 @@ const T = {
     csvTitle: 'Cennik modeli', csvSource: 'Źródło:', csvLoad: 'Wczytaj CSV', csvReset: 'Cennik wbudowany',
     csvBuiltIn: 'cennik_modeli_2026-09.csv (wbudowany)', csvError: 'Nie udało się odczytać CSV: brak wymaganych kolumn.',
     shortcuts: 'Skróty: 1–3 scenariusze · A założenia · L język · Ctrl/Cmd+S zapisz · ↑/↓ na liście modeli',
-    live: 'API {api}, chmura {cloud}, własny serwer {own} miesięcznie.',
+    live: 'API {api}, chmura {cloud}, Dell GB10 {small}, własny serwer {own} miesięcznie.',
   },
   en: {
     title: 'What does AI cost a business?',
-    lead: 'A RAG assistant answers from company documents. Compare the monthly cost of three options: a paid model API, a cloud GPU and your own server.',
+    lead: 'A RAG assistant answers from company documents. Compare the monthly cost of four options: a paid model API, a cloud GPU, a small deployment on a Dell GB10 and your own server.',
     assumpBtn: 'Assumptions and sources', assumpTitle: 'Calculator assumptions', close: 'Close',
     assumpLead: 'External rate sources checked on 14 Sep 2026. Default workload, GPU and hardware values are editable illustrations. Net costs, excluding VAT.',
     thAssump: 'Assumption', thValue: 'Value', thSource: 'Rationale and source',
@@ -795,8 +844,8 @@ const T = {
     promptTok: 'Instructions + question (tok.)', outTok: 'Answer (tok.)',
     docLang: 'Content language', langPl: 'Polish', langEn: 'English',
     kvTokens: 'Tokens / request (in / out)', kvReqMonth: 'Requests / month',
-    secOptions: 'Three options – monthly cost',
-    apiPath: 'API', cloudPath: 'Cloud GPU', ownPath: 'Own server', monthly: '/ month',
+    secOptions: 'Four options – monthly cost',
+    apiPath: 'API', cloudPath: 'Cloud GPU', ownPath: 'Own server', smallPath: 'Small deployment · Dell GB10', monthly: '/ month',
     model: 'Model', gpu: 'GPU', cloudPrice: 'GPU price / month excl. support (PLN)', cloudMode: 'GPU running time', mode247: '24/7', modeWork: 'Working hours',
     capex: 'Purchase (PLN)', amort: 'Depreciation (months)', ops: 'Fixed support / month (PLN)', kwh: 'Net power PLN / kWh',
     lInput: 'Input tokens', lOutput: 'Output tokens', lGpu: 'GPU excl. support', lAmort: 'Purchase depreciation', lEnergy: 'Net power', lOps: 'Support',
@@ -804,11 +853,12 @@ const T = {
     cheapest: 'Cheapest', tierNote: 'Prompt above {k}K tokens: higher rate.', ctxOver: 'Prompt does not fit the model context window!',
     summaryTitle: 'Monthly summary', summarySub: 'Cost of each option at the current workload.',
     aApiVsCloud: 'First API-over-cloud advantage interval ends at', aApiVsOwn: 'First API-over-own-server advantage interval ends at',
+    aApiVsSmall: 'First API-over-Dell-GB10 advantage interval ends at', aPaybackSmall: 'First cash-cost crossing of Dell GB10 and cloud after',
     aPayback: 'First cash-cost crossing of server and cloud after', aMinute: 'API request vs a minute of work (1.49 PLN)',
     usersUnit: 'users', monthsUnit: 'mo.', never: 'not within 10 years', apiNever: 'never (even 1 user)',
-    chartTime: 'Cumulative cost over time', chartTimeSub: 'Own server starts at the purchase price. A new purchase is added each hardware-replacement period.',
+    chartTime: 'Cumulative cost over time', chartTimeSub: 'Dell GB10 and own server start at the purchase price. A new purchase is added each hardware-replacement period.',
     showData: 'Show data', monthLabel: 'Month',
-    secModels: 'Compare all API models', modelsNote: 'Tokens are estimated for the model family, not measured by running each tokenizer. Click a row to select the model.',
+    secModels: 'Compare all API models', modelsNote: 'Monthly amounts include the fixed API infrastructure. Tokens are estimated for the model family, not measured by running each tokenizer. Click a row to select the model.',
     thModel: 'Model', thTok: 'Tokens in / out', thIn: 'In $/1M', thOut: 'Out $/1M', thReq: 'Request', thMonth: 'Monthly', thVs: 'Vs GPU',
     vsCheaper: 'cheaper than GPU', vsDearer: 'dearer than both GPUs', vsMid: 'in between',
     secAdvanced: 'Advanced settings', advApi: 'API', advTime: 'Time and load', advGpu: 'GPU throughput (tok/s)',
@@ -818,12 +868,15 @@ const T = {
     csvTitle: 'Model price list', csvSource: 'Source:', csvLoad: 'Load CSV', csvReset: 'Built-in list',
     csvBuiltIn: 'cennik_modeli_2026-09.csv (built-in)', csvError: 'Could not read the CSV: required columns missing.',
     shortcuts: 'Shortcuts: 1–3 scenarios · A assumptions · L language · Ctrl/Cmd+S save · ↑/↓ in the model list',
-    live: 'API {api}, cloud {cloud}, own server {own} per month.',
+    live: 'API {api}, cloud {cloud}, Dell GB10 {small}, own server {own} per month.',
   },
 };
 
 Object.assign(T.pl, {
-  dashboardLead: 'Asystent RAG w firmie: porównaj API, chmurę GPU i własny serwer.', costBreakdown: 'Szczegóły kosztów',
+  dashboardLead: 'Asystent RAG w firmie: porównaj API, chmurę GPU, małe wdrożenie na Dell GB10 i własny serwer.', costBreakdown: 'Szczegóły kosztów',
+  workloadDetails: 'Szczegóły obciążenia',
+  apiOps: 'Infrastruktura API (PLN / mies.)', lApiInfra: 'Infrastruktura API',
+  smallGpu: 'Sprzęt', smallMaxUsers: 'Maks. użytkowników', smallTooMany: 'Opcja niedostępna: Dell GB10 obsługuje do {n} użytkowników.', smallPower: 'Moc Dell GB10 (W)', smallReplace: 'Dell GB10: wymiana co (mies.)', smallPrefill: 'Dell GB10: wejście', smallDecode: 'Dell GB10: wyjście',
   settingsTitle: 'Ustawienia', settingsDone: 'Pokaż wyniki', settingsClose: 'Zamknij ustawienia', scenarioTitle: 'Zapis i pliki',
   estimateNotice: 'Szacunek kosztów inferencji, nie oferta ani gwarancja jakości i wydajności. Kwoty netto.',
   cloudOps: 'Stała obsługa chmury / mies. (PLN)', ownReplace: 'Wymiana sprzętu co (mies.)',
@@ -840,7 +893,10 @@ Object.assign(T.pl, {
   importBusy: 'Wczytywanie pliku…', csvLoaded: 'Cennik wczytany. Zapisz scenariusz, aby zachować zmiany.',
 });
 Object.assign(T.en, {
-  dashboardLead: 'A company RAG assistant: compare API, cloud GPU and your own server.', costBreakdown: 'Cost breakdown',
+  dashboardLead: 'A company RAG assistant: compare API, cloud GPU, a small Dell GB10 deployment and your own server.', costBreakdown: 'Cost breakdown',
+  workloadDetails: 'Workload details',
+  apiOps: 'API infrastructure (PLN / month)', lApiInfra: 'API infrastructure',
+  smallGpu: 'Hardware', smallMaxUsers: 'Max users', smallTooMany: 'Option unavailable: Dell GB10 supports up to {n} users.', smallPower: 'Dell GB10 power (W)', smallReplace: 'Dell GB10: replace every (months)', smallPrefill: 'Dell GB10: input', smallDecode: 'Dell GB10: output',
   settingsTitle: 'Settings', settingsDone: 'Show results', settingsClose: 'Close settings', scenarioTitle: 'Save and files',
   estimateNotice: 'Inference cost estimate, not a quote or a quality/capacity guarantee. Net amounts.',
   cloudOps: 'Fixed cloud support / month (PLN)', ownReplace: 'Replace hardware every (months)',
@@ -1192,26 +1248,47 @@ function cloudCost(s, users = s.users) {
   const monthly = gpuMonthly + cloudOps;
   return { ...g, hours, gpuMonthly, cloudOps, monthly, perReq: w.reqMonth ? monthly / w.reqMonth : 0 };
 }
-function ownCost(s, users = s.users) {
+// Purchased hardware (own server and the small Dell GB10 deployment) share one cost model.
+const SERVER_PATHS = ['own', 'small'];
+const COST_PATHS = ['api', 'cloud', ...SERVER_PATHS];
+function hardwareCost(s, users, h) {
   const w = workload(s, users);
-  const g = gpuUnits(w, s.ownPrefill, s.ownDecode);
-  const energy = g.units * s.ownPower / 1000 * 24 * 30.4 * s.kwh;
-  const amort = g.units * s.ownCapex / s.ownAmort;
-  const ownOps = s.ownOps;
-  const running = energy + ownOps;
+  const g = gpuUnits(w, h.prefill, h.decode);
+  const energy = g.units * h.power / 1000 * 24 * 30.4 * s.kwh;
+  const amort = g.units * h.capex / h.amort;
+  const ops = h.ops;
+  const running = energy + ops;
   const monthly = amort + running;
-  const replacementMonths = Number.isFinite(s.ownReplace) ? s.ownReplace : s.ownAmort;
-  return { ...g, energy, amort, running, ownOps, capex: g.units * s.ownCapex, replacementMonths, monthly, perReq: w.reqMonth ? monthly / w.reqMonth : 0 };
+  const replacementMonths = Number.isFinite(h.replace) ? h.replace : h.amort;
+  return { ...g, energy, amort, running, ops, ownOps: ops, capex: g.units * h.capex, replacementMonths, monthly, perReq: w.reqMonth ? monthly / w.reqMonth : 0 };
+}
+function ownCost(s, users = s.users) {
+  return hardwareCost(s, users, { capex: s.ownCapex, amort: s.ownAmort, replace: s.ownReplace, ops: s.ownOps, power: s.ownPower, prefill: s.ownPrefill, decode: s.ownDecode });
+}
+function smallCost(s, users = s.users) {
+  return hardwareCost(s, users, { capex: s.smallCapex, amort: s.smallAmort, replace: s.smallReplace, ops: s.smallOps, power: s.smallPower, prefill: s.smallPrefill, decode: s.smallDecode });
 }
 function cumulativeCost(path, cost, month) {
   if (!Number.isFinite(month) || month < 0) throw new Error('Month must be a nonnegative finite number');
   if (!cost || !Number.isFinite(cost.monthly)) throw new Error('Cost must be finite');
   if (path === 'api' || path === 'cloud') return cost.monthly * month;
-  if (path !== 'own') throw new Error(`Unknown cost path: ${path}`);
+  if (!SERVER_PATHS.includes(path)) throw new Error(`Unknown cost path: ${path}`);
   const replacementMonths = cost.replacementMonths;
   if (!Number.isFinite(replacementMonths) || replacementMonths <= 0) throw new Error('Replacement period must be positive');
   const purchases = Math.max(1, Math.ceil(month / replacementMonths));
   return cost.capex * purchases + cost.running * month;
+}
+
+// Path total: infrastructure cost plus the fixed monthly API infrastructure; Dell GB10 is limited to small deployments.
+function totalCost(path, s, users = s.users, model) {
+  if (!COST_PATHS.includes(path)) throw new Error(`Unknown cost path: ${path}`);
+  const infra = path === 'api' ? apiCost(model, s, users) : path === 'cloud' ? cloudCost(s, users) : path === 'own' ? ownCost(s, users) : smallCost(s, users);
+  const fixed = path === 'api' ? s.apiOps : 0;
+  const monthly = infra.monthly + fixed;
+  const reqMonth = reqPerMonth(s, users);
+  const total = { ...infra, fixed, monthly, perReq: reqMonth ? monthly / reqMonth : 0 };
+  if (path === 'small') { total.eligible = users <= s.smallMaxUsers; total.reason = total.eligible ? null : 'smallTooMany'; }
+  return total;
 }
 
 function breakEvenUsers(costA, costB, max = 20000) {
@@ -1260,20 +1337,22 @@ function computeResults(s, models) {
   if (!model) throw new Error('Selected model is unavailable');
   const w = workload(s);
   const base = reqTokens(BASE_FAMILY, s, false);
-  const api = apiCost(model, s);
-  const cloud = cloudCost(s);
-  const own = ownCost(s);
-  const modelRows = models.map((m) => ({ m, c: apiCost(m, s) })).sort((a, b) => {
+  const api = totalCost('api', s, s.users, model);
+  const cloud = totalCost('cloud', s);
+  const own = totalCost('own', s);
+  const small = totalCost('small', s);
+  const modelRows = models.map((m) => ({ m, c: totalCost('api', s, s.users, m) })).sort((a, b) => {
     if (a.c.eligible !== b.c.eligible) return a.c.eligible ? -1 : 1;
     return a.c.monthly - b.c.monthly || a.m.name.localeCompare(b.m.name);
   });
-  const candidates = { api: api.eligible ? api.monthly : Infinity, cloud: cloud.monthly, own: own.monthly };
+  const candidates = { api: api.eligible ? api.monthly : Infinity, cloud: cloud.monthly, own: own.monthly, small: small.eligible ? small.monthly : Infinity };
   const winner = Object.keys(candidates).reduce((a, b) => candidates[a] <= candidates[b] ? a : b);
   const apiAtUsers = (users) => {
-    try { const value = apiCost(model, s, users); return value.eligible ? value.monthly : Infinity; } catch (_) { return Infinity; }
+    try { const value = totalCost('api', s, users, model); return value.eligible ? value.monthly : Infinity; } catch (_) { return Infinity; }
   };
-  const cloudAtUsers = (users) => cloudCost(s, users).monthly;
-  const ownAtUsers = (users) => ownCost(s, users).monthly;
+  const cloudAtUsers = (users) => totalCost('cloud', s, users).monthly;
+  const ownAtUsers = (users) => totalCost('own', s, users).monthly;
+  const smallAtUsers = (users) => { const value = totalCost('small', s, users); return value.eligible ? value.monthly : Infinity; };
   return {
     model,
     workload: w,
@@ -1281,11 +1360,14 @@ function computeResults(s, models) {
     api,
     cloud,
     own,
+    small,
     winner,
     modelRows,
     breakEvenCloud: breakEvenUsers(apiAtUsers, cloudAtUsers, 20000),
     breakEvenOwn: breakEvenUsers(apiAtUsers, ownAtUsers, 20000),
+    breakEvenSmall: breakEvenUsers(apiAtUsers, smallAtUsers, 20000),
     payback: paybackMonth(own, cloud.monthly, 120),
+    paybackSmall: small.eligible ? paybackMonth(small, cloud.monthly, 120) : null,
   };
 }
 
@@ -1299,7 +1381,7 @@ function runRegressionChecks(models = []) {
   const sourceModels = Array.isArray(models) && models.length ? models : regressionFixtureModels();
   const terra = sourceModels.find((item) => item.id === 'gpt-5.6-terra' || item.id === 'regression-terra') || sourceModels[0];
   const fable = sourceModels.find((item) => item.id === 'claude-fable-5-1' || item.id === 'regression-fable') || sourceModels[0];
-  const s = { ...DEFAULTS, model: terra.name, cloudOps: 0, ownReplace: DEFAULTS.ownAmort };
+  const s = { ...DEFAULTS, model: terra.name, cloudOps: 0, ownReplace: DEFAULTS.ownAmort, smallReplace: DEFAULTS.smallAmort };
   const checks = [];
   const add = (name, pass, detail) => checks.push({ name, pass: Boolean(pass), detail: String(detail) });
   try {
@@ -1308,7 +1390,15 @@ function runRegressionChecks(models = []) {
     const own = ownCost(s);
     add('baseline API', Math.abs(api.monthly - 839.25) < 1e-6, api.monthly.toFixed(6));
     add('baseline cloud', Math.abs(cloud.monthly - 10000) < 1e-6, cloud.monthly.toFixed(6));
-    add('baseline own', Math.abs(own.monthly - 8601.084444444445) < 1e-6, own.monthly.toFixed(6));
+    add('baseline own', Math.abs(own.monthly - 7601.084444444445) < 1e-6, own.monthly.toFixed(6));
+    const small = smallCost(s);
+    add('baseline small (Dell GB10)', Math.abs(small.monthly - SMALL_BASELINE) < 1e-6 && small.capex === 35000, small.monthly.toFixed(6));
+    const totals = { api: totalCost('api', s, s.users, terra), cloud: totalCost('cloud', s), small: totalCost('small', s), own: totalCost('own', s) };
+    const fixedOk = Math.abs(totals.api.monthly - (api.monthly + s.apiOps)) < 1e-9 && Math.abs(totals.cloud.monthly - cloud.monthly) < 1e-9
+      && Math.abs(totals.own.monthly - own.monthly) < 1e-9 && cumulativeCost('small', totals.small, 0) === small.capex && cumulativeCost('api', totals.api, 12) === totals.api.monthly * 12;
+    add('API infrastructure', fixedOk, `${totals.api.monthly.toFixed(2)} / ${totals.own.monthly.toFixed(2)}`);
+    const smallLimit = totalCost('small', s, s.smallMaxUsers), smallOver = totalCost('small', s, s.smallMaxUsers + 1);
+    add('Dell GB10 user limit', smallLimit.eligible === true && smallOver.eligible === false && smallOver.reason === 'smallTooMany' && computeResults({ ...s, users: 300 }, sourceModels).winner !== 'small', `${s.smallMaxUsers}`);
     const exact = apiCost(terra, { ...s, chunks: 1, chunkTok: 272000, promptTok: 0, outTok: 0 });
     const above = apiCost(terra, { ...s, chunks: 1, chunkTok: 272001, promptTok: 0, outTok: 0 });
     add('long-context threshold', exact.tiered === false && above.tiered === true, `${exact.pin}/${above.pin}`);
@@ -1341,7 +1431,7 @@ function applyI18n() {
   document.documentElement.lang = state.lang;
   document.querySelectorAll('[data-t]').forEach((n) => { n.textContent = t(n.dataset.t); });
   document.querySelectorAll('[data-lang]').forEach((b) => { const active = b.dataset.lang === state.lang; b.classList.toggle('active', active); b.setAttribute('aria-pressed', String(active)); });
-  document.title = state.lang === 'pl' ? 'Kalkulator kosztów AI – API, chmura, własny serwer' : 'AI cost calculator – API, cloud, own server';
+  document.title = state.lang === 'pl' ? 'Kalkulator kosztów AI – API, chmura, Dell GB10, własny serwer' : 'AI cost calculator – API, cloud, Dell GB10, own server';
   $('settingsBackdrop').setAttribute('aria-label', t('settingsClose'));
 }
 function renderPresets() {
@@ -1408,7 +1498,7 @@ function render() {
   if (!renderValidation()) return;
   const result = computeResults(s, s.models);
   App.results = result;
-  const { model: m, workload: w, base, api, cloud, own, winner } = result;
+  const { model: m, workload: w, base, api, cloud, own, small, winner } = result;
   syncSegs();
   renderPresets();
 
@@ -1423,14 +1513,20 @@ function render() {
   let apiWarn = null;
   if (!api.eligible) apiWarn = t(api.reason);
   else if (api.tiered) apiWarn = t('tierNote', { k: m.tier.above / 1000 });
+  const opsLine = (v) => v > 0 ? [[t('lOps'), money(v, 0)]] : [];
   renderOption($('optApi'), { monthly: api.monthly, win: winner === 'api', warn: apiWarn, eligible: api.eligible,
-    lines: [[t('lInput'), money(api.inMonthly, 0)], [t('lOutput'), money(api.outMonthly, 0)]],
+    lines: [[t('lApiInfra'), money(api.fixed, 0)], [t('lInput'), money(api.inMonthly, 0)], [t('lOutput'), money(api.outMonthly, 0)]],
     extra: [[t('lYear'), money(api.monthly * 12, 0)], [t('lPerReq'), money(api.perReq, 4)]] });
   renderOption($('optCloud'), { monthly: cloud.monthly, win: winner === 'cloud',
-    lines: [[t('lGpu') + ` (${cloud.units} × ${fmtNum(cloud.hours, 0)} h)`, money(cloud.monthly - s.cloudOps, 0)], [t('lOps'), money(s.cloudOps, 0)]],
+    lines: [[t('lGpu') + ` (${cloud.units} × ${fmtNum(cloud.hours, 0)} h)`, money(cloud.gpuMonthly, 0)], ...opsLine(s.cloudOps)],
     extra: [[t('lYear'), money(cloud.monthly * 12, 0)], [t('lPerReq'), money(cloud.perReq, 4)], [t('lUtil'), cloud.units + ' GPU · ' + pct(cloud.load / cloud.units)]] });
+  renderOption($('optSmall'), { monthly: small.monthly, win: winner === 'small', eligible: small.eligible,
+    warn: small.eligible ? null : t('smallTooMany', { n: fmtNum(s.smallMaxUsers) }),
+    lines: [[t('lAmort'), money(small.amort, 0)], [t('lEnergy'), money(small.energy, 0)], ...opsLine(s.smallOps)],
+    extra: [[t('lYear'), money(small.monthly * 12, 0)], [t('lFirstYear'), money(cumulativeCost('small', small, 12), 0)], [t('lPerReq'), money(small.perReq, 4)],
+      [t('lUtil'), small.units + ' × GB10 · ' + pct(small.load / small.units)]] });
   renderOption($('optOwn'), { monthly: own.monthly, win: winner === 'own',
-    lines: [[t('lAmort'), money(own.amort, 0)], [t('lEnergy'), money(own.energy, 0)], [t('lOps'), money(s.ownOps, 0)]],
+    lines: [[t('lAmort'), money(own.amort, 0)], [t('lEnergy'), money(own.energy, 0)], ...opsLine(s.ownOps)],
     extra: [[t('lYear'), money(own.monthly * 12, 0)], [t('lFirstYear'), money(cumulativeCost('own', own, 12), 0)], [t('lPerReq'), money(own.perReq, 4)],
       [t('lUtil'), own.units + ' GPU · ' + pct(own.load / own.units)]] });
 
@@ -1438,24 +1534,27 @@ function render() {
   renderBars([
     { key: 'api', label: t('apiPath') + ' · ' + m.name, value: api.monthly, color: COLORS.api },
     { key: 'cloud', label: t('cloudPath'), value: cloud.monthly, color: COLORS.cloud },
+    { key: 'small', label: t('smallPath'), value: small.monthly, color: COLORS.small },
     { key: 'own', label: t('ownPath'), value: own.monthly, color: COLORS.own },
-  ].filter((i) => i.key !== 'api' || api.eligible));
+  ].filter((i) => (i.key !== 'api' || api.eligible) && (i.key !== 'small' || small.eligible)));
   const maxU = 20000;
-  const beCloud = result.breakEvenCloud, beOwn = result.breakEvenOwn;
+  const beCloud = result.breakEvenCloud, beOwn = result.breakEvenOwn, beSmall = result.breakEvenSmall;
   const beTxt = (n) => !api.eligible ? t('unavailable') : n === 0 ? t('apiNever') : n >= maxU ? '≥ ' + fmtNum(maxU) + ' ' + t('usersUnit') : '~' + fmtNum(n) + ' ' + t('usersUnit');
-  const pbCloud = result.payback;
+  const pbCloud = result.payback, pbSmall = result.paybackSmall;
   const minuteRatio = api.perReq / MINUTE_OF_WORK;
   const answers = [
     [t('aApiVsCloud'), beTxt(beCloud)],
+    [t('aApiVsSmall'), small.eligible ? beTxt(beSmall) : t('unavailable')],
     [t('aApiVsOwn'), beTxt(beOwn)],
+    [t('aPaybackSmall'), !small.eligible ? t('unavailable') : pbSmall == null ? t('never') : pbSmall + ' ' + t('monthsUnit')],
     [t('aPayback'), pbCloud == null ? t('never') : pbCloud + ' ' + t('monthsUnit')],
     [t('aMinute'), api.eligible ? money(api.perReq, 4) + ' · ' + (minuteRatio < 0.01 ? '<1%' : pct(minuteRatio)) : t('unavailable')],
   ];
   $('answers').replaceChildren(...answers.map(([l, v]) => { const li = el('li'); li.append(el('span', {}, l), el('b', {}, v)); return li; }));
   $('answers').append(el('li', { class: 'hint' }, t('firstCrossNote')));
 
-  renderModelTable(result.modelRows, cloud.monthly, own.monthly);
-  renderCharts(m, api, cloud, own);
+  renderModelTable(result.modelRows, cloud.monthly, own.monthly, small.eligible ? small.monthly : Infinity);
+  renderCharts(m, api, cloud, own, small);
   if (dialogEl.open) renderAssumptions();
 
   // DOM contract
@@ -1464,25 +1563,28 @@ function render() {
     thinking: String(s.thinking), cloudMode: s.cloudMode, reqMonth: api.reqMonth.toFixed(0),
     baseInTokens: base.inTok.toFixed(0), baseOutTokens: base.outTok.toFixed(0), inTokens: api.inTok.toFixed(0), outTokens: api.outTok.toFixed(0),
     ossInTokens: w.inTok.toFixed(0), ossOutTokens: w.outTok.toFixed(0),
-    apiMonthly: api.eligible ? api.monthly.toFixed(2) : '', cloudMonthly: cloud.monthly.toFixed(2), ownMonthly: own.monthly.toFixed(2),
-    ownAmort: own.amort.toFixed(2), ownEnergy: own.energy.toFixed(2), apiPerReq: api.eligible ? api.perReq.toFixed(6) : '',
-    cloudUnits: String(cloud.units), ownUnits: String(own.units),
-    breakEvenCloudUsers: api.eligible ? String(beCloud) : '', breakEvenOwnUsers: api.eligible ? String(beOwn) : '', paybackVsCloud: String(pbCloud ?? ''), lang: state.lang,
+    apiMonthly: api.eligible ? api.monthly.toFixed(2) : '', cloudMonthly: cloud.monthly.toFixed(2), ownMonthly: own.monthly.toFixed(2), smallMonthly: small.eligible ? small.monthly.toFixed(2) : '',
+    ownAmort: own.amort.toFixed(2), ownEnergy: own.energy.toFixed(2), smallAmort: small.amort.toFixed(2), smallEnergy: small.energy.toFixed(2), apiPerReq: api.eligible ? api.perReq.toFixed(6) : '',
+    cloudUnits: String(cloud.units), ownUnits: String(own.units), smallUnits: String(small.units), smallEligible: String(small.eligible), smallMaxUsers: String(s.smallMaxUsers),
+    breakEvenCloudUsers: api.eligible ? String(beCloud) : '', breakEvenOwnUsers: api.eligible ? String(beOwn) : '', breakEvenSmallUsers: api.eligible ? String(beSmall) : '',
+    paybackVsCloud: String(pbCloud ?? ''), paybackSmallVsCloud: String(pbSmall ?? ''), lang: state.lang,
     effectiveThinking: String(modelThinks(m, s)), ownReplacementMonths: String(s.ownReplace), ownFirstYear: cumulativeCost('own', own, 12).toFixed(2),
+    smallReplacementMonths: String(s.smallReplace), smallFirstYear: cumulativeCost('small', small, 12).toFixed(2), smallCapex: String(s.smallCapex), apiInfra: String(s.apiOps),
     assumptionsOpen: String(dialogEl.open),
   });
-  $('live').textContent = t('live', { api: api.eligible ? money(api.monthly, 0) : t('unavailable'), cloud: money(cloud.monthly, 0), own: money(own.monthly, 0) });
+  $('live').textContent = t('live', { api: api.eligible ? money(api.monthly, 0) : t('unavailable'), cloud: money(cloud.monthly, 0), own: money(own.monthly, 0), small: small.eligible ? money(small.monthly, 0) : t('unavailable') });
 }
 
-function renderModelTable(rows, cloudM, ownM) {
-  const cheapest = Math.min(cloudM, ownM);
+function renderModelTable(rows, cloudM, ownM, smallM) {
+  const cheapest = Math.min(cloudM, ownM, smallM);
+  const dearest = Math.max(...[cloudM, ownM, smallM].filter(Number.isFinite));
   modelTbody.replaceChildren(...rows.map(({ m, c }) => {
     const tr = el('tr', { tabindex: '0', 'data-model': m.name, 'data-monthly': c.eligible ? c.monthly.toFixed(2) : '', 'data-eligible': String(c.eligible), 'aria-selected': String(m.name === state.model) });
     tr.classList.toggle('selected', m.name === state.model);
     let vs;
     if (!c.eligible) vs = el('span', { class: 'edu-chip chip-warn', title: t(c.reason) }, t('unavailable'));
     else if (c.monthly <= cheapest) vs = el('span', { class: 'edu-chip chip-win' }, t('vsCheaper'));
-    else if (c.monthly > Math.max(cloudM, ownM)) vs = el('span', { class: 'edu-chip chip-warn' }, t('vsDearer'));
+    else if (c.monthly > dearest) vs = el('span', { class: 'edu-chip chip-warn' }, t('vsDearer'));
     else vs = el('span', { class: 'edu-chip chip-mini' }, t('vsMid'));
     const tdVs = el('td'); tdVs.append(vs);
     tr.append(el('td', { class: 'name' }, m.name), el('td', { class: 'num' }, pair(c.inTok, c.outTok)),
@@ -1492,17 +1594,18 @@ function renderModelTable(rows, cloudM, ownM) {
   }));
 }
 
-function renderCharts(m, api, cloud, own) {
+function renderCharts(m, api, cloud, own, small) {
   const s = state;
   const base = [
     { key: 'api', color: COLORS.api, short: t('apiPath'), label: t('apiPath') + ' · ' + m.name },
     { key: 'cloud', color: COLORS.cloud, dash: '7 4', short: t('cloudPath'), label: t('cloudPath') + ' · ' + s.cloudGpu },
+    { key: 'small', color: COLORS.small, short: t('smallPath'), label: t('smallPath') + ' · ' + s.smallGpu },
     { key: 'own', color: COLORS.own, dash: '2 4', short: t('ownPath'), label: t('ownPath') + ' · ' + s.ownGpu },
   ];
   const hz = Math.max(6, Math.round(s.horizon));
   const ms = Array.from({ length: hz + 1 }, (_, i) => i);
-  const costs = { api, cloud, own };
-  const series = base.filter((b) => b.key !== 'api' || api.eligible).map((b) => ({ ...b,
+  const costs = { api, cloud, own, small };
+  const series = base.filter((b) => (b.key !== 'api' || api.eligible) && (b.key !== 'small' || small.eligible)).map((b) => ({ ...b,
     ys: ms.map((mo) => cumulativeCost(b.key, costs[b.key], mo)) }));
   renderLegend($('legendTime'), series);
   lineChart($('chartTime'), { xs: ms, series, xFmt: (v) => String(v), xHead: t('monthLabel') });
@@ -1519,6 +1622,7 @@ function buildAssumptions() {
   const cloudSupport = Number(s.cloudOps) >= 0 ? Number(s.cloudOps) : 0;
   const cloudRunHours = typeof cloudHours === 'function' ? cloudHours(s) : HOURS_MONTH;
   const ownReplace = Number(s.ownReplace) > 0 ? Number(s.ownReplace) : Number(s.ownAmort);
+  const smallReplace = Number(s.smallReplace) > 0 ? Number(s.smallReplace) : Number(s.smallAmort);
   const tokenRows = Object.entries(TOK_PER_WORD).map(([family, f]) => {
     const label = P(f.label + ' – szacunek', f.label + ' – estimate');
     let note = P(
@@ -1560,6 +1664,7 @@ function buildAssumptions() {
     { title: P('API', 'API'), rows: [
       [P('Cennik', 'Price list'), String(state.models.length) + ' ' + P('modeli', 'models'),
         P('Stawki standardowe, bez założenia cache i Batch, sprawdzone 14.09.2026. Cache zależy od dostawcy, hit rate i zgodności prefiksu; Batch jest trybem asynchronicznym, więc nie zakładamy rabatu dla interaktywnego RAG.', 'Standard rates, without assuming cache or Batch, checked on 14 Sep 2026. Caching depends on the provider, hit rate and prefix match; Batch is asynchronous, so we do not assume a discount for interactive RAG.'), 'openai'],
+      [P('Infrastruktura API', 'API infrastructure'), now(money(s.apiOps, 0) + P(' / mies.', ' / month')), P('Stały miesięczny koszt infrastruktury wokół API (hosting aplikacji, baza wektorowa, sieć). Edytowalna wartość scenariusza.', 'Fixed monthly cost of the infrastructure around the API (app hosting, vector store, networking). Editable scenario value.')],
       [P('Kurs USD/PLN', 'USD/PLN rate'), now(fmtNum(s.fx, 2)), P('Źródło zewnętrzne sprawdzone 14.09.2026; kurs w polu jest edytowalną wartością scenariusza.', 'External source checked on 14 Sep 2026; the field is an editable scenario value.'), 'nbp'],
       [P('Długi kontekst', 'Long context'), 'OpenAI > 272K', P('Powyżej progu droższa stawka dla całego żądania.', 'Above the threshold the whole request uses a higher rate.')],
       [P('DeepSeek', 'DeepSeek'), P('szczyt pon.–pt. 01–04 i 06–10 UTC', 'peak Mon–Fri 01–04 and 06–10 UTC'), P('Poza szczytem połowa ceny.', 'Half price off-peak.'), 'deepseek'],
@@ -1577,9 +1682,22 @@ function buildAssumptions() {
         P('Domyślna kwota oznacza ilustracyjny pakiet z GPU, serwerem, UPS i wdrożeniem. Wymaga indywidualnej wyceny i nie jest ofertą ani gwarancją kompletności.', 'The default is an illustrative bundle with GPU, server, UPS and setup. It requires an individual quote and is not an offer or completeness guarantee.'), 'pro6000'],
       [P('Amortyzacja', 'Depreciation'), now(s.ownAmort + ' ' + t('monthsUnit')), P('Amortyzacja jest osobnym rozliczeniem zakupu. Nie wyznacza terminu wymiany sprzętu.', 'Depreciation is a separate purchase accounting period. It does not set the replacement date.')],
       [P('Wymiana sprzętu', 'Hardware replacement'), now(ownReplace + ' ' + t('monthsUnit')), P('Osobny okres wymiany używany na wykresie; nie jest utożsamiany z amortyzacją.', 'A separate replacement period used by the chart; it is not the depreciation period.')],
-      [P('Obsługa', 'Support'), now(money(s.ownOps, 0) + P(' / mies.', ' / month')), P('Stały koszt scenariusza na drobną administrację i części. Bez etatu MLOps i bez drugiej karty na wypadek awarii.', 'Fixed scenario cost for light administration and parts. No MLOps role and no failover card.')],
+      [P('Obsługa', 'Support'), now(money(s.ownOps, 0) + P(' / mies.', ' / month')), P('Domyślnie 0 PLN: utrzymanie sprzętu nie jest liczone. Edytowalny stały koszt na drobną administrację i części; bez etatu MLOps i bez drugiej karty na wypadek awarii.', 'Defaults to PLN 0: hardware maintenance is not counted. An editable fixed cost for light administration and parts; no MLOps role and no failover card.')],
       [P('Prąd netto', 'Net power'), now(fmtNum(s.ownPower) + ' W · ' + fmtNum(s.kwh, 2) + ' PLN/kWh netto · 24/7'),
         P('Pełna moc przez całą dobę to górna granica. Stawka PLN/kWh jest edytowalnym kosztem netto; źródło nie kalibruje tu brutto ani dystrybucji.', 'Full power around the clock is an upper bound. PLN/kWh is an editable net input; the source is not used to calibrate gross price or distribution.'), 'power'],
+    ]},
+    { title: P('Małe wdrożenie: Dell GB10', 'Small deployment: Dell GB10'), rows: [
+      [P('Sprzęt', 'Hardware'), now(s.smallGpu),
+        P('Stacja Dell Pro Max z układem NVIDIA GB10 Grace Blackwell: 128 GB pamięci zunifikowanej, pobór mocy stacji do ok. 240 W. Jedna maszyna obsługuje jeden model klasy 30–70B w kwantyzacji; kalkulator liczy kolejne sztuki, gdy szczyt przekracza przepustowość.', 'A Dell Pro Max workstation with the NVIDIA GB10 Grace Blackwell superchip: 128 GB unified memory, system power draw around 240 W. One box serves one quantised 30–70B-class model; the calculator adds units when the peak exceeds throughput.'), 'gb10'],
+      [P('Limit użytkowników', 'User limit'), now(fmtNum(s.smallMaxUsers) + ' ' + t('usersUnit')), P('Powyżej tej liczby użytkowników opcja Dell GB10 jest oznaczana jako niedostępna i nie bierze udziału w porównaniu.', 'Above this number of users the Dell GB10 option is marked unavailable and left out of the comparison.')],
+      [P('Zakup', 'Purchase'), now(money(s.smallCapex, 0)),
+        P('Cena pakietu małego wdrożenia (sprzęt Dell GB10 z konfiguracją). Jest edytowalną wartością scenariusza; nie obejmuje budowy aplikacji ani utrzymania.', 'Price of the small deployment package (Dell GB10 hardware with setup). It is an editable scenario value; it excludes app build and operations.')],
+      [P('Amortyzacja', 'Depreciation'), now(s.smallAmort + ' ' + t('monthsUnit')), P('Rozliczane tak samo jak dla własnego serwera.', 'Accounted for exactly like the own server.')],
+      [P('Wymiana sprzętu', 'Hardware replacement'), now(smallReplace + ' ' + t('monthsUnit')), P('Osobny okres wymiany używany na wykresie.', 'A separate replacement period used by the chart.')],
+      [P('Obsługa', 'Support'), now(money(s.smallOps, 0) + P(' / mies.', ' / month')), P('Domyślnie 0 PLN: utrzymanie sprzętu nie jest liczone.', 'Defaults to PLN 0: hardware maintenance is not counted.')],
+      [P('Prąd netto', 'Net power'), now(fmtNum(s.smallPower) + ' W · ' + fmtNum(s.kwh, 2) + ' PLN/kWh netto · 24/7'), P('Ta sama stawka za energię co dla własnego serwera; pełna moc przez całą dobę to górna granica.', 'The same energy rate as the own server; full power around the clock is an upper bound.'), 'power'],
+      [P('Przepustowość', 'Throughput'), now(fmtNum(s.smallPrefill) + ' / ' + fmtNum(s.smallDecode) + ' tok/s'),
+        P('Domyślne wartości są ilustracyjne: pamięć LPDDR5x o przepustowości ok. 273 GB/s ogranicza generowanie do rzędu setek tok/s łącznie. Zmierz na własnym modelu przed decyzją.', 'Defaults are illustrative: LPDDR5x memory bandwidth of roughly 273 GB/s limits aggregate generation to the order of hundreds of tok/s. Measure with your own model before deciding.'), 'gb10'],
     ]},
     { title: P('Przepustowość', 'Throughput'), rows: [
       [P('Pola wejście / wyjście', 'Input / output fields'), now(fmtNum(s.cloudPrefill) + ' / ' + fmtNum(s.cloudDecode) + ' tok/s'),
@@ -1763,7 +1881,7 @@ function onSettingsKeydown(e) {
 }
 
 // ─── Scenario helpers ───
-const LS_SCENARIO = 'edulab-aicalc-scenario-v1';
+const LS_SCENARIO = 'edulab-aicalc-scenario-v2';
 const MAX_SCENARIO_BYTES = 1024 * 1024;
 function serializeScenario(s) {
   const values = Object.fromEntries([...Object.keys(DEFAULTS), 'lang'].map((key) => [key, s[key]]));
@@ -1883,17 +2001,17 @@ function checkDomContract(doc, result) {
     const open = doc.querySelector('#app')?.dataset.settings === 'open';
     return doc.querySelector('#settingsToggle')?.getAttribute('aria-expanded') === String(open) && doc.querySelector('#resultsPanel')?.inert === open;
   });
-  for (const key of ['api', 'cloud', 'own']) {
+  for (const key of ['api', 'cloud', 'own', 'small']) {
     probe('DOM: ' + key + ' monthly cost', () => {
       const node = doc.querySelector('#opt' + key[0].toUpperCase() + key.slice(1));
-      const expected = key === 'api' && !result.api.eligible ? '' : result[key].monthly.toFixed(2);
+      const expected = result[key].eligible === false ? '' : result[key].monthly.toFixed(2);
       return node && node.dataset.monthly === expected && node.dataset.winner === String(result.winner === key);
     });
   }
   probe('DOM: model rows', () => doc.querySelectorAll('#modelTable tbody tr').length === state.models.length);
   probe('DOM: no nonfinite chart coordinates', () => {
     const paths = [...doc.querySelectorAll('#chartTime path[data-series]')];
-    return paths.length === (result.api.eligible ? 3 : 2) && paths.every((p) => !/NaN|Infinity/.test(p.getAttribute('d')));
+    return paths.length === 2 + (result.api.eligible ? 1 : 0) + (result.small.eligible ? 1 : 0) && paths.every((p) => !/NaN|Infinity/.test(p.getAttribute('d')));
   });
   return checks;
 }
@@ -2031,7 +2149,7 @@ window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer
 (function init() {
   const css = getComputedStyle(document.documentElement);
   const token = (name) => css.getPropertyValue(name).trim();
-  for (const [key, name] of Object.entries({ api: '--blue', cloud: '--green', own: '--play-grape', ink: '--ink', ink3: '--ink-3', line: '--line', surface: '--surface' })) COLORS[key] = token(name);
+  for (const [key, name] of Object.entries({ api: '--blue', cloud: '--green', own: '--play-grape', small: '--play-berry', ink: '--ink', ink3: '--ink-3', line: '--line', surface: '--surface' })) COLORS[key] = token(name);
   Object.assign(CHART_TYPE, { mono: token('--font-mono'), sans: token('--font-sans'), tickSize: token('--chart-tick-size'), labelSize: token('--chart-label-size'), tickAlign: token('--chart-tick-align'), xAlign: token('--chart-x-align') });
   for (const [id, rule] of Object.entries(FIELD_SCHEMA)) {
     const input = $(id); input.min = rule.min; input.max = rule.max; input.step = rule.integer ? '1' : 'any';

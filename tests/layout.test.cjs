@@ -144,7 +144,7 @@ for (const id of ['settingsClose', 'settingsBackdrop']) {
 assert.ok(['open', 'closed'].includes(app.attrs['data-settings']), '#app data-settings must be open or closed');
 
 const breakdowns = descendants(resultsPanel, (node) => node.tag === 'details' && hasClass(node, 'cost-breakdown'));
-assert.equal(breakdowns.length, 3, 'each result card has an expandable breakdown');
+assert.equal(breakdowns.length, 4, 'each result card has an expandable breakdown');
 assert.ok(breakdowns.every((node) => !('open' in node.attrs)), 'cost breakdowns are collapsed initially');
 
 const drawerCode = html.split('// ─── Settings drawer ───')[1].split('// ─── Scenario helpers ───')[0];

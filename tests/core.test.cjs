@@ -40,24 +40,53 @@ assert.equal(run('Object.entries(FIELD_SCHEMA).every(([id, rule]) => validateFie
 const baseline = run(`(() => {
   const s = { ...DEFAULTS };
   const m = models.find((x) => x.id === 'gpt-5.6-terra');
-  return { api: apiCost(m, s).monthly, cloud: cloudCost(s).monthly, own: ownCost(s).monthly };
+  return { api: apiCost(m, s).monthly, cloud: cloudCost(s).monthly, own: ownCost(s).monthly, small: smallCost(s).monthly };
 })()`);
 assert.ok(Math.abs(baseline.api - 839.25) < 1e-9, `API baseline ${baseline.api}`);
 assert.ok(Math.abs(baseline.cloud - 10000) < 1e-9, `cloud baseline ${baseline.cloud}`);
-assert.ok(Math.abs(baseline.own - 8601.084444444445) < 1e-9, `own baseline ${baseline.own}`);
+assert.ok(Math.abs(baseline.own - 7601.084444444445) < 1e-9, `own baseline ${baseline.own}`);
+const smallBaseline = run(`(() => {
+  const s = { ...DEFAULTS };
+  const small = smallCost(s);
+  return { monthly: small.monthly, units: small.units, capex: small.capex, m0: cumulativeCost('small', small, 0), m12: cumulativeCost('small', small, 12), units300: smallCost(s, 300).units };
+})()`);
+assert.ok(Math.abs(smallBaseline.monthly - 1147.3262222222222) < 1e-9, `Dell GB10 baseline ${smallBaseline.monthly}`);
+assert.equal(smallBaseline.units, 1, 'one GB10 unit at scenario S1');
+assert.equal(smallBaseline.capex, 35000, 'Dell GB10 package costs 35 000 PLN');
+assert.equal(smallBaseline.m0, 35000, 'GB10 cumulative cost starts at the purchase price');
+assert.ok(Math.abs(smallBaseline.m12 - (35000 + 12 * 175.104)) < 1e-9, 'GB10 first year = purchase + 12 × running');
+assert.equal(smallBaseline.units300, 3, 'scenario S3 needs three GB10 units');
+const smallLimit = run(`(() => {
+  const s = { ...DEFAULTS };
+  const ok = totalCost('small', s, 199), over = totalCost('small', s, 200), r = computeResults({ ...s, users: 300 }, models);
+  return [ok.eligible, over.eligible, over.reason, r.winner !== 'small', r.paybackSmall];
+})()`);
+assert.deepEqual(JSON.parse(JSON.stringify(smallLimit)), [true, false, 'smallTooMany', true, null], 'Dell GB10 is unavailable from 200 users');
 
 const resultShape = run(`(() => {
   const result = computeResults({ ...DEFAULTS }, models);
   return { keys: Object.keys(result).sort(), winner: result.winner, rows: result.modelRows.length };
 })()`);
-assert.deepEqual(JSON.parse(JSON.stringify(resultShape.keys)), ['api', 'base', 'breakEvenCloud', 'breakEvenOwn', 'cloud', 'model', 'modelRows', 'own', 'payback', 'winner', 'workload'], 'computeResults shape');
+assert.deepEqual(JSON.parse(JSON.stringify(resultShape.keys)), ['api', 'base', 'breakEvenCloud', 'breakEvenOwn', 'breakEvenSmall', 'cloud', 'model', 'modelRows', 'own', 'payback', 'paybackSmall', 'small', 'winner', 'workload'], 'computeResults shape');
 assert.equal(resultShape.rows, models.length, 'computeResults returns all model rows');
 const steps = run(`(() => {
   const s = { ...DEFAULTS }, m = models.find((model) => model.id === 'gpt-5.6-terra');
   const result = computeResults(s, models);
-  return [result.breakEvenCloud, apiCost(m, s, 239).monthly > cloudCost(s, 239).monthly, apiCost(m, s, 463).monthly < cloudCost(s, 463).monthly];
+  const be = result.breakEvenCloud;
+  const at = (path, users) => totalCost(path, s, users, m).monthly;
+  return [be > 0 && be < 20000, at('api', be) <= at('cloud', be), at('api', be + 1) > at('cloud', be + 1)];
 })()`);
-assert.deepEqual(JSON.parse(JSON.stringify(steps)), [238, true, true], 'first interval does not imply permanent advantage');
+assert.deepEqual(JSON.parse(JSON.stringify(steps)), [true, true, true], 'break-even is the end of the first API-over-cloud interval');
+const fixedInfra = run(`(() => {
+  const s = { ...DEFAULTS }, m = models.find((model) => model.id === 'gpt-5.6-terra');
+  const r = computeResults(s, models);
+  return { api: r.api.monthly - apiCost(m, s).monthly, cloud: r.cloud.monthly - cloudCost(s).monthly, own: r.own.monthly - ownCost(s).monthly, small: r.small.monthly - smallCost(s).monthly,
+    rowFixed: r.modelRows[0].c.fixed, api12: cumulativeCost('api', r.api, 12) - r.api.monthly * 12 };
+})()`);
+assert.ok(Math.abs(fixedInfra.api - 1000) < 1e-9, 'API total adds 1 000 PLN/month infrastructure');
+assert.ok(fixedInfra.cloud === 0 && fixedInfra.own === 0 && fixedInfra.small === 0, 'fixed infrastructure applies to the API path only');
+assert.equal(fixedInfra.rowFixed, 1000, 'model table rows include the API infrastructure');
+assert.equal(fixedInfra.api12, 0, 'API cumulative cost is linear');
 assert.throws(() => run('computeResults({ ...DEFAULTS, users: 0 }, models)'), /invalid|state/i, 'invalid state blocks results');
 
 const tierRates = run(`(() => {

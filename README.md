@@ -1,11 +1,12 @@
 # aicalc – kalkulator kosztów AI
 
 Jednoplikowy kalkulator edukacyjny porównujący miesięczny koszt asystenta RAG w
-trzech wariantach:
+czterech wariantach:
 
-1. płatne API modelu,
+1. płatne API modelu (plus stała infrastruktura wokół API),
 2. GPU w chmurze,
-3. własny serwer.
+3. **małe wdrożenie na Dell Pro Max GB10** – pakiet wyceniony na **35 000 PLN**,
+4. własny serwer (RTX PRO 6000).
 
 To **szacunek kosztu inferencji**, a nie oferta, wycena wdrożenia ani gwarancja
 jakości lub przepustowości. Wszystkie kwoty są netto, bez VAT.
@@ -25,10 +26,37 @@ Następnie otwórz <http://127.0.0.1:8000/index.html>.
 
 Wersja online: <https://workszop.github.io/aicalc/>.
 
+## Małe wdrożenie: Dell GB10
+
+Trzecia ścieżka liczy się tym samym modelem co własny serwer (amortyzacja
+zakupu + prąd + stała obsługa; na wykresie kolejny zakup co okres wymiany).
+Domyślne parametry są edytowalne w panelu ustawień:
+
+| Parametr | Domyślnie | Uwaga |
+| --- | --- | --- |
+| `smallCapex` | 35 000 PLN | cena pakietu Dell GB10 z konfiguracją |
+| `smallAmort` / `smallReplace` | 36 mies. | amortyzacja i wymiana rozliczane osobno |
+| `smallOps` | 0 PLN / mies. | utrzymanie sprzętu domyślnie nie jest liczone |
+| `smallPower` | 240 W | pobór stacji GB10, pełna moc 24/7 jako górna granica |
+| `smallPrefill` / `smallDecode` | 3 000 / 250 tok/s | ilustracyjne; pamięć ~273 GB/s ogranicza generowanie |
+
+Opcja jest przeznaczona dla małych wdrożeń: od **200 użytkowników**
+(`smallMaxUsers` = 199) karta pokazuje „Opcja niedostępna” i GB10 nie bierze
+udziału w porównaniu, paskach ani wykresie. Poniżej limitu, gdy szczyt
+przekracza przepustowość, kalkulator dolicza kolejne sztuki GB10. Wartości
+przepustowości trzeba zmierzyć na własnym modelu przed decyzją.
+
+Przy API doliczana jest stała infrastruktura `apiOps` (domyślnie 1 000 PLN /
+mies.: hosting aplikacji, baza wektorowa, sieć); kwoty w tabeli modeli też ją
+zawierają. Koszty obsługi sprzętu (`cloudOps`, `ownOps`, `smallOps`) domyślnie
+wynoszą 0.
+
 ## Scenariusze i cennik
 
 - **Zapisz lokalnie** zapisuje ustawienia i aktualny cennik w pamięci
-  przeglądarki. Zapisany scenariusz jest odczytywany przy kolejnym starcie.
+  przeglądarki (klucz `edulab-aicalc-scenario-v2`; scenariusze zapisane przez
+  poprzednią wersję nie są odczytywane, bo nie mają pól GB10). Zapisany
+  scenariusz jest odczytywany przy kolejnym starcie.
   Język PL/EN jest zapisywany niezależnie; ostatnia preferencja językowa ma
   pierwszeństwo przed językiem zapisanym w scenariuszu. Import również
   zachowuje wybraną preferencję.
@@ -43,12 +71,13 @@ Wersja online: <https://workszop.github.io/aicalc/>.
 ## Układ interfejsu
 
 Na dużym ekranie ustawienia są zebrane w niezależnie przewijanym panelu po
-lewej stronie. Panel obejmuje obciążenie, wybór modelu, parametry GPU i serwera,
+lewej stronie. Panel obejmuje obciążenie (widoczne są trzy scenariusze,
+szczegóły zwinięte), model API, chmurę GPU, Dell GB10, własny serwer,
 ustawienia zaawansowane oraz operacje scenariusza. Po prawej stronie pozostają
 wyniki, wykresy i porównanie modeli, więc zmiana parametrów nie wypycha
 wyników poza ekran.
 
-Karty wyników pokazują od razu kwoty miesięczne. Przycisk **Szczegóły kosztów**
+Cztery karty wyników pokazują od razu kwoty miesięczne. Przycisk **Szczegóły kosztów**
 rozwija rozbicie kosztów, dzięki czemu wykresy pozostają wyżej na stronie.
 
 Na ekranach o szerokości do 768 px panel staje się wysuwanym panelem ustawień.
@@ -111,7 +140,9 @@ opcjonalnych stawek oznaczają brak danej taryfy.
 - `kwh = 1 PLN/kWh` to przyjęte założenie ceny energii **netto**.
 - `ownReplace = 36 miesięcy` (wymiana sprzętu) jest niezależne od
   `ownAmort = 36 miesięcy` (amortyzacja zakupu). Obie wartości można zmienić
-  osobno.
+  osobno; to samo dotyczy `smallReplace` i `smallAmort` dla Dell GB10.
+- `ownOps`, `smallOps` i `cloudOps` domyślnie wynoszą 0: utrzymanie sprzętu nie
+  jest liczone, dopóki nie wpiszesz własnej kwoty.
 - Odpowiedź o zwrocie zakupu podaje **pierwsze** przecięcie kosztów gotówkowych. Pierwszy próg
   przewagi nie jest stałym ani wiecznym progiem opłacalności: po zmianie
   obciążenia, taryfy lub liczby GPU porównanie może się odwrócić ponownie.
@@ -129,14 +160,19 @@ python3 tests/browser-smoke.py
 
 Ostatni test uruchamia lokalny serwer na losowym porcie i świeży profil
 Google Chrome/Chromium, a następnie sprawdza tryb `?verify=1` zarówno przez
-`http://`, jak i `file://`. Jeśli przeglądarka nie jest zainstalowana, test
+`http://`, jak i `file://` (24 sprawdzenia, w tym kontrakt DOM dla czterech
+kart: `data-small-monthly`, `data-small-units`, `data-small-eligible`,
+`data-break-even-small-users`, `data-payback-small-vs-cloud`). Jeśli
+przeglądarka nie jest zainstalowana, test
 kończy się czytelnym komunikatem z instrukcją instalacji. Skrypt niczego nie
 instaluje.
 
 ## English quick note
 
 `aicalc` is a dependency-free, single-file educational estimator for RAG
-inference costs across model API, cloud GPU, and own-server options. It is an
+inference costs across model API (plus PLN 1,000 per month of fixed
+infrastructure), cloud GPU, a small Dell Pro Max GB10 deployment priced at
+PLN 35,000 (available up to 199 users), and own-server options. It is an
 estimate, not a quote or a capacity guarantee. Open `index.html` directly or
 serve the directory with Python. Prices were checked on 14 Sep 2026; token
 factors are illustrative and hardware throughput is not production-verified.
