@@ -846,9 +846,9 @@ const T = {
     aApiVsSmall: 'Pierwszy zakres przewagi API nad Dell GB10 kończy się przy', aPaybackSmall: 'Pierwsze przecięcie kosztów gotówkowych Dell GB10 z chmurą po',
     aPayback: 'Pierwsze przecięcie kosztów gotówkowych serwera z chmurą po', aMinute: 'Zapytanie API a minuta pracy (1,49 zł)',
     usersUnit: 'użytk.', monthsUnit: 'mies.', never: 'nie w ciągu 10 lat', apiNever: 'nigdy (już 1 osoba)',
-    chartTime: 'Koszt narastająco w czasie', chartTimeSub: 'Dell GB10 i własny serwer startują od ceny sprzętu i licencji Zagłoba RAG. Co okres wymiany sprzętu doliczamy kolejny zakup sprzętu; licencja jest jednorazowa.',
+    chartTime: 'Koszt narastająco w czasie', chartTimeSub: 'Dell GB10 i własny serwer startują od ceny sprzętu i licencji oprogramowania. Co okres wymiany sprzętu doliczamy kolejny zakup sprzętu; licencja jest jednorazowa.',
     showData: 'Pokaż dane', monthLabel: 'Miesiąc',
-    secModels: 'Porównaj wszystkie modele API', modelsNote: 'Kwoty miesięczne zawierają Zagłoba RAG jako SaaS i stałą infrastrukturę API. Tokeny są szacowane dla rodziny modelu, nie liczone uruchomieniem tokenizerów. Kliknij wiersz, aby wybrać model.',
+    secModels: 'Porównaj wszystkie modele API', modelsNote: 'Kwoty miesięczne zawierają oprogramowanie RAG jako SaaS i stałą infrastrukturę API. Tokeny są szacowane dla rodziny modelu, nie liczone uruchomieniem tokenizerów. Kliknij wiersz, aby wybrać model.',
     thModel: 'Model', thTok: 'Tokeny we / wy', thIn: 'We $/1M', thOut: 'Wy $/1M', thReq: 'Zapytanie', thMonth: 'Miesięcznie', thVs: 'Na tle GPU',
     vsCheaper: 'tańsze niż GPU', vsDearer: 'droższe niż oba GPU', vsMid: 'pomiędzy',
     secAdvanced: 'Ustawienia zaawansowane', advApi: 'API', advTime: 'Czas i obciążenie', advGpu: 'Przepustowość GPU (tok/s)',
@@ -883,9 +883,9 @@ const T = {
     aApiVsSmall: 'First API-over-Dell-GB10 advantage interval ends at', aPaybackSmall: 'First cash-cost crossing of Dell GB10 and cloud after',
     aPayback: 'First cash-cost crossing of server and cloud after', aMinute: 'API request vs a minute of work (1.49 PLN)',
     usersUnit: 'users', monthsUnit: 'mo.', never: 'not within 10 years', apiNever: 'never (even 1 user)',
-    chartTime: 'Cumulative cost over time', chartTimeSub: 'Dell GB10 and own server start at the hardware price plus the Zagłoba RAG licence. Hardware is bought again each replacement period; the licence is one-off.',
+    chartTime: 'Cumulative cost over time', chartTimeSub: 'Dell GB10 and own server start at the hardware price plus the software licence. Hardware is bought again each replacement period; the licence is one-off.',
     showData: 'Show data', monthLabel: 'Month',
-    secModels: 'Compare all API models', modelsNote: 'Monthly amounts include Zagłoba RAG as SaaS and the fixed API infrastructure. Tokens are estimated for the model family, not measured by running each tokenizer. Click a row to select the model.',
+    secModels: 'Compare all API models', modelsNote: 'Monthly amounts include the RAG software as SaaS and the fixed API infrastructure. Tokens are estimated for the model family, not measured by running each tokenizer. Click a row to select the model.',
     thModel: 'Model', thTok: 'Tokens in / out', thIn: 'In $/1M', thOut: 'Out $/1M', thReq: 'Request', thMonth: 'Monthly', thVs: 'Vs GPU',
     vsCheaper: 'cheaper than GPU', vsDearer: 'dearer than both GPUs', vsMid: 'in between',
     secAdvanced: 'Advanced settings', advApi: 'API', advTime: 'Time and load', advGpu: 'GPU throughput (tok/s)',
@@ -901,10 +901,10 @@ const T = {
 
 Object.assign(T.pl, {
   dashboardLead: 'Asystent RAG w firmie: porównaj API, chmurę GPU, małe wdrożenie na Dell GB10 i własny serwer.', costBreakdown: 'Szczegóły kosztów',
-  workloadDetails: 'Szczegóły obciążenia', softwareTitle: 'Oprogramowanie: Quantica Zagłoba RAG',
-  softwareHint: 'Warstwa oprogramowania nad infrastrukturą. Przy API i chmurze Zagłoba RAG działa jako SaaS (abonament miesięczny); przy Dell GB10 i własnym serwerze jest sprzedawana jako licencja z rocznym kontraktem wsparcia.',
+  workloadDetails: 'Szczegóły obciążenia', softwareTitle: 'Oprogramowanie RAG',
+  softwareHint: 'Warstwa oprogramowania nad infrastrukturą. Przy API i chmurze oprogramowanie RAG działa jako SaaS (abonament miesięczny); przy Dell GB10 i własnym serwerze jest sprzedawana jako licencja z rocznym kontraktem wsparcia.',
   softApi: 'SaaS przy API (PLN / mies.)', softCloud: 'SaaS przy chmurze (PLN / mies.)', softLicense: 'Licencja przy sprzęcie (PLN)', softSupport: 'Kontrakt wsparcia (PLN / rok)', softAmort: 'Amortyzacja licencji (mies.)',
-  apiOps: 'Infrastruktura API (PLN / mies.)', lApiInfra: 'Infrastruktura API', lSoftSaas: 'Zagłoba RAG · SaaS', lSoftLicense: 'Zagłoba RAG · licencja (amort.)', lSoftSupport: 'Zagłoba RAG · wsparcie', lInfra: 'Infrastruktura', lSoftware: 'Oprogramowanie',
+  apiOps: 'Infrastruktura API (PLN / mies.)', lApiInfra: 'Infrastruktura API', lSoftSaas: 'Oprogramowanie · SaaS', lSoftLicense: 'Oprogramowanie · licencja (amort.)', lSoftSupport: 'Oprogramowanie · wsparcie', lInfra: 'Infrastruktura', lSoftware: 'Oprogramowanie',
   smallGpu: 'Sprzęt', smallMaxUsers: 'Maks. użytkowników', smallTooMany: 'Opcja niedostępna: Dell GB10 obsługuje do {n} użytkowników.', smallPower: 'Moc Dell GB10 (W)', smallReplace: 'Dell GB10: wymiana co (mies.)', smallPrefill: 'Dell GB10: wejście', smallDecode: 'Dell GB10: wyjście',
   settingsTitle: 'Ustawienia', settingsDone: 'Pokaż wyniki', settingsClose: 'Zamknij ustawienia', scenarioTitle: 'Zapis i pliki',
   estimateNotice: 'Szacunek kosztów inferencji, nie oferta ani gwarancja jakości i wydajności. Kwoty netto.',
@@ -923,10 +923,10 @@ Object.assign(T.pl, {
 });
 Object.assign(T.en, {
   dashboardLead: 'A company RAG assistant: compare API, cloud GPU, a small Dell GB10 deployment and your own server.', costBreakdown: 'Cost breakdown',
-  workloadDetails: 'Workload details', softwareTitle: 'Software: Quantica Zagłoba RAG',
-  softwareHint: 'The software layer above the infrastructure. With API and cloud, Zagłoba RAG runs as SaaS (monthly subscription); with Dell GB10 and own server it is sold as a licence with a yearly support contract.',
+  workloadDetails: 'Workload details', softwareTitle: 'RAG software',
+  softwareHint: 'The software layer above the infrastructure. With API and cloud, the RAG software runs as SaaS (monthly subscription); with Dell GB10 and own server it is sold as a licence with a yearly support contract.',
   softApi: 'SaaS with API (PLN / month)', softCloud: 'SaaS with cloud (PLN / month)', softLicense: 'Licence with hardware (PLN)', softSupport: 'Support contract (PLN / year)', softAmort: 'Licence depreciation (months)',
-  apiOps: 'API infrastructure (PLN / month)', lApiInfra: 'API infrastructure', lSoftSaas: 'Zagłoba RAG · SaaS', lSoftLicense: 'Zagłoba RAG · licence (depr.)', lSoftSupport: 'Zagłoba RAG · support', lInfra: 'Infrastructure', lSoftware: 'Software',
+  apiOps: 'API infrastructure (PLN / month)', lApiInfra: 'API infrastructure', lSoftSaas: 'Oprogramowanie · SaaS', lSoftLicense: 'Software · licence (depr.)', lSoftSupport: 'Software · support', lInfra: 'Infrastructure', lSoftware: 'Software',
   smallGpu: 'Hardware', smallMaxUsers: 'Max users', smallTooMany: 'Option unavailable: Dell GB10 supports up to {n} users.', smallPower: 'Dell GB10 power (W)', smallReplace: 'Dell GB10: replace every (months)', smallPrefill: 'Dell GB10: input', smallDecode: 'Dell GB10: output',
   settingsTitle: 'Settings', settingsDone: 'Show results', settingsClose: 'Close settings', scenarioTitle: 'Save and files',
   estimateNotice: 'Inference cost estimate, not a quote or a quality/capacity guarantee. Net amounts.',
@@ -1310,7 +1310,7 @@ function cumulativeCost(path, cost, month) {
   return cost.capex * purchases + (cost.oneOff || 0) + cost.running * month;
 }
 
-// Software layer: Quantica Zagłoba RAG as SaaS (API, cloud) or as a licence + yearly support (GB10, own server).
+// Software layer: RAG software as SaaS (API, cloud) or as a licence + yearly support (GB10, own server).
 function softwareCost(path, s) {
   if (path === 'api') return { saas: s.softApi, licenseAmort: 0, support: 0, oneOff: 0, monthly: s.softApi };
   if (path === 'cloud') return { saas: s.softCloud, licenseAmort: 0, support: 0, oneOff: 0, monthly: s.softCloud };
@@ -1444,7 +1444,7 @@ function runRegressionChecks(models = []) {
       && Math.abs(totals.small.monthly - (small.monthly + s.softLicense / s.softAmort + s.softSupport / 12)) < 1e-9
       && cumulativeCost('small', totals.small, 0) === small.capex + s.softLicense
       && Math.abs(cumulativeCost('own', totals.own, 12) - (own.capex + s.softLicense + 12 * (own.running + s.softSupport / 12))) < 1e-6;
-    add('Zagłoba RAG software layer', softOk, `${totals.own.monthly.toFixed(2)} / ${totals.small.monthly.toFixed(2)}`);
+    add('RAG software layer', softOk, `${totals.own.monthly.toFixed(2)} / ${totals.small.monthly.toFixed(2)}`);
     const smallLimit = totalCost('small', s, s.smallMaxUsers), smallOver = totalCost('small', s, s.smallMaxUsers + 1);
     add('Dell GB10 user limit', smallLimit.eligible === true && smallOver.eligible === false && smallOver.reason === 'smallTooMany' && computeResults({ ...s, users: 300 }, sourceModels).winner !== 'small', `${s.smallMaxUsers}`);
     const exact = apiCost(terra, { ...s, chunks: 1, chunkTok: 272000, promptTok: 0, outTok: 0 });
@@ -1714,11 +1714,11 @@ function buildAssumptions() {
       [P('Tokeny myślenia', 'Thinking tokens'), now((s.thinking ? P('włączone', 'on') : P('wyłączone', 'off')) + ' · ×' + fmtNum(s.thinkMult, 1)),
         P('Tokeny rozumowania są płatne jak wyjście i nie są widoczne w odpowiedzi.', 'Reasoning tokens are billed as output and are not visible in the answer.')],
     ]},
-    { title: P('Oprogramowanie: Quantica Zagłoba RAG', 'Software: Quantica Zagłoba RAG'), rows: [
-      [P('SaaS przy API', 'SaaS with API'), now(money(s.softApi, 0) + P(' / mies.', ' / month')), P('Abonament Zagłoba RAG dla wariantu z płatnym API modelu. Doliczany do kosztu tokenów w każdym miesiącu.', 'Zagłoba RAG subscription for the paid model API variant. Added to token cost every month.')],
-      [P('SaaS przy chmurze', 'SaaS with cloud'), now(money(s.softCloud, 0) + P(' / mies.', ' / month')), P('Abonament Zagłoba RAG dla wariantu z GPU w chmurze.', 'Zagłoba RAG subscription for the cloud GPU variant.')],
+    { title: P('Oprogramowanie RAG', 'RAG software'), rows: [
+      [P('SaaS przy API', 'SaaS with API'), now(money(s.softApi, 0) + P(' / mies.', ' / month')), P('Abonament oprogramowania RAG dla wariantu z płatnym API modelu. Doliczany do kosztu tokenów w każdym miesiącu.', 'RAG software subscription for the paid model API variant. Added to token cost every month.')],
+      [P('SaaS przy chmurze', 'SaaS with cloud'), now(money(s.softCloud, 0) + P(' / mies.', ' / month')), P('Abonament oprogramowania RAG dla wariantu z GPU w chmurze.', 'RAG software subscription for the cloud GPU variant.')],
       [P('Licencja przy sprzęcie', 'Licence with hardware'), now(money(s.softLicense, 0) + ' · ' + s.softAmort + ' ' + t('monthsUnit')), P('Jednorazowa sprzedaż oprogramowania dla Dell GB10 i własnego serwera. W koszcie miesięcznym rozliczana przez okres amortyzacji licencji; na wykresie płatna w miesiącu 0 i nie powtarzana przy wymianie sprzętu.', 'One-off software sale for Dell GB10 and own server. Spread over the licence depreciation period in the monthly cost; on the chart paid in month 0 and not repeated with hardware replacement.')],
-      [P('Kontrakt wsparcia', 'Support contract'), now(money(s.softSupport, 0) + P(' / rok', ' / year')), P('Roczny kontrakt wsparcia Zagłoba RAG przy licencji, liczony jako 1/12 miesięcznie.', 'Yearly Zagłoba RAG support contract with the licence, counted as 1/12 per month.')],
+      [P('Kontrakt wsparcia', 'Support contract'), now(money(s.softSupport, 0) + P(' / rok', ' / year')), P('Roczny kontrakt wsparcia oprogramowania przy licencji, liczony jako 1/12 miesięcznie.', 'Yearly software support contract with the licence, counted as 1/12 per month.')],
     ]},
     { title: P('API', 'API'), rows: [
       [P('Cennik', 'Price list'), String(state.models.length) + ' ' + P('modeli', 'models'),
@@ -1741,7 +1741,7 @@ function buildAssumptions() {
         P('Domyślna kwota oznacza ilustracyjny pakiet z GPU, serwerem, UPS i wdrożeniem. Wymaga indywidualnej wyceny i nie jest ofertą ani gwarancją kompletności.', 'The default is an illustrative bundle with GPU, server, UPS and setup. It requires an individual quote and is not an offer or completeness guarantee.'), 'pro6000'],
       [P('Amortyzacja', 'Depreciation'), now(s.ownAmort + ' ' + t('monthsUnit')), P('Amortyzacja jest osobnym rozliczeniem zakupu. Nie wyznacza terminu wymiany sprzętu.', 'Depreciation is a separate purchase accounting period. It does not set the replacement date.')],
       [P('Wymiana sprzętu', 'Hardware replacement'), now(ownReplace + ' ' + t('monthsUnit')), P('Osobny okres wymiany używany na wykresie; nie jest utożsamiany z amortyzacją.', 'A separate replacement period used by the chart; it is not the depreciation period.')],
-      [P('Obsługa', 'Support'), now(money(s.ownOps, 0) + P(' / mies.', ' / month')), P('Domyślnie 0 PLN: utrzymanie sprzętu nie jest liczone; wsparcie oprogramowania jest w kontrakcie Zagłoba RAG. Bez etatu MLOps i bez drugiej karty na wypadek awarii.', 'Defaults to PLN 0: hardware maintenance is not counted; software support sits in the Zagłoba RAG contract. No MLOps role and no failover card.')],
+      [P('Obsługa', 'Support'), now(money(s.ownOps, 0) + P(' / mies.', ' / month')), P('Domyślnie 0 PLN: utrzymanie sprzętu nie jest liczone; wsparcie oprogramowania jest w kontrakcie wsparcia oprogramowania. Bez etatu MLOps i bez drugiej karty na wypadek awarii.', 'Defaults to PLN 0: hardware maintenance is not counted; software support sits in the software support contract. No MLOps role and no failover card.')],
       [P('Prąd netto', 'Net power'), now(fmtNum(s.ownPower) + ' W · ' + fmtNum(s.kwh, 2) + ' PLN/kWh netto · 24/7'),
         P('Pełna moc przez całą dobę to górna granica. Stawka PLN/kWh jest edytowalnym kosztem netto; źródło nie kalibruje tu brutto ani dystrybucji.', 'Full power around the clock is an upper bound. PLN/kWh is an editable net input; the source is not used to calibrate gross price or distribution.'), 'power'],
     ]},
@@ -1753,7 +1753,7 @@ function buildAssumptions() {
         P('Cena pakietu małego wdrożenia (sprzęt Dell GB10 z konfiguracją). Jest edytowalną wartością scenariusza; nie obejmuje budowy aplikacji ani utrzymania.', 'Price of the small deployment package (Dell GB10 hardware with setup). It is an editable scenario value; it excludes app build and operations.')],
       [P('Amortyzacja', 'Depreciation'), now(s.smallAmort + ' ' + t('monthsUnit')), P('Rozliczane tak samo jak dla własnego serwera.', 'Accounted for exactly like the own server.')],
       [P('Wymiana sprzętu', 'Hardware replacement'), now(smallReplace + ' ' + t('monthsUnit')), P('Osobny okres wymiany używany na wykresie.', 'A separate replacement period used by the chart.')],
-      [P('Obsługa', 'Support'), now(money(s.smallOps, 0) + P(' / mies.', ' / month')), P('Domyślnie 0 PLN: utrzymanie sprzętu nie jest liczone; wsparcie oprogramowania jest w kontrakcie Zagłoba RAG.', 'Defaults to PLN 0: hardware maintenance is not counted; software support sits in the Zagłoba RAG contract.')],
+      [P('Obsługa', 'Support'), now(money(s.smallOps, 0) + P(' / mies.', ' / month')), P('Domyślnie 0 PLN: utrzymanie sprzętu nie jest liczone; wsparcie oprogramowania jest w kontrakcie wsparcia oprogramowania.', 'Defaults to PLN 0: hardware maintenance is not counted; software support sits in the software support contract.')],
       [P('Prąd netto', 'Net power'), now(fmtNum(s.smallPower) + ' W · ' + fmtNum(s.kwh, 2) + ' PLN/kWh netto · 24/7'), P('Ta sama stawka za energię co dla własnego serwera; pełna moc przez całą dobę to górna granica.', 'The same energy rate as the own server; full power around the clock is an upper bound.'), 'power'],
       [P('Przepustowość', 'Throughput'), now(fmtNum(s.smallPrefill) + ' / ' + fmtNum(s.smallDecode) + ' tok/s'),
         P('Domyślne wartości są ilustracyjne: pamięć LPDDR5x o przepustowości ok. 273 GB/s ogranicza generowanie do rzędu setek tok/s łącznie. Zmierz na własnym modelu przed decyzją.', 'Defaults are illustrative: LPDDR5x memory bandwidth of roughly 273 GB/s limits aggregate generation to the order of hundreds of tok/s. Measure with your own model before deciding.'), 'gb10'],

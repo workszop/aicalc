@@ -8,7 +8,7 @@ czterech wariantach:
 3. **małe wdrożenie na Dell Pro Max GB10** – pakiet wyceniony na **35 000 PLN**,
 4. własny serwer (RTX PRO 6000).
 
-Nad infrastrukturą liczona jest warstwa oprogramowania **Quantica Zagłoba RAG**:
+Nad infrastrukturą liczona jest warstwa **oprogramowania RAG** (neutralna etykieta, edytowalne kwoty):
 przy API i chmurze jako SaaS (domyślnie 5 000 PLN / mies. w obu), przy Dell
 GB10 i własnym serwerze jako sprzedaż licencji (150 000 PLN jednorazowo,
 amortyzowane przez 36 mies.) z rocznym kontraktem wsparcia (20 000 PLN / rok).
@@ -44,7 +44,7 @@ Domyślne parametry są edytowalne w panelu ustawień:
 | --- | --- | --- |
 | `smallCapex` | 35 000 PLN | cena pakietu Dell GB10 z konfiguracją |
 | `smallAmort` / `smallReplace` | 36 mies. | amortyzacja i wymiana rozliczane osobno |
-| `smallOps` | 0 PLN / mies. | utrzymanie sprzętu nie jest liczone (wsparcie jest w kontrakcie Zagłoba RAG) |
+| `smallOps` | 0 PLN / mies. | utrzymanie sprzętu nie jest liczone (wsparcie jest w kontrakcie wsparcia oprogramowania) |
 | `smallPower` | 240 W | pobór stacji GB10, pełna moc 24/7 jako górna granica |
 | `smallPrefill` / `smallDecode` | 3 000 / 250 tok/s | ilustracyjne; pamięć ~273 GB/s ogranicza generowanie |
 
@@ -54,7 +54,7 @@ udziału w porównaniu, paskach ani wykresie. Poniżej limitu, gdy szczyt
 przekracza przepustowość, kalkulator dolicza kolejne sztuki GB10. Wartości
 przepustowości trzeba zmierzyć na własnym modelu przed decyzją.
 
-Parametry oprogramowania (sekcja „Oprogramowanie: Quantica Zagłoba RAG”):
+Parametry oprogramowania (sekcja „Oprogramowanie RAG”):
 `softApi` 5 000, `softCloud` 5 000 PLN / mies., `softLicense` 150 000 PLN,
 `softSupport` 20 000 PLN / rok, `softAmort` 36 mies. Przy API doliczana jest
 stała infrastruktura `apiOps` (domyślnie 1 000 PLN / mies.: hosting aplikacji,
@@ -83,7 +83,7 @@ wynoszą 0.
 
 Na dużym ekranie ustawienia są zebrane w niezależnie przewijanym panelu po
 lewej stronie. Panel obejmuje obciążenie (widoczne są trzy scenariusze,
-szczegóły zwinięte), oprogramowanie Zagłoba RAG, model API, chmurę GPU,
+szczegóły zwinięte), oprogramowanie RAG, model API, chmurę GPU,
 Dell GB10, własny serwer,
 ustawienia zaawansowane oraz operacje scenariusza. Po prawej stronie pozostają
 wyniki, wykresy i porównanie modeli, więc zmiana parametrów nie wypycha
@@ -187,7 +187,7 @@ instaluje.
 inference costs across model API (plus PLN 1,000 per month of fixed
 infrastructure), cloud GPU, a small Dell Pro Max GB10 deployment priced at
 PLN 35,000 (available up to 199 users), and own-server options, plus a
-Quantica Zagłoba RAG software layer (SaaS 5,000 PLN per month with API/cloud;
+RAG software layer (SaaS 5,000 PLN per month with API/cloud;
 a 150,000 PLN licence with a 20,000 PLN yearly support contract on hardware).
 It is an estimate, not a quote or a capacity guarantee. Open `index.html` directly or
 serve the directory with Python. Prices were checked on 14 Sep 2026; token

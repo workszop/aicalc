@@ -87,8 +87,8 @@ const fixedInfra = run(`(() => {
 assert.equal(fixedInfra.rowFixed, 1000, 'model table rows include the 1 000 PLN/month API infrastructure');
 assert.equal(fixedInfra.fixedOnly, 0, 'fixed infrastructure applies to the API path only');
 assert.equal(fixedInfra.api12, 0, 'API cumulative cost is linear');
-assert.ok(Math.abs(fixedInfra.api - 5000) < 1e-9 && Math.abs(fixedInfra.cloud - 5000) < 1e-9, 'Zagłoba RAG SaaS: 5 000 with API and with cloud');
-assert.ok(Math.abs(fixedInfra.own - (150000 / 36 + 20000 / 12)) < 1e-9 && Math.abs(fixedInfra.small - fixedInfra.own) < 1e-9, 'Zagłoba RAG licence 150 000 + 20 000/year on hardware paths');
+assert.ok(Math.abs(fixedInfra.api - 5000) < 1e-9 && Math.abs(fixedInfra.cloud - 5000) < 1e-9, 'RAG software SaaS: 5 000 with API and with cloud');
+assert.ok(Math.abs(fixedInfra.own - (150000 / 36 + 20000 / 12)) < 1e-9 && Math.abs(fixedInfra.small - fixedInfra.own) < 1e-9, 'RAG software licence 150 000 + 20 000/year on hardware paths');
 assert.equal(fixedInfra.small0, 35000 + 150000, 'GB10 cumulative cost starts at hardware + licence');
 assert.ok(Math.abs(fixedInfra.small12 - (185000 + 12 * (175.104 + 20000 / 12))) < 1e-9, 'GB10 first year adds support but not the licence again');
 assert.equal(fixedInfra.rowSoft, 5000, 'model table rows include the SaaS fee');
