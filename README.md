@@ -48,12 +48,6 @@ Domyślne parametry są edytowalne w panelu ustawień:
 | `smallPower` | 240 W | pobór stacji GB10, pełna moc 24/7 jako górna granica |
 | `smallPrefill` / `smallDecode` | 3 000 / 250 tok/s | ilustracyjne; pamięć ~273 GB/s ogranicza generowanie |
 
-Opcja jest przeznaczona dla małych wdrożeń: od **200 użytkowników**
-(`smallMaxUsers` = 199) karta pokazuje „Opcja niedostępna” i GB10 nie bierze
-udziału w porównaniu, paskach ani wykresie. Poniżej limitu, gdy szczyt
-przekracza przepustowość, kalkulator dolicza kolejne sztuki GB10. Wartości
-przepustowości trzeba zmierzyć na własnym modelu przed decyzją.
-
 Parametry oprogramowania (sekcja „Oprogramowanie RAG”):
 `softApi` 5 000, `softCloud` 5 000 PLN / mies., `softLicense` 150 000 PLN,
 `softSupport` 20 000 PLN / rok, `softAmort` 36 mies. Przy API doliczana jest
@@ -61,6 +55,58 @@ stała infrastruktura `apiOps` (domyślnie 1 000 PLN / mies.: hosting aplikacji,
 baza wektorowa, sieć); kwoty w tabeli modeli zawierają SaaS i tę
 infrastrukturę. Koszty obsługi sprzętu (`cloudOps`, `ownOps`, `smallOps`) domyślnie
 wynoszą 0.
+
+Opcja jest przeznaczona dla małych wdrożeń: do **100 użytkowników** włącznie
+(`smallMaxUsers` = 100) GB10 bierze udział w porównaniu; od 101 karta pokazuje
+„Opcja niedostępna” i GB10 nie bierze udziału w porównaniu, paskach ani
+wykresie. Poniżej limitu, gdy szczyt przekracza zadany limit wykorzystania,
+kalkulator dolicza kolejne sztuki GB10. Wartości przepustowości trzeba
+zmierzyć na własnym modelu przed decyzją.
+
+Od **50 użytkowników** (`smallRecommendFrom`, edytowalne), gdy GB10 jest
+najtańszy, karta GB10 zachowuje etykietę „Najtańsze”, a kolejna najtańsza
+opcja dostaje etykietę „Rekomendowane” (`data-recommended` na karcie i
+`#app[data-recommended]`). Poniżej progu, albo gdy GB10 nie wygrywa,
+rekomendacja nie jest pokazywana.
+
+## Dobór sprzętu do liczby użytkowników
+
+W ustawieniach zaawansowanych parametr `maxUtilization` ustala maksymalne
+wykorzystanie sprzętu (1–100%, domyślnie **80%**). Domyślnie zostaje więc
+co najmniej 20% rezerwy obliczeniowej przy szacowanym szczycie. Kalkulator
+sumuje obciążenie wejścia i wyjścia, dzieli je przez limit wykorzystania
+i zaokrągla w górę do pełnych jednostek. Przy zerowym ruchu pozostaje jedna
+jednostka, z jej normalnymi kosztami.
+
+Jednostka oznacza kompletną konfigurację: instancję GPU w chmurze, własny
+serwer albo stację GB10. Cena, moc i przepustowość w ustawieniach dotyczą
+jednej takiej jednostki. Kolejne jednostki zwiększają koszt najmu albo
+zakupu, amortyzacji, energii i wymiany sprzętu; stałe koszty obsługi oraz
+oprogramowania nie są mnożone. Zmiana samego opisu GPU nie zmienia parametrów.
+
+Karty pokazują liczbę jednostek, wykorzystanie w szczycie, limit oraz
+szacowaną liczbę obsługiwanych i dodatkowych użytkowników. Pojemność dotyczy
+bieżącego profilu na osobę (zapytania, kontekst, odpowiedź, język, myślenie,
+godziny i szczyt), **nie liczby jednoczesnych sesji**. Przy braku obciążenia
+tokenami pojemność z przepustowości nie jest wyznaczana. Limit wdrożenia GB10
+pozostaje niezależny i obowiązuje także wtedy.
+
+Przykłady przy pozostałych ustawieniach domyślnych:
+
+| Użytkownicy | Chmura GPU | Własny serwer | GB10 |
+| --- | --- | --- | --- |
+| 20 | 1 instancja | 1 serwer | 1 stacja |
+| 50 | 1 instancja | 1 serwer | 1 stacja |
+| 100 | 1 instancja | 1 serwer | 2 stacje |
+| 101 | 1 instancja | 1 serwer | niedostępne |
+| 400 | 2 instancje | 2 serwery | niedostępne |
+
+Przy 400 użytkownikach dwie instancje chmurowe obsługują szacunkowo do
+740 osób, czyli zostaje miejsce na 340 dodatkowych użytkowników o tym samym
+profilu. Ustawienie limitu 100% wyłącza rezerwę i przywraca wcześniejszy
+model doboru liczby jednostek. To nadal szacunek: aplikacja nie weryfikuje
+VRAM, dopasowania modelu do sprzętu ani opóźnień. Przed zakupem lub najmem
+potrzebny jest test obciążeniowy własnej konfiguracji.
 
 ## Scenariusze i cennik
 
@@ -73,6 +119,10 @@ wynoszą 0.
   zachowuje wybraną preferencję.
 - **Eksport JSON** i **Import JSON** pozwalają przenieść scenariusz między
   przeglądarkami. Import jest walidowany przed zastosowaniem.
+- Limit wykorzystania i próg rekomendacji są zapisywane i eksportowane wraz
+  ze scenariuszem. Starsze pliki bez `maxUtilization` otrzymują wartość 80%,
+  a bez `smallRecommendFrom` wartość 50; ich wyniki mogą więc wymagać większej
+  liczby jednostek niż wcześniej.
 - **Reset scenariusza** przywraca ustawienia kalkulatora i od razu zapisuje
   reset. Aktualny, zaimportowany cennik pozostaje zachowany.
 - **Cennik wbudowany** to osobny reset CSV: przywraca wyłącznie listę modeli
@@ -172,7 +222,7 @@ python3 tests/browser-smoke.py
 
 Ostatni test uruchamia lokalny serwer na losowym porcie i świeży profil
 Google Chrome/Chromium, a następnie sprawdza tryb `?verify=1` zarówno przez
-`http://`, jak i `file://` (25 sprawdzeń, w tym kontrakt DOM dla czterech
+`http://`, jak i `file://` (35 sprawdzeń, w tym testy pojemności i kontrakt DOM dla czterech
 kart: `data-small-monthly`, `data-small-units`, `data-small-eligible`,
 `data-break-even-small-users`, `data-payback-small-vs-cloud`,
 `data-api-software`, `data-own-software`; każda karta publikuje
@@ -186,7 +236,7 @@ instaluje.
 `aicalc` is a dependency-free, single-file educational estimator for RAG
 inference costs across model API (plus PLN 1,000 per month of fixed
 infrastructure), cloud GPU, a small Dell Pro Max GB10 deployment priced at
-PLN 35,000 (available up to 199 users), and own-server options, plus a
+PLN 35,000 (available up to 100 users, sized with an 80% utilization ceiling), and own-server options, plus a
 RAG software layer (SaaS 5,000 PLN per month with API/cloud;
 a 150,000 PLN licence with a 20,000 PLN yearly support contract on hardware).
 It is an estimate, not a quote or a capacity guarantee. Open `index.html` directly or
