@@ -110,6 +110,14 @@ CAPACITY_SMOKE_SCRIPT = r"""
       expect(blank(card.dataset[name]), `${key}: unavailable ${name} dataset must be blank`);
     }
     expect(card.fields.status, `${key}: unavailable status text is empty`);
+    // Task 6: an unavailable option stays in the summary bars and the chart legend, marked as such.
+    const bar = document.querySelector(`#bars .bar-row[data-path="${key}"]`);
+    expect(bar && bar.dataset.unavailable === 'true', `${key}: unavailable bar row missing`);
+    expect(bar.querySelector('.bar-fill') === null, `${key}: unavailable bar must not draw a fill`);
+    expect(document.querySelector(`#legendTime [data-series="${key}"][data-unavailable="true"]`), `${key}: legend entry missing`);
+    // Task 11: the unavailable card keeps its structure and offers a way back.
+    expect(card.node.dataset.eligible === 'false' && card.node.querySelector('.opt-note button[data-focus="users"]'), `${key}: unavailable card lacks the change-users link`);
+    expect(card.node.querySelector('.opt-lines .line'), `${key}: unavailable card keeps its breakdown lines`);
     return card;
   };
   const assertInvalid = (key) => {
@@ -245,6 +253,41 @@ CAPACITY_SMOKE_SCRIPT = r"""
     expect(checkDomContract(document, App.results).some((check) => !check.pass), 'DOM contract misses visible corruption');
     unitsField.textContent = oldUnitsText;
     expect(checkDomContract(document, App.results).every((check) => check.pass), 'DOM contract does not recover');
+
+    // Task 5: validation banner links jump to and focus the broken field.
+    setInput('users', 0);
+    const jump = document.querySelector('#validationStatus button[data-focus="users"]');
+    expect(jump, 'validation banner has a jump button for #users');
+    document.querySelector('#workloadDetails').open = false;
+    jump.click();
+    expect(document.activeElement && document.activeElement.id === 'users', 'jump button focuses #users');
+    expect(document.querySelector('#workloadDetails').open === true, 'jump button opens the enclosing details');
+    if (window.matchMedia('(max-width: 768px)').matches) expect(app.dataset.settings === 'open', 'jump button opens the mobile drawer');
+    setInput('users', 20);
+    expect(document.querySelector('#validationStatus').hidden === true, 'banner hides after recovery');
+
+    // Review fix C1/I5: rendering never writes the hash; applying a hash consumes it and keeps the custom model list.
+    expect(location.hash === '', 'render must not write the URL hash');
+    const keptModels = state.models.length;
+    expect(applyShareHash('#users=77') === true, 'applyShareHash accepts a valid hash');
+    expect(state.users === 77 && document.querySelector('#users').value === '77', 'hash values applied');
+    expect(location.hash === '' && state.models.length === keptModels, 'hash consumed, models untouched');
+    expect(applyShareHash('#users=0') === false && state.users === 77, 'invalid hash ignored');
+    click('[data-preset="S1"]');
+    expect(location.hash === '', 'preset change leaves the URL alone');
+    // Deferred minors: singular grammar at one user; software-off copy swap; unavailable stack shows a dash.
+    setInput('users', 1);
+    expect(/Przy 1 użytkowniku/.test(document.querySelector('#verdict').textContent), 'singular user phrase: ' + document.querySelector('#verdict').textContent);
+    setInput('users', 20);
+    document.querySelector('#softwareOn').checked = false; document.querySelector('#softwareOn').dispatchEvent(new Event('input', { bubbles: true }));
+    expect(!/Zagłoba/.test(document.querySelector('#modelNote').textContent) && document.querySelector('[data-t="modelsNote"]').textContent === T.pl.modelsNoteNoSoft, 'models note swaps when software is off');
+    document.querySelector('#softwareOn').checked = true; document.querySelector('#softwareOn').dispatchEvent(new Event('input', { bubbles: true }));
+    setInput('users', 300);
+    expect(document.querySelector('#optSmall .opt-stack').textContent === '–', 'unavailable stack shows a dash');
+    setInput('users', 20);
+    // Sidebar redesign: collapsed section summaries show the current setting.
+    expect(document.querySelector('[data-meta="apiSettings"]').textContent === state.model, 'API summary shows the model');
+    expect(/100/.test(document.querySelector('[data-meta="workloadDetails"]').textContent) === false && /20/.test(document.querySelector('[data-meta="workloadDetails"]').textContent), 'workload summary shows the user count');
 
     expect(document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1, 'horizontal overflow');
     finish({ ok: true });
@@ -671,7 +714,7 @@ def check_layout_contract(parser: ContractParser, label: str) -> None:
         if len(records) != 1 or not is_descendant(records[0], "settingsPanel"):
             raise SmokeFailure(f"{label}: #{node_id} must be inside #settingsPanel")
 
-    for node_id in ("scenarioSave", "scenarioExport", "scenarioImport", "scenarioReset"):
+    for node_id in ("scenarioSave", "scenarioExport", "scenarioImport"):
         records = records_with_id(node_id)
         if len(records) != 1 or not is_descendant(records[0], "settingsPanel"):
             raise SmokeFailure(f"{label}: #{node_id} must be inside #settingsPanel")

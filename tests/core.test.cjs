@@ -344,4 +344,68 @@ const regression = run('runRegressionChecks()');
 assert.ok(Array.isArray(regression) && regression.length > 0, 'regression checks exposed');
 assert.ok(regression.every((check) => check.pass === true), JSON.stringify(regression));
 
+// Task 1: Polish-only PL copy and thousands grouping
+assert.equal(run('T.pl.navTag'), 'Kalkulator kosztów AI');
+assert.equal(typeof run('T.pl.heroTag'), 'string');
+assert.equal(run('T.pl.thinking'), 'Tryb myślenia (rozumowanie)');
+assert.equal(new Intl.NumberFormat('pl-PL', { useGrouping: 'always', maximumFractionDigits: 0 }).format(6839).replace(/\s/g, ' '), '6 839', 'always-grouping groups four-digit numbers in Polish');
+assert.ok(/function fmtNum\([^)]*\)[^\n]*useGrouping: 'always'/.test(js), 'fmtNum groups thousands always');
+
+// Task 2: field help and glossary copy exist in both languages
+for (const key of ['help_users', 'help_chunks', 'help_chunkTok', 'help_peak', 'help_maxUtilization', 'help_smallMaxUsers', 'help_softApi', 'help_softLicense',
+  'glossaryRagTerm', 'glossaryRag', 'glossaryGb10Term', 'glossaryGb10', 'glossaryTokensTerm', 'glossaryTokens', 'glossaryPeakTerm', 'glossaryPeak', 'glossaryHeadroomTerm', 'glossaryHeadroom'])
+  for (const lang of ['pl', 'en']) assert.equal(typeof run(`T.${lang}.${key}`), 'string', `${lang}.${key}`);
+assert.deepEqual(Object.keys(run('FIELD_HELP')), ['users', 'chunks', 'chunkTok', 'peak', 'maxUtilization', 'smallMaxUsers', 'softApi', 'softLicense']);
+
+// Task 3: software toggle
+assert.equal(run('DEFAULTS.softwareOn'), true, 'software counted by default');
+assert.equal(JSON.stringify(run('softwareCost("api", { ...DEFAULTS, softwareOn: false })')), JSON.stringify({ saas: 0, licenseAmort: 0, support: 0, oneOff: 0, monthly: 0 }));
+assert.equal(run('totalCost("own", { ...DEFAULTS, softwareOn: false }).oneOff'), 0, 'no licence when software is off');
+assert.ok(run('totalCost("cloud", { ...DEFAULTS, softwareOn: false }).monthly') < run('totalCost("cloud", DEFAULTS).monthly'), 'cloud drops the SaaS fee');
+
+// Task 4: verdict
+const verdict20 = run('(() => { const r = computeResults({ ...DEFAULTS, lang: "en" }, models); return { v: verdict(r), r }; })()');
+assert.equal(verdict20.v.winner, verdict20.r.winner, 'verdict winner is the cheapest eligible path');
+const verdict100 = run('(() => { const r = computeResults({ ...DEFAULTS, users: 100 }, models); return { v: verdict(r), r }; })()');
+assert.equal(verdict100.r.recommended, 'api', 'fixture: API recommended at 100 users');
+assert.equal(verdict100.v.winner, 'small', 'cheapest stays the winner');
+assert.equal(verdict100.v.recommended, 'api', 'verdict carries the recommendation');
+assert.ok(verdict100.v.savingsPct >= 0, 'savings never negative');
+assert.ok(verdict100.v.recommendedMonthly > verdict100.v.monthly, 'recommended monthly reported');
+assert.ok(verdict20.v.savingsPct > 0 && verdict20.v.savingsPct < 1, `savings fraction ${verdict20.v.savingsPct}`);
+assert.ok(verdict20.v.runnerUp && verdict20.v.runnerUp !== verdict20.v.winner, 'runner-up differs from winner');
+const verdict300 = run('verdict(computeResults({ ...DEFAULTS, users: 300 }, models))');
+assert.notEqual(verdict300.runnerUp, 'small', 'ineligible Dell never runner-up');
+assert.notEqual(verdict300.winner, 'small', 'ineligible Dell never winner');
+for (const key of ['verdictText', 'verdictSingle', 'aApiVsCloud', 'aApiVsSmall', 'aApiVsOwn', 'aPaybackSmall', 'aPayback', 'aMinute'])
+  for (const lang of ['pl', 'en']) assert.ok(/\{(n|cost|pct|minute|users|winner|monthly|runnerUp)\}/.test(run(`T.${lang}.${key}`)), `${lang}.${key} is a sentence template`);
+
+// Task 10: price-check metadata is exposed per model
+assert.equal(models[0].checkedAt, '2026-09-13', 'checkedAt parsed from CSV');
+assert.ok(String(models[0].source).startsWith('https://'), 'source URL parsed from CSV');
+for (const lang of ['pl', 'en']) { assert.equal(typeof run(`T.${lang}.thSource`), 'string'); assert.equal(typeof run(`T.${lang}.sourceLink`), 'string'); }
+
+// Task 12: crossover detection between cumulative series
+assert.equal(JSON.stringify(run('crossovers([{ key: "a", ys: [0, 10, 20, 30] }, { key: "b", ys: [25, 25, 25, 25] }])')), JSON.stringify([{ a: 'a', b: 'b', month: 2.5, value: 25 }]), 'crossing point is interpolated');
+assert.equal(JSON.stringify(run('crossovers([{ key: "a", ys: [1, 2] }, { key: "b", ys: [] }])')), '[]', 'series without data are skipped');
+assert.equal(JSON.stringify(run('crossovers([{ key: "a", ys: [5, 6, 7] }, { key: "b", ys: [1, 2, 3] }])')), '[]', 'no crossing when one series stays above');
+assert.equal(run('crossovers([{ key: "a", ys: [0, 10, 20, 30, 40] }, { key: "b", ys: [25, 25, 25, 25, 25] }, { key: "c", ys: [15, 15, 15, 15, 15] }]).length'), 2, 'one crossover per crossing pair');
+
+// Review fixes: no duplicate keys inside T.pl / T.en; edge-case insight templates exist
+const tSource = js.slice(js.indexOf('const T = {'), js.indexOf('};', js.indexOf('const T = {')));
+for (const lang of ['pl', 'en']) {
+  const block = tSource.slice(tSource.indexOf(`  ${lang}: {`), tSource.indexOf('\n  }', tSource.indexOf(`  ${lang}: {`)));
+  const keys = [...block.matchAll(/(?:^|[{,]\s*)([A-Za-z_][\w]*):\s/g)].map((m) => m[1]);
+  const dupes = keys.filter((k, i) => keys.indexOf(k) !== i);
+  assert.deepEqual(dupes, [], `duplicate T.${lang} keys: ${dupes.join(', ')}`);
+  for (const key of ['thChecked', 'aApiVsCloudNever', 'aApiVsCloudAlways', 'aApiVsSmallNever', 'aApiVsSmallAlways', 'aApiVsOwnNever', 'aApiVsOwnAlways', 'aPaybackNever', 'aPaybackSmallNever', 'linkIgnored'])
+    assert.equal(typeof run(`T.${lang}.${key}`), 'string', `${lang}.${key}`);
+  assert.ok(!/\{n\}/.test(run(`T.${lang}.aPaybackNever`)), 'never template has no placeholder');
+}
+
+// Deferred minors: singular/plural phrases, software-off copy, tie verdict
+for (const lang of ['pl', 'en']) for (const key of ['usersOne', 'usersMany', 'monthsOne', 'monthsMany', 'verdictTie', 'modelsNoteNoSoft', 'chartTimeSubNoSoft'])
+  assert.equal(typeof run(`T.${lang}.${key}`), 'string', `${lang}.${key}`);
+assert.equal(run('T.pl.usersOne'), 'użytkowniku');
+
 console.log('Core validation, CSV, cost-model, and regression checks passed');

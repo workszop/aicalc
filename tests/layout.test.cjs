@@ -111,7 +111,15 @@ for (const node of descendants(options, (candidate) => candidate.tag === 'input'
 assert.ok(descendants(settingsPanel, (node) => node.attrs.id === 'presets').length, '#presets must be in #settingsPanel');
 assert.ok(descendants(settingsPanel, (node) => node.attrs.id === 'advancedPanel').length, '#advancedPanel must be in #settingsPanel');
 
-const scenarioButtonIds = ['scenarioSave', 'scenarioExport', 'scenarioImport', 'scenarioReset'];
+// Task 7: reset sits next to the presets; assumptions is not a solid button.
+const resetButton = byId('scenarioReset');
+const navBar = descendants(documentRoot, (node) => hasClass(node, 'nav') || hasClass(node, 'edu-header'))[0];
+assert.ok(resetButton && navBar && contains(navBar, resetButton), '#scenarioReset lives in the top nav');
+assert.ok(resetButton.parent === descendants(documentRoot, (node) => hasClass(node, 'js-assump'))[0].parent, '#scenarioReset sits next to the assumptions button');
+const assumpButton = descendants(documentRoot, (node) => hasClass(node, 'js-assump'))[0];
+assert.ok(assumpButton && !hasClass(assumpButton, 'pill-solid'), 'assumptions button is outlined, not solid');
+
+const scenarioButtonIds = ['scenarioSave', 'scenarioExport', 'scenarioImport'];
 const scenarioButtons = scenarioButtonIds.map(byId);
 function commonAncestor(nodes) {
   let candidate = nodes[0].parent;
@@ -168,5 +176,59 @@ vm.runInContext("onSettingsKeydown({ key: 'Tab', shiftKey: true, preventDefault(
 assert.equal(focusDoc.activeElement, lastSummary, 'backward Tab excludes controls inside closed details even when they have layout rectangles');
 vm.runInContext("onSettingsKeydown({ key: 'Tab', shiftKey: false, preventDefault() {} })", drawerContext);
 assert.equal(focusDoc.activeElement, closeButton, 'forward Tab wraps to the drawer close button');
+
+// Task 2: glossary with five terms inside the results panel
+const glossary = byId('glossary');
+assert.ok(glossary && glossary.tag === 'dl' && hasClass(glossary, 'glossary'), '#glossary is a <dl class="glossary">');
+assert.equal(descendants(glossary, (node) => node.tag === 'dt' && /^glossary\w+Term$/.test(node.attrs['data-t'] || '')).length, 5, 'glossary has five terms');
+
+// Task 9: sticky totals strip is the first child of the results panel
+const ticker = byId('ticker');
+assert.ok(ticker && hasClass(ticker, 'ticker'), '#ticker exists');
+const resultsChildren = resultsPanel.children.filter((node) => node.tag && node.tag !== '#text');
+assert.equal(resultsChildren[0], ticker, '#ticker is the first element in #resultsPanel');
+assert.equal(descendants(ticker, (node) => node.tag === 'span' && node.attrs['data-path']).length, 4, 'ticker has four path spans');
+
+// Task 10: typography tokens, compact hero with stats, one primary button, source column
+assert.ok(/--label-size:\s*12px;/.test(html) && /--tag-size:\s*12px;/.test(html), 'label and tag tokens are 12px');
+assert.ok(/--field-label-size:\s*13px;/.test(html), 'field label token exists');
+assert.equal(descendants(documentRoot, (node) => hasClass(node, 'pill-solid') || hasClass(node, 'edu-btn')).length, 0, 'no solid button in static markup');
+assert.equal(descendants(documentRoot, (node) => hasClass(node, 'hero-q')).length, 0, 'ghosted Q mark removed from the hero');
+const resultsContext = descendants(documentRoot, (node) => hasClass(node, 'results-context'))[0];
+assert.ok(resultsContext && contains(descendants(documentRoot, (node) => hasClass(node, 'page-head'))[0], resultsContext), 'stats strip sits inside the page head');
+assert.ok(descendants(documentRoot, (node) => node.tag === 'th' && node.attrs['data-t'] === 'thChecked').length === 1, 'model table has a source column');
+
+// Task 11: every option card shares one structure
+const optionCards = descendants(resultsPanel, (node) => hasClass(node, 'option'));
+assert.equal(optionCards.length, 4, 'four option cards');
+for (const card of optionCards) {
+  assert.equal(descendants(card, (n) => hasClass(n, 'opt-capacity')).length, 1, `${card.attrs.id} has one .opt-capacity`);
+  assert.equal(descendants(card, (n) => n.tag === 'details' && hasClass(n, 'cost-breakdown')).length, 1, `${card.attrs.id} has one breakdown`);
+}
+
+// Task 12: summary, chart and model cards are visually secondary
+const twoCol = descendants(resultsPanel, (node) => hasClass(node, 'two-col'))[0];
+assert.ok(twoCol, 'summary/chart section exists');
+assert.ok(twoCol.children.filter((n) => hasClass(n, 'card')).every((n) => hasClass(n, 'secondary')), 'summary and chart cards carry .secondary');
+
+// Deferred minors: no hardcoded px font sizes outside the token block; one live region; chips are sans
+const css = html.match(/<style>([\s\S]*?)<\/style>/)[1];
+const rules = css.replace(/:root\s*\{[\s\S]*?\n\}/, '');
+const hardcoded = [...rules.matchAll(/font-size:\s*(\d+(?:\.\d+)?px)/g)].map((m) => m[1]);
+assert.deepEqual(hardcoded, [], `hardcoded font sizes: ${hardcoded.join(', ')}`);
+assert.equal(descendants(documentRoot, (node) => node.attrs['aria-live'] !== undefined && node.attrs.id !== 'live' && node.attrs.id !== 'scenarioStatus').length, 0, 'only #live and #scenarioStatus announce');
+assert.ok(/\.edu-chip \{[^}]*font-family: var\(--font-sans\)/.test(css) && !/\.edu-chip \{[^}]*uppercase/.test(css), 'chips are sans, not uppercase');
+assert.ok(!/\.settings-body \.field label \{[^}]*letter-spacing/.test(css), 'no leftover letter-spacing on sidebar labels');
+
+// Sidebar redesign: three labelled groups, option sections carry their path accent, summaries expose a meta slot
+const groups = descendants(settingsPanel, (node) => hasClass(node, 'settings-group'));
+assert.equal(groups.length, 3, 'sidebar has three groups');
+assert.ok(groups.every((g) => g.children.some((n) => hasClass(n, 'group-title') && n.attrs['data-t'])), 'each group has a translated title');
+for (const [id, path] of [['apiSettings', 'api'], ['cloudSettings', 'cloud'], ['smallSettings', 'small'], ['ownSettings', 'own']]) {
+  const sec = byId(id);
+  assert.equal(sec.attrs['data-accent'], path, `${id} carries data-accent=${path}`);
+  const summary = sec.children.find((n) => n.tag === 'summary');
+  assert.ok(summary && summary.children.some((n) => hasClass(n, 'sum-meta') && n.attrs['data-meta'] === id), `${id} summary has a meta slot`);
+}
 
 console.log('Sidebar layout and keyboard contracts passed');
