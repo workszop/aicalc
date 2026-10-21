@@ -32,7 +32,6 @@ jakości lub przepustowości. Wszystkie kwoty są netto, bez VAT.
   wbudowanej listy. Otwarcie linku nakłada wartości na zapisany lokalnie
   scenariusz (zachowując wczytany cennik) i czyści hash; sam adres nie zmienia
   się podczas pracy.
-- **Drukuj / PDF** z arkuszem `@media print` i blokiem „Scenariusz”.
 - Pomoc pod polami, słowniczek, pasek bieżących sum przy przewijaniu, skok z
   komunikatu walidacji do pola, kolumna „Sprawdzono” ze źródłem cen w tabeli
   modeli, znaczniki przecięć kosztów na wykresie (`data-crossovers`).
@@ -128,7 +127,6 @@ potrzebny jest test obciążeniowy własnej konfiguracji.
 
 ## Scenariusze i cennik
 
-- **Zapisz lokalnie** zapisuje ustawienia i aktualny cennik w pamięci
   przeglądarki (klucz `edulab-aicalc-scenario-v2`; scenariusze zapisane przez
   poprzednią wersję nie są odczytywane, bo nie mają pól GB10). Zapisany
   scenariusz jest odczytywany przy kolejnym starcie.
