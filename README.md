@@ -47,7 +47,8 @@ python3 -m http.server 8000
 
 Następnie otwórz <http://127.0.0.1:8000/index.html>.
 
-Wersja online: <https://workszop.github.io/aicalc/>.
+Wersja online: <https://workszop.github.io/aicalc/>. Strony z sekcji
+„Kalkulatory dodatkowe” pojawią się pod tym samym adresem po wdrożeniu gałęzi.
 
 ## Kalkulatory dodatkowe
 
@@ -81,7 +82,12 @@ Wzory (miesięcznie):
 - lokalnie: `ceil(users / localMaxUsers) × (localCapex / localAmort +
   localPower / 1000 × 24 × 30,4 × kwh) + localOps + uiOps`,
 - punkt przecięcia: liczba czatów dziennie na osobę, od której subskrypcja
-  jest tańsza niż API.
+  jest tańsza niż API. Ma jeden z trzech rodzajów (`data-break-even-kind`):
+  `from` – subskrypcja jest tańsza od podanej liczby rozmów
+  (`data-break-even-chats`), `always` – jest tańsza przy każdym użyciu (cena
+  miejsca nie przekracza utrzymania czatu na osobę), `never` – nigdy nie jest
+  tańsza, bo rozmowy przez API nic nie kosztują i zostaje samo `uiOps`. Gdy
+  model API nie mieści rozmowy, zdanie o progu znika z werdyktu.
 
 | Parametr | Domyślnie |
 | --- | --- |
@@ -151,8 +157,10 @@ Strona `roi.html` oraz panel ROI na stronach `seats.html` i `agent.html`
 inwestycji →” pod werdyktem w `index.html` podstawia tam koszt miesięczny
 rekomendowanej (a bez rekomendacji najtańszej) opcji, jej koszt jednorazowy
 (licencja oprogramowania przy własnym serwerze lub GB10, gdy warstwa
-oprogramowania jest włączona, inaczej 0) oraz liczbę użytkowników. Nieprawidłowe
-parametry w adresie są ignorowane i zostają wartości domyślne.
+oprogramowania jest włączona, inaczej 0) oraz liczbę użytkowników. Przy GB10
+i własnym serwerze licencja trafia do kosztu jednorazowego, a koszt miesięczny
+w linku jest pomniejszony o jej amortyzację. Nieprawidłowe parametry w adresie
+są ignorowane i zostają wartości domyślne.
 
 Wzory:
 
@@ -380,31 +388,31 @@ node tests/sub-sync.test.cjs
 python3 tests/sub-smoke.py
 ```
 
-Co sprawdzają (liczby z ostatniego uruchomienia):
+Co sprawdzają:
 
-- `core.test.cjs` – obliczenia, CSV i regresje kosztów (270 asercji),
+- `core.test.cjs` – obliczenia, CSV i regresje kosztów,
 - `scenario.test.cjs` – zapis i odczyt scenariusza oraz odrzucanie błędnych
   danych,
 - `layout.test.cjs` – układ panelu ustawień, nagłówka (w tym nawigacji do
-  stron pomocniczych) i link `#roiLink` (87 asercji),
+  stron pomocniczych) i link `#roiLink`,
 - `browser-smoke.py` – lokalny serwer na losowym porcie i świeży profil
   Google Chrome/Chromium; tryb `?verify=1` przez `http://` i `file://`
-  (35 sprawdzeń kontraktu DOM w każdym z 5 przebiegów, w tym testy pojemności
+  (kontrakt DOM w każdym przebiegu, w tym testy pojemności
   i dane czterech kart: `data-small-monthly`, `data-small-units`,
   `data-small-eligible`, `data-break-even-small-users`,
   `data-payback-small-vs-cloud`, `data-api-software`, `data-own-software`;
   każda karta publikuje `data-software` i `data-infra`) oraz przepływ z
   linkiem `#roiLink` (koszt, koszt jednorazowy i liczba użytkowników w
-  adresie),
+  adresie), a także nagłówek przy 360 i 320 px (nic nie jest ucięte, nagłówek
+  nie zachodzi na wyniki, strona nie przewija się w bok),
 - `sub-core.test.cjs` – rdzeń stron pomocniczych: walidacja pól, wzory
-  subskrypcji, API, agenta i ROI (211 asercji),
+  subskrypcji, API, agenta i ROI,
 - `sub-sync.test.cjs` – zgodność cen modeli i współczynników tokenów z
-  `index.html` (911 asercji),
+  `index.html`,
 - `sub-smoke.py` – przeglądarkowy test `seats.html`, `agent.html` i
-  `roi.html` przez `http://` (desktop i mobile) oraz `file://`: kontrakt DOM
-  (`roi.html` 7/7, `seats.html` 10/10, `agent.html` 9/9 sprawdzeń na
-  przebieg), przepływy użytkownika (47-58 asercji na przebieg), stan po
-  zmianie ustawień i nieprawidłowe parametry adresu `roi.html`.
+  `roi.html` przez `http://` (desktop i mobile) oraz `file://`: kontrakt DOM,
+  przepływy użytkownika, stan po zmianie ustawień i nieprawidłowe parametry
+  adresu `roi.html`.
 
 Jeśli przeglądarka nie jest zainstalowana, testy przeglądarkowe kończą się
 czytelnym komunikatem z instrukcją instalacji. Skrypty niczego nie instalują.
@@ -430,7 +438,10 @@ seat prices verified 2026-11-05: ChatGPT Business 25 USD, Microsoft 365 Copilot
 25.2 USD, Claude Team 25 USD per seat per month), `agent.html` (agent cost per
 run vs manual work) and `roi.html` (payback and ROI; the "Calculate ROI" link
 under the verdict in `index.html` prefills it with the recommended option's
-monthly cost, one-off licence and user count). All figures are estimates in net
+monthly cost, one-off licence and user count; with GB10 and the own server
+the licence goes into the one-off cost, and the monthly cost in the link is
+reduced by its amortisation). On the seats page the break-even against the API
+is one of three kinds: `from` a number of chats, `always` or `never`. All figures are estimates in net
 PLN; time saved is value, not cash; GB10 throughput is not checked on the seats
 page. They will be online at <https://workszop.github.io/aicalc/seats.html>,
 `agent.html` and `roi.html` after deployment. Run all seven checks listed under

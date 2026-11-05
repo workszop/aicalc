@@ -310,7 +310,9 @@ CAPACITY_SMOKE_SCRIPT = r"""
     expect(expectRoiLink('100 users (recommended)') === 'api' && roiParams().get('oneOff') === '0', 'roi link: recommended API has no one-off');
     click('[data-lang="en"]');
     expect(document.querySelector('#roiLink').textContent === 'Calculate ROI →' && document.querySelector('.sub-nav [data-nav="seats"]').textContent === 'Seats vs API', 'roi link and nav translate to English');
+    expect(document.querySelector('.sub-nav').getAttribute('aria-label') === 'Calculators', 'nav aria-label translates to English');
     click('[data-lang="pl"]');
+    expect(document.querySelector('.sub-nav').getAttribute('aria-label') === 'Kalkulatory', 'nav aria-label is Polish');
     expect(document.querySelector('#roiLink').textContent === 'Policz zwrot z inwestycji →', 'roi link Polish text');
     setInput('users', 20);
 
