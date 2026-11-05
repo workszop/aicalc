@@ -221,9 +221,10 @@ function computeRoi({ costMonthly, benefitMonthly, oneOff, ramp, horizon }) {
     if (paybackMonth === null && benefitMonthly > 0 && series[m] >= 0) paybackMonth = m;
     sumBenefit += benefitMonthly * (ramp > 0 ? Math.min(1, m / ramp) : 1);
   }
-  const denom = costMonthly * horizon + oneOff;
-  const roiPct = denom === 0 ? null : (sumBenefit - costMonthly * horizon - oneOff) / denom * 100;
-  return { benefitMonthly, costMonthly, oneOff, netMonthly: benefitMonthly - costMonthly, paybackMonth, roiPct, series };
+  const sumCost = costMonthly * horizon;
+  const denom = sumCost + oneOff;
+  const roiPct = denom === 0 ? null : (sumBenefit - sumCost - oneOff) / denom * 100;
+  return { benefitMonthly, costMonthly, oneOff, horizon, sumBenefit, sumCost, netMonthly: benefitMonthly - costMonthly, paybackMonth, roiPct, series };
 }
 
 function parseRoiQuery(search) {

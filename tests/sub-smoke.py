@@ -89,6 +89,21 @@ ROI_FLOW = r"""
     expect(panel.querySelector('svg [data-axis="x"]').textContent !== axisBefore, 'chart axis label did not switch');
     expect(panel.dataset.roiPct === before.roi && panel.dataset.paybackMonth === before.pay, 'numbers changed on language switch');
     expect($('nav a[aria-current="page"]').getAttribute('href') === 'roi.html', 'nav current link wrong');
+    // an invalid field in the inactive benefit mode must not block the other mode
+    click('[data-field="benefitMode"] [data-value="time"]');
+    setField('adoption', 500);
+    expect(document.body.dataset.state === 'invalid', 'adoption 500 did not set invalid');
+    click('[data-field="benefitMode"] [data-value="amount"]');
+    expect(document.body.dataset.state === 'ready', 'invalid hidden time field still blocks amount mode');
+    expect(!$('#amountFields').hidden && $('#timeFields').hidden, 'amount mode was not rendered');
+    expect(panel.dataset.benefitMonthly === '5000', `amount mode benefit ${panel.dataset.benefitMonthly}, expected 5000`);
+    click('[data-field="benefitMode"] [data-value="time"]');
+    expect(document.body.dataset.state === 'invalid', 'back in time mode the invalid field must block again');
+    expect(!$('#timeFields').hidden, 'time mode was not rendered');
+    setField('adoption', 60);
+    expect(document.body.dataset.state === 'ready', 'fixing adoption did not restore ready');
+    click('[data-field="benefitMode"] [data-value="amount"]');
+    expect(panel.dataset.paybackMonth === before.pay, 'payback changed after the mode round trip');
     if (window.matchMedia('(max-width: 768px)').matches) {
       click('#settingsToggle');
       expect($('#app').dataset.settings === 'open' && $('#settingsToggle').getAttribute('aria-expanded') === 'true', 'drawer did not open');

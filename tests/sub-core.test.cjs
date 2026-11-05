@@ -117,6 +117,9 @@ const agentBase = () => ({ ...C.defaultsOf(SHARED_FIELDS, AGENT_FIELDS, ROI_FIEL
   assert.ok(near(ser[7], -2000, 0.01));
   assert.ok(near(ser[8], 2000, 0.01));
   const r = C.computeRoi({ costMonthly: 1000, benefitMonthly: 5000, oneOff: 25000, ramp: 3, horizon: 12 });
+  assert.ok(near(r.sumBenefit, 55000, 1e-6), 'sumBenefit');
+  assert.ok(near(r.sumCost, 12000, 1e-9), 'sumCost excludes oneOff');
+  assert.equal(r.horizon, 12);
   assert.equal(r.paybackMonth, 8);
   assert.ok(near(r.roiPct, 48.65, 0.01));
   assert.ok(near(r.netMonthly, 4000, 1e-9));
@@ -127,6 +130,8 @@ const agentBase = () => ({ ...C.defaultsOf(SHARED_FIELDS, AGENT_FIELDS, ROI_FIEL
   assert.ok(near(nb.roiPct, -100, 1e-9));
   const zero = C.computeRoi({ costMonthly: 0, benefitMonthly: 0, oneOff: 0, ramp: 0, horizon: 12 });
   assert.equal(zero.roiPct, null);
+  assert.equal(zero.sumBenefit, 0);
+  assert.equal(zero.sumCost, 0);
   assert.equal(zero.paybackMonth, null);
   assert.ok(zero.series.every((v) => Number.isFinite(v)));
   noNaN(zero);

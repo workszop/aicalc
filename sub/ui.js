@@ -38,13 +38,6 @@ const T = {
     chartTitle: 'Skumulowany wynik netto', chartSub: 'Start od nakładów jednorazowych, potem co miesiąc korzyść minus koszt.',
     axisMonth: 'Miesiąc', axisNet: 'PLN netto, narastająco', chartPayback: 'zwrot', chartPoint: 'Miesiąc {month}: {value}',
     chartAria: 'Wykres skumulowanego wyniku netto przez {horizon} mies.; {payback}',
-    // roi.html
-    roiPageTitle: 'Zwrot z inwestycji AI',
-    roiLead: 'Po ilu miesiącach wdrożenie AI się zwraca? Wpisz koszt miesięczny, nakłady jednorazowe i spodziewaną korzyść.',
-    groupCost: 'Koszt', costMonthly: 'Koszt miesięczny (PLN)', costHint: 'Abonamenty, API, utrzymanie. Kalkulatory subskrypcji i agenta podają tę kwotę.',
-    groupBenefit: 'Korzyść', benefitModeLabel: 'Jak liczyć korzyść', modeTime: 'Oszczędzony czas', modeAmount: 'Kwota miesięcznie',
-    benefitMonthly: 'Korzyść miesięcznie (PLN)', timeBenefitValue: 'Oszczędzony czas jest wart {value} miesięcznie.',
-    groupRollout: 'Wdrożenie i horyzont',
   },
   en: {
     navLabel: 'Calculators', navRag: 'RAG assistant', navSeats: 'Seats vs API', navAgent: 'Agent / automation', navRoi: 'Return on investment',
@@ -68,12 +61,6 @@ const T = {
     chartTitle: 'Cumulative net result', chartSub: 'Starts at the one-off outlays, then adds benefit minus cost every month.',
     axisMonth: 'Month', axisNet: 'Net PLN, cumulative', chartPayback: 'payback', chartPoint: 'Month {month}: {value}',
     chartAria: 'Chart of the cumulative net result over {horizon} months; {payback}',
-    roiPageTitle: 'AI return on investment',
-    roiLead: 'How many months until an AI rollout pays for itself? Enter the monthly cost, the one-off outlays and the expected benefit.',
-    groupCost: 'Cost', costMonthly: 'Monthly cost (PLN)', costHint: 'Subscriptions, API, upkeep. The seats and agent calculators give you this amount.',
-    groupBenefit: 'Benefit', benefitModeLabel: 'How to count the benefit', modeTime: 'Time saved', modeAmount: 'Amount per month',
-    benefitMonthly: 'Benefit per month (PLN)', timeBenefitValue: 'The time saved is worth {value} per month.',
-    groupRollout: 'Rollout and horizon',
   },
 };
 
@@ -144,6 +131,17 @@ function setLang(next) {
   langListeners.forEach((fn) => fn(next));
 }
 function onLangChange(fn) { langListeners.push(fn); }
+// Page scripts register their own strings; pl and en must have the same keys and may not shadow shared ones.
+function addStrings(strings) {
+  const pl = Object.keys((strings && strings.pl) || {});
+  const en = Object.keys((strings && strings.en) || {});
+  const missing = pl.filter((k) => !en.includes(k)).concat(en.filter((k) => !pl.includes(k)));
+  if (missing.length) throw new Error('addStrings: pl/en key mismatch: ' + missing.join(', '));
+  const clash = pl.filter((k) => Object.prototype.hasOwnProperty.call(T.pl, k) && (T.pl[k] !== strings.pl[k] || T.en[k] !== strings.en[k]));
+  if (clash.length) throw new Error('addStrings: key already defined: ' + clash.join(', '));
+  Object.assign(T.pl, strings.pl);
+  Object.assign(T.en, strings.en);
+}
 function onReset(fn) { resetHandler = fn; }
 
 // ─── Fields ───
@@ -158,7 +156,10 @@ function fieldKind(node, rule) {
   if (rule.enum) return 'seg';
   throw new Error('Unsupported [data-field] element for ' + node.dataset.field);
 }
-function bindFields(root, schemas, state, onChange) {
+// opts.isActive(fieldId, state) -> boolean: an invalid field that is not active neither blocks onChange
+// nor counts toward body[data-state="invalid"]. Enum / segmented / checkbox commits always reach onChange.
+function bindFields(root, schemas, state, onChange, opts = {}) {
+  const isActive = opts.isActive || (() => true);
   const ruleOf = (id) => { for (const s of schemas) if (Object.prototype.hasOwnProperty.call(s, id)) return s[id]; return null; };
   const invalid = new Set();
   const entries = [...root.querySelectorAll('[data-field]')].map((node) => {
@@ -177,7 +178,8 @@ function bindFields(root, schemas, state, onChange) {
     }
     return { id, node, rule, kind, error };
   });
-  const syncBody = () => { document.body.dataset.state = invalid.size ? 'invalid' : 'ready'; };
+  const blocking = () => [...invalid].filter((id) => isActive(id, state));
+  const syncBody = () => { document.body.dataset.state = blocking().length ? 'invalid' : 'ready'; };
   const markValid = (e) => { e.node.removeAttribute('aria-invalid'); delete e.error.dataset.err; e.error.textContent = ''; };
   const read = (e, source) => {
     if (e.kind === 'checkbox') return e.node.checked;
@@ -211,7 +213,7 @@ function bindFields(root, schemas, state, onChange) {
     state[e.id] = value;
     if (e.kind === 'seg') write(e);
     syncBody();
-    if (!invalid.size) onChange(e.id);
+    if (e.kind !== 'number' || !blocking().length) onChange(e.id);
   };
   entries.forEach((e) => {
     if (e.kind === 'seg') e.node.addEventListener('click', (ev) => { const b = ev.target.closest('button[data-value]'); if (b && e.node.contains(b)) commit(e, b); });
@@ -219,7 +221,7 @@ function bindFields(root, schemas, state, onChange) {
   });
   function sync() { invalid.clear(); entries.forEach((e) => { markValid(e); write(e); }); syncBody(); }
   sync();
-  return { sync, isValid: () => invalid.size === 0, invalid };
+  return { sync, isValid: () => blocking().length === 0, invalid };
 }
 function fillSelect(select, options) {
   select.replaceChildren(...options.map((o) => el('option', { value: o.value }, o.label)));
@@ -357,7 +359,7 @@ function buildRoiPanel(node) {
 function renderRoiPanel(node, roi, state) {
   const parts = node.roiParts || buildRoiPanel(node);
   const on = state.roiOn !== false && Boolean(roi);
-  const horizon = state.horizon;
+  const horizon = roi ? roi.horizon : state.horizon;
   Object.assign(node.dataset, {
     on: String(on),
     benefitMonthly: roi ? dataNum(roi.benefitMonthly) : '',
@@ -378,10 +380,8 @@ function renderRoiPanel(node, roi, state) {
   parts.tiles.payback.textContent = pay === null ? t('paybackNoneShort') : t('paybackShort', { month: pay });
   const paybackText = pay === null ? t('paybackNone', { horizon }) : t('paybackIn', { month: pay });
   if (parts.payback.textContent !== paybackText) parts.payback.textContent = paybackText;
-  const totalCost = roi.costMonthly * horizon + roi.oneOff;
-  const totalBenefit = roi.series[roi.series.length - 1] + totalCost;
   parts.sentence.textContent = roi.roiPct === null ? t('roiUndefined')
-    : t('roiSentence', { horizon, pct: fmtNum(roi.roiPct, 1) + '%', benefit: money(totalBenefit), cost: money(totalCost) });
+    : t('roiSentence', { horizon, pct: fmtNum(roi.roiPct, 1) + '%', benefit: money(roi.sumBenefit), cost: money(roi.sumCost + roi.oneOff) });
   parts.caveat.textContent = t('roiCaveat');
   parts.svg.setAttribute('aria-label', t('chartAria', { horizon, payback: paybackText }));
   renderLineChart(parts.svg, roi.series, { paybackMonth: pay });
@@ -486,7 +486,7 @@ function runChecks(checks) {
 
 // ─── Exports ───
 globalThis.SubUI = {
-  T, LS_LANG, NAV_PAGES, t, getLang, setLang, onLangChange, onReset, applyI18n,
+  T, LS_LANG, NAV_PAGES, t, addStrings, getLang, setLang, onLangChange, onReset, applyI18n,
   money, moneyShort, fmtNum, dataNum, el, svgEl, announce, isVerify,
   bindFields, fillSelect, persist, restore,
   renderNav, setDrawer, renderRoiPanel, renderLineChart, roiPanelChecks, runChecks,
