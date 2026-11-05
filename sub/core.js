@@ -173,13 +173,18 @@ function computeSeatResults(s, models) {
   const winner = options.reduce((best, cur) => (cur[1] < best[1] ? cur : best))[0];
   const perChatMonthly = perChat * s.workDays / 12;
   const numerator = seatPln - s.uiOps / s.users;
-  const breakEvenChats = numerator <= 0 || perChatMonthly === 0 ? null : numerator / perChatMonthly;
+  // Break-even against the API only. 'always': seats are cheaper at any usage; 'never': chats are free, so the
+  // API costs only uiOps and seats never undercut it; 'from': seats are cheaper from value chats per person per day.
+  const breakEven = numerator <= 0 ? { kind: 'always', value: null }
+    : perChatMonthly === 0 ? { kind: 'never', value: null }
+    : { kind: 'from', value: numerator / perChatMonthly };
+  const breakEvenChats = breakEven.value;
   return {
     model, plan,
     sub: { monthly: subMonthly, perUser: subMonthly / s.users },
     api: { monthly: apiMonthly, perUser: apiMonthly / s.users, perChat, eligible: chat.eligible, reason: chat.reason },
     local: { monthly: localMonthly, perUser: localMonthly / s.users, units },
-    winner, breakEvenChats,
+    winner, breakEven, breakEvenChats,
   };
 }
 

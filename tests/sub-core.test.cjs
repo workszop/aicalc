@@ -78,6 +78,42 @@ const seatBase = () => ({ ...C.defaultsOf(SHARED_FIELDS, SEAT_FIELDS, ROI_FIELDS
   assert.equal(C.seatPlanOf({ plan: 'nope', customUsd: 7 }).id, 'chatgpt-business');
 }
 
+// ─── Seats break-even kinds and winner ───
+{
+  // defaults: seats beat the API from ~61 chats per person per day
+  const def = C.computeSeatResults(seatBase(), MODELS);
+  assert.equal(def.breakEven.kind, 'from');
+  assert.ok(near(def.breakEven.value, 60.99, 0.01));
+  assert.equal(def.breakEven.value, def.breakEvenChats);
+  // 3 users: the chat upkeep per person exceeds the seat price, so seats win at any usage
+  const three = C.computeSeatResults({ ...seatBase(), users: 3 }, MODELS);
+  assert.equal(three.winner, 'sub');
+  assert.equal(three.breakEven.kind, 'always');
+  assert.equal(three.breakEven.value, null);
+  assert.equal(three.breakEvenChats, null);
+  // free chats: the API costs only uiOps, seats never undercut it
+  const free = C.computeSeatResults({ ...seatBase(), inTok: 0, outTok: 0 }, MODELS);
+  assert.equal(free.breakEven.kind, 'never');
+  assert.equal(free.breakEven.value, null);
+  assert.equal(free.breakEvenChats, null);
+  // a custom price of 0 is cheaper than the API at any usage
+  assert.equal(C.computeSeatResults({ ...seatBase(), plan: 'custom', customUsd: 0 }, MODELS).breakEven.kind, 'always');
+  // heavy use: the local box wins
+  const heavy = C.computeSeatResults({ ...seatBase(), users: 20, chatsPerDay: 100 }, MODELS);
+  assert.equal(heavy.winner, 'local');
+  assert.ok(heavy.local.monthly < heavy.sub.monthly && heavy.local.monthly < heavy.api.monthly);
+  // ties break in the order sub, api, local
+  const zeroCost = { ...seatBase(), plan: 'custom', customUsd: 0, chatsPerDay: 0, uiOps: 0, localCapex: 0, localPower: 0, localOps: 0 };
+  const allTie = C.computeSeatResults(zeroCost, MODELS);
+  assert.equal(allTie.sub.monthly, 0); assert.equal(allTie.api.monthly, 0); assert.equal(allTie.local.monthly, 0);
+  assert.equal(allTie.winner, 'sub');
+  const apiLocalTie = C.computeSeatResults({ ...zeroCost, customUsd: 1 }, MODELS);
+  assert.equal(apiLocalTie.api.monthly, 0); assert.equal(apiLocalTie.local.monthly, 0);
+  assert.equal(apiLocalTie.winner, 'api');
+  // with the API ineligible, a sub/local tie still goes to sub
+  assert.equal(C.computeSeatResults({ ...zeroCost, inTok: 2000000 }, MODELS).winner, 'sub');
+}
+
 // ─── Agent model ───
 const agentBase = () => ({ ...C.defaultsOf(SHARED_FIELDS, AGENT_FIELDS, ROI_FIELDS) });
 {
