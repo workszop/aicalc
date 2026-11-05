@@ -3,7 +3,7 @@ const vm = require('node:vm');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 
-const context = vm.createContext({ console });
+const context = vm.createContext({ console, URLSearchParams });
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../sub/core.js'), 'utf8'), context);
 const C = vm.runInContext('globalThis.SubCore', context);
 const { MODELS, SHARED_FIELDS, SEAT_FIELDS, AGENT_FIELDS, ROI_FIELDS } = C;
@@ -105,5 +105,38 @@ const agentBase = () => ({ ...C.defaultsOf(SHARED_FIELDS, AGENT_FIELDS, ROI_FIEL
   assert.equal(nm.savedHours, 0);
   noNaN(nm);
   assert.equal(C.computeAgentResults({ ...agentBase(), model: 'missing' }, MODELS).model, MODELS[0]);
+}
+
+// ─── ROI model ───
+{
+  const ser = C.roiSeries(1000, 5000, 25000, 3, 12);
+  assert.equal(ser.length, 13);
+  assert.equal(ser[0], -25000);
+  assert.ok(near(ser[1], -24333.33, 0.01));
+  assert.ok(near(ser[2], -22000, 0.01));
+  assert.ok(near(ser[7], -2000, 0.01));
+  assert.ok(near(ser[8], 2000, 0.01));
+  const r = C.computeRoi({ costMonthly: 1000, benefitMonthly: 5000, oneOff: 25000, ramp: 3, horizon: 12 });
+  assert.equal(r.paybackMonth, 8);
+  assert.ok(near(r.roiPct, 48.65, 0.01));
+  assert.ok(near(r.netMonthly, 4000, 1e-9));
+  assert.equal(r.series.length, 13);
+  assert.ok(near(C.roiSeries(1000, 5000, 25000, 0, 12)[1], -25000 + 4000, 1e-9));
+  const nb = C.computeRoi({ costMonthly: 1000, benefitMonthly: 0, oneOff: 25000, ramp: 3, horizon: 12 });
+  assert.equal(nb.paybackMonth, null);
+  assert.ok(near(nb.roiPct, -100, 1e-9));
+  const zero = C.computeRoi({ costMonthly: 0, benefitMonthly: 0, oneOff: 0, ramp: 0, horizon: 12 });
+  assert.equal(zero.roiPct, null);
+  assert.equal(zero.paybackMonth, null);
+  assert.ok(zero.series.every((v) => Number.isFinite(v)));
+  noNaN(zero);
+  assert.ok(near(C.timeBenefit(seatBase()), 7440.83, 0.01));
+  const ag = C.computeRoi({ costMonthly: 1653.56, benefitMonthly: 35716, oneOff: 25000, ramp: 3, horizon: 36 });
+  assert.equal(ag.paybackMonth, 2);
+  assert.deepEqual({ ...C.parseRoiQuery('?cost=abc&users=0') }, {});
+  assert.deepEqual({ ...C.parseRoiQuery('?cost=1200&oneOff=30000&users=50') }, { costMonthly: 1200, setup: 30000, training: 0, users: 50 });
+  assert.deepEqual({ ...C.parseRoiQuery('?cost=-5') }, {});
+  assert.deepEqual({ ...C.parseRoiQuery('?cost=&users=1.5') }, {});
+  assert.deepEqual({ ...C.parseRoiQuery('') }, {});
 }
 console.log('sub-core tests passed');

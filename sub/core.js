@@ -198,12 +198,57 @@ function computeAgentResults(s, models) {
   };
 }
 
+function timeBenefit(s) {
+  return s.users * s.adoption / 100 * s.minPerDay * s.workDays / 12 * s.hourlyRate / 60;
+}
+
+function roiSeries(costMonthly, benefitMonthly, oneOff, ramp, horizon) {
+  const series = [-oneOff];
+  for (let m = 1; m <= horizon; m++) {
+    const factor = ramp > 0 ? Math.min(1, m / ramp) : 1;
+    series.push(series[m - 1] + benefitMonthly * factor - costMonthly);
+  }
+  return series;
+}
+
+function computeRoi({ costMonthly, benefitMonthly, oneOff, ramp, horizon }) {
+  const series = roiSeries(costMonthly, benefitMonthly, oneOff, ramp, horizon);
+  let paybackMonth = null;
+  let sumBenefit = 0;
+  for (let m = 1; m <= horizon; m++) {
+    if (paybackMonth === null && benefitMonthly > 0 && series[m] >= 0) paybackMonth = m;
+    sumBenefit += benefitMonthly * (ramp > 0 ? Math.min(1, m / ramp) : 1);
+  }
+  const denom = costMonthly * horizon + oneOff;
+  const roiPct = denom === 0 ? null : (sumBenefit - costMonthly * horizon - oneOff) / denom * 100;
+  return { benefitMonthly, costMonthly, oneOff, netMonthly: benefitMonthly - costMonthly, paybackMonth, roiPct, series };
+}
+
+function parseRoiQuery(search) {
+  const params = new URLSearchParams(search);
+  const read = (key, rule) => {
+    const raw = params.get(key);
+    if (raw === null || raw.trim() === '') return undefined;
+    const value = Number(raw);
+    return validateValue(rule, value).valid ? value : undefined;
+  };
+  const out = {};
+  const cost = read('cost', ROI_PAGE_FIELDS.costMonthly);
+  const oneOff = read('oneOff', ROI_FIELDS.setup);
+  const users = read('users', SHARED_FIELDS.users);
+  if (cost !== undefined) out.costMonthly = cost;
+  if (oneOff !== undefined) { out.setup = oneOff; out.training = 0; }
+  if (users !== undefined) out.users = users;
+  return out;
+}
+
 // ─── Exports ───
 globalThis.SubCore = {
   MODELS, TOK_PER_WORD, BASE_FAMILY, EN_WORD_FACTOR, THINK_MULT, SEAT_PLANS,
   SHARED_FIELDS, SEAT_FIELDS, AGENT_FIELDS, ROI_FIELDS, ROI_PAGE_FIELDS,
   defaultsOf, validateValue, loadState, familyFactor, modelRates, chatCost,
   seatPlanOf, computeSeatResults, computeAgentResults,
+  timeBenefit, roiSeries, computeRoi, parseRoiQuery,
 };
 if (typeof module !== 'undefined') module.exports = globalThis.SubCore;
 })();
