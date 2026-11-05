@@ -286,11 +286,14 @@ CAPACITY_SMOKE_SCRIPT = r"""
     const expectRoiLink = (label) => {
       const key = App.results.recommended || App.results.winner;
       const monthly = Number(document.querySelector(cardId(key)).dataset.monthly);
-      const oneOff = (key === 'own' || key === 'small') && state.softwareOn ? state.softLicense : 0;
+      // GB10 / own server: the licence goes to oneOff, so the monthly cost drops its amortisation (no double count).
+      const licensed = (key === 'own' || key === 'small') && state.softwareOn;
+      const oneOff = licensed ? state.softLicense : 0;
+      const cost = Math.round(licensed ? monthly - state.softLicense / state.softAmort : monthly);
       const link = document.querySelector('#roiLink');
       expect(link && /^roi\.html\?/.test(link.getAttribute('href')), `${label}: #roiLink href must target roi.html`);
       const params = roiParams();
-      expect(params.get('cost') === String(Math.round(monthly)), `${label}: cost=${params.get('cost')}, expected ${Math.round(monthly)} (${key})`);
+      expect(params.get('cost') === String(cost), `${label}: cost=${params.get('cost')}, expected ${cost} (${key})`);
       expect(params.get('oneOff') === String(oneOff), `${label}: oneOff=${params.get('oneOff')}, expected ${oneOff} (${key})`);
       expect(params.get('users') === String(state.users), `${label}: users=${params.get('users')}, expected ${state.users}`);
       return key;
@@ -298,6 +301,7 @@ CAPACITY_SMOKE_SCRIPT = r"""
     click('[data-preset="S1"]');
     setInput('users', 49);
     expect(['own', 'small'].includes(expectRoiLink('49 users')), 'roi link: a hardware card wins at 49 users');
+    expect(Number(roiParams().get('cost')) < Number(document.querySelector(cardId(App.results.recommended || App.results.winner)).dataset.monthly) - 1, 'roi link: hardware cost must exclude the licence amortisation');
     document.querySelector('#softwareOn').checked = false; document.querySelector('#softwareOn').dispatchEvent(new Event('input', { bubbles: true }));
     expectRoiLink('software off');
     expect(roiParams().get('oneOff') === '0', 'roi link: oneOff is 0 with the software layer off');

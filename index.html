@@ -2012,7 +2012,10 @@ function render() {
   const v = verdict(result);
   const verdictVars = { users: fmtNum(s.users), usersWord: usersPhrase(s.users), winner: t(v.winner + 'Path'), monthly: money(v.monthly, 0), pct: pct(v.savingsPct || 0), runnerUp: t((v.runnerUp || '') + 'Path'), from: fmtNum(s.smallRecommendFrom), recommended: t((v.recommended || '') + 'Path'), recMonthly: money(v.recommendedMonthly || 0, 0) };
   const roiKey = recommended || winner, roiPick = result[roiKey];
-  $('roiLink').href = `roi.html?cost=${Math.round(roiPick.monthly)}&oneOff=${Math.round(roiPick.oneOff || 0)}&users=${s.users}`;
+  // GB10 / own server: monthly already holds the licence amortisation and roi.html adds oneOff on top,
+  // so the link passes the licence once, as oneOff, and drops its amortisation from the monthly cost.
+  const roiSoftware = roiPick.software || { licenseAmort: 0, oneOff: 0 };
+  $('roiLink').href = `roi.html?cost=${Math.round(roiPick.monthly - roiSoftware.licenseAmort)}&oneOff=${Math.round(roiSoftware.oneOff)}&users=${s.users}`;
   $('verdict').textContent = t(v.recommended ? 'verdictRecommended' : !v.runnerUp ? 'verdictSingle' : v.savingsPct < 0.005 ? 'verdictTie' : 'verdictText', verdictVars);
   document.querySelector('[data-t="modelsNote"]').textContent = t(s.softwareOn ? 'modelsNote' : 'modelsNoteNoSoft');
   document.querySelector('[data-t="chartTimeSub"]').textContent = t(s.softwareOn ? 'chartTimeSub' : 'chartTimeSubNoSoft');
