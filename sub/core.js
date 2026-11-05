@@ -78,7 +78,9 @@ const ROI_FIELDS = {
   training:  num(5000, 0, 1e8, false),
 };
 const ROI_PAGE_FIELDS = {
-  costMonthly: num(1000, 0, 1e8, false),
+  costMonthly:    num(1000, 0, 1e8, false),
+  benefitMode:    { def: 'time', enum: ['time', 'amount'] },
+  benefitMonthly: num(5000, 0, 1e8, false),
 };
 
 // ─── Helpers ───

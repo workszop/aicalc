@@ -32,4 +32,32 @@ indexModels.forEach((m, i) => {
 assert.deepEqual(JSON.parse(JSON.stringify(sub.TOK_PER_WORD)), JSON.parse(JSON.stringify(indexTok.TOK_PER_WORD)), 'TOK_PER_WORD matches');
 assert.equal(sub.BASE_FAMILY, indexTok.BASE_FAMILY);
 assert.equal(sub.EN_WORD_FACTOR, indexTok.EN_WORD_FACTOR);
+
+// ─── sub/sub.css tokens ───
+const trimEnds = (text) => text.split('\n').map((line) => line.replace(/\s+$/, '')).join('\n');
+const firstRootBlock = (text) => {
+  const start = text.indexOf(':root {');
+  assert.ok(start >= 0, 'a :root { block exists');
+  const end = text.indexOf('\n}', start);
+  assert.ok(end > start, ':root block is closed');
+  return text.slice(start, end + 2);
+};
+const indexRoot = trimEnds(firstRootBlock(html));
+const subCssPath = path.join(__dirname, '../sub/sub.css');
+assert.ok(fs.existsSync(subCssPath), 'sub/sub.css exists');
+const subCss = trimEnds(fs.readFileSync(subCssPath, 'utf8'));
+assert.ok(subCss.includes(indexRoot), "sub/sub.css contains index.html's :root block verbatim");
+const cssOutsideRoot = subCss.replace(indexRoot, '');
+const strayHex = cssOutsideRoot.match(/#[0-9a-fA-F]{3,8}\b/g);
+assert.equal(strayHex, null, 'no hex colours outside the :root block: ' + strayHex);
+
+// ─── sub/ui.js i18n parity (ui.js loaded in vm with a minimal document stub) ───
+const uiCtx = vm.createContext({ console, URLSearchParams, Intl, SubCore: sub, document: { documentElement: {}, body: { dataset: {} } } });
+vm.runInContext(fs.readFileSync(path.join(__dirname, '../sub/ui.js'), 'utf8'), uiCtx);
+const ui = vm.runInContext('globalThis.SubUI', uiCtx);
+assert.deepEqual(Object.keys(ui.T.en), Object.keys(ui.T.pl), 'T.pl and T.en have the same keys in the same order');
+Object.entries(ui.T).forEach(([lang, table]) => Object.entries(table).forEach(([key, value]) => {
+  assert.ok(typeof value === 'string' && value.length > 0, `T.${lang}.${key} is a non-empty string`);
+  assert.ok(!value.includes('\u2014'), `T.${lang}.${key} has no em-dash`);
+}));
 console.log('sub-sync tests passed');

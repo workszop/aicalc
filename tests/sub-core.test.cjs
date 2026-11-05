@@ -139,4 +139,22 @@ const agentBase = () => ({ ...C.defaultsOf(SHARED_FIELDS, AGENT_FIELDS, ROI_FIEL
   assert.deepEqual({ ...C.parseRoiQuery('?cost=&users=1.5') }, {});
   assert.deepEqual({ ...C.parseRoiQuery('') }, {});
 }
+
+// ─── roi.html page fields ───
+{
+  const P = C.ROI_PAGE_FIELDS;
+  assert.deepEqual(Object.keys(P), ['costMonthly', 'benefitMode', 'benefitMonthly']);
+  assert.equal(P.benefitMode.def, 'time');
+  assert.deepEqual([...P.benefitMode.enum], ['time', 'amount']);
+  assert.equal(C.validateValue(P.benefitMode, 'cash').error, 'enum');
+  assert.equal(P.benefitMonthly.def, 5000);
+  assert.equal(C.validateValue(P.benefitMonthly, 1234.5).error, null);
+  assert.equal(C.validateValue(P.benefitMonthly, -1).error, 'range');
+  assert.equal(C.validateValue(P.benefitMonthly, 1e8 + 1).error, 'range');
+  const roiSchemas = [SHARED_FIELDS, ROI_FIELDS, P];
+  const restored = C.loadState(roiSchemas, { benefitMode: 'cash', benefitMonthly: 'x', costMonthly: 900 }, MODELS);
+  assert.equal(restored.benefitMode, 'time');
+  assert.equal(restored.benefitMonthly, 5000);
+  assert.equal(restored.costMonthly, 900);
+}
 console.log('sub-core tests passed');

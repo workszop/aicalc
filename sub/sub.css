@@ -1,0 +1,306 @@
+/* Design tokens: verbatim copy of index.html's :root block (sync-tested). */
+:root {
+  /* ---- Brand fonts ---- */
+  --font-display: 'Outfit', 'IBM Plex Sans', system-ui, sans-serif;
+  --font-sans:    'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+  --font-mono:    'Roboto Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* ============================================================
+     RAW COLOR TOKENS
+     ============================================================ */
+
+  /* Paper – page background is white; the sand steps are wells/alternating sections */
+  --paper:    #FFFFFF;   /* page background (white)    */
+  --paper-2:  #F5F3F0;   /* alternating section        */
+  --paper-3:  #EAE6E0;   /* deepest sand / wells       */
+  --surface:  #FFFFFF;   /* cards & sheets             */
+
+  /* Ink – warm near-black text & lines */
+  --ink:      #1C1917;   /* primary text               */
+  --ink-2:    #44403C;   /* secondary text             */
+  --ink-3:    #625B53;   /* muted / placeholder        */
+  --line:     #E0DBD3;   /* hairline borders           */
+  --line-2:   #C9C2B7; --line-strong: #857C69; /* control borders >= 3:1 */ --track: color-mix(in srgb, var(--ink) 24%, transparent);   /* stronger borders           */
+
+  /* ---- Brand: Yellow main · Blue + Green secondary · Red danger ----
+     Plain saturated colours. A "-soft" tint IS the saturated colour
+     (panels and chips are solid), "-ink" is the text colour ON it:
+     white on blue/green/red, dark ink on yellow. Never colour-on-colour
+     (no green text on green); the saturated colour itself goes only on
+     white or black. */
+
+  /* Yellow – primary (buttons, progress, values on dark panels) */
+  --yellow:      #FFD500;
+  --yellow-600:  #F0C800;  /* hover / press          */
+  --yellow-soft: #FFD500;  /* chip / panel fill      */
+  --yellow-ink:  #1C1917;  /* text on yellow         */
+
+  /* Blue – secondary (panels, chips, correct / selected state) */
+  --blue:      #1E8FC2;
+  --blue-600:  #177AA8;
+  --blue-soft: #177AA8;
+  --blue-ink:  #FFFFFF;
+
+  /* Green – secondary support (chips, success) */
+  --green:      #00A651;
+  --green-600:  #078342;
+  --green-soft: #078342;
+  --green-ink:  #FFFFFF;
+  --success-chip: #007A3D; /* darker success chip for small white text */
+  --success-chip-ink: #FFFFFF;
+
+  /* Red – danger / important / wrong (use sparingly) */
+  --red:      #E5322D;
+  --red-600:  #C92823;
+  --red-soft: #C92823;
+  --red-ink:  #FFFFFF;
+
+  /* Legacy role aliases – older edulab apps use these names */
+  --marigold: var(--yellow); --marigold-600: var(--yellow-600); --marigold-soft: var(--yellow-soft); --marigold-ink: var(--yellow-ink);
+  --teal:     var(--blue);   --teal-600:     var(--blue-600);   --teal-soft:     var(--blue-soft);   --teal-ink:     var(--blue-ink);
+  --sky:      var(--green);                                     --sky-soft:      var(--green-soft);  --sky-ink:      var(--green-ink);
+  --coral:    var(--red);    --coral-600:    var(--red-600);    --coral-soft:    var(--red-soft);    --coral-ink:    var(--red-ink);
+
+  /* Play palette – subject/category colours in the kids app */
+  --play-sun:    #FFD500;
+  --play-grass:  #00A651;
+  --play-berry:  #C6478B;
+  --play-grape:  #7A5AC2;
+  --play-sky:    #1E8FC2;
+  --play-coral:  #E5322D;
+
+  /* ---- Semantic ---- */
+  --success:      #00A651;  --success-soft: #078342;  --success-ink: #FFFFFF;
+  --warning:      #FFD500;  --warning-soft: #FFD500;  --warning-ink: #1C1917;
+  --danger:       #E5322D;  --danger-soft:  #C92823;  --danger-ink:  #FFFFFF;
+  --info:         #1E8FC2;  --info-soft:    #177AA8;  --info-ink:    #FFFFFF;
+
+  /* ---- Functional aliases ---- */
+  --bg:        var(--paper);
+  --fg:        var(--ink);
+  --fg-muted:  var(--ink-2);
+  --primary:   var(--yellow);
+  --on-primary:#1C1917;      /* dark text on yellow */
+  --focus-ring: 0 0 0 2px var(--paper), 0 0 0 5px var(--ink);
+
+  /* ============================================================
+     COMPONENT TOKENS
+     Keep component typography, alignment and translucent surfaces
+     in one place so the page can be reskinned without selector edits.
+     ============================================================ */
+  --transparent: transparent;
+  --header-bg: var(--paper);
+  --dialog-backdrop: rgba(28, 25, 23, .45);
+  --align-start: left;
+  --align-center: center;
+  --align-end: right;
+  --font-code-size: .92em;
+  --wordmark-size: 22px;
+  --title-size: clamp(2.3rem, 5vw, 3.3rem);
+  --lead-size: 1.15rem;
+  --sidebar-width: 320px;
+  --header-height: 81px;
+  --tag-size: 12px;
+  --label-size: 12px;
+  --field-label-size: 13px;
+  --pill-sm-size: 13px;
+  --chevron-size: 18px;
+  --small-size: 12.5px;
+  --tiny-size: 12px;
+  --body-tight-size: 15px;
+  --stat-size: 20px;
+  --total-size: 34px;
+  --disclosure-size: 15px;
+  --chart-tick-size: 11px;
+  --chart-label-size: 12px;
+  --chart-tick-align: end;
+  --chart-x-align: middle;
+  --line-height-body: 1.6;
+  --line-height-note: 1.5;
+  --line-height-tight: 1.45;
+
+  /* ============================================================
+     SPACING  (4pt base)
+     ============================================================ */
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px;
+  --sp-12: 48px; --sp-16: 64px; --sp-20: 80px; --sp-24: 96px;
+
+  /* ---- Radii (friendly, generous) ---- */
+  --r-xs: 6px; --r-sm: 10px; --r-md: 14px; --r-lg: 20px; --r-xl: 28px; --r-pill: 999px;
+
+  /* ---- Elevation – warm, low, soft ---- */
+  --shadow-sm: 0 1px 2px rgba(33,30,26,.10), 0 2px 6px rgba(33,30,26,.06);
+  --shadow-md: 0 6px 18px rgba(33,30,26,.12), 0 1px 3px rgba(33,30,26,.08);
+  --shadow-lg: 0 16px 40px rgba(33,30,26,.12), 0 3px 8px rgba(33,30,26,.06);
+  --shadow-primary:  0 8px 22px color-mix(in srgb, var(--yellow) 30%, transparent);
+  --shadow-marigold: var(--shadow-primary);   /* legacy alias */
+
+  /* ============================================================
+     TYPE SCALE (semantic sizes)
+     ============================================================ */
+  --display-font:  clamp(48px, 6vw, 72px);
+  --h1: 44px; --h2: 33px; --h3: 25px; --h4: 19px;
+  --body-lg: 18px; --body: 16px; --body-sm: 14px;
+  --caption: 13px; --overline: 12px;
+}
+
+/* ============================================================
+   Shared layout for the sub pages (seats, agent, roi).
+   Rules copied from index.html keep their class names; colours
+   come only from the :root block above (tests/sub-sync.test.cjs).
+   ============================================================ */
+
+body.edu { background: var(--paper); color: var(--ink); font-family: var(--font-sans); line-height: var(--line-height-body); }
+
+/* ─── Layout ─── */
+* { box-sizing: border-box; }
+body { margin: 0; padding: 0; height: 100dvh; overflow: hidden; display: flex; flex-direction: column; }
+.edu-header { position: sticky; top: 0; z-index: 50; width: 100%; flex: none; background: var(--header-bg); border-bottom: 1px solid var(--line-2); }
+.edu-header-inner { min-height: var(--header-height); padding: 0 var(--sp-6); display: flex; align-items: center; gap: 12px; }
+.edu-brand { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; flex: none; }
+.edu-logo { width: 64px; height: 64px; display: block; margin-right: -6px; }
+.edu-wordmark { font-family: var(--font-display); font-weight: 700; font-size: var(--wordmark-size); letter-spacing: -.02em; color: var(--ink); }
+.header-spacer { flex: 1; }
+main { flex: 1; min-height: 0; display: grid; grid-template-columns: var(--sidebar-width) minmax(0, 1fr); }
+.page-head { text-align: var(--align-start); margin-bottom: var(--sp-5); padding-bottom: var(--sp-5); border-bottom: 1px solid var(--line-2); }
+.app-title { font-family: var(--font-display); font-weight: 800; font-size: var(--h2); letter-spacing: -.025em; line-height: 1.1; color: var(--ink); margin: 0 0 var(--sp-2); }
+.edu-lead { font-size: var(--lead-size); line-height: 1.6; color: var(--ink-2); margin: 0; }
+.sec-title { font-family: var(--font-display); font-weight: 600; font-size: var(--h4); color: var(--ink); margin: 0; letter-spacing: -.01em; }
+
+/* ─── Header nav ─── */
+.sub-nav { display: flex; flex-wrap: wrap; gap: 4px; min-width: 0; margin-left: var(--sp-4); }
+.sub-nav a { font-family: var(--font-sans); font-weight: 600; font-size: var(--body-sm); color: var(--ink-2); text-decoration: none; padding: 7px 12px; border-radius: var(--r-pill); border: 1px solid var(--transparent); white-space: nowrap; transition: background-color .15s; }
+.sub-nav a:hover { background: var(--paper-2); }
+.sub-nav a[aria-current="page"] { color: var(--ink); background: var(--paper-2); border-color: var(--line-strong); }
+.sub-nav a:focus-visible, .edu-brand:focus-visible { outline: 3px solid var(--transparent); box-shadow: var(--focus-ring); }
+
+/* ─── Controls ─── */
+.edu-seg { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 3px; background: var(--paper-2); border-radius: var(--r-pill); }
+.edu-seg button { border: none; background: var(--transparent); padding: 7px 14px; border-radius: var(--r-pill);
+  font-family: var(--font-sans); font-weight: 600; font-size: var(--body-sm); color: var(--ink-2); cursor: pointer; transition: background-color .15s; }
+.edu-seg button:hover { background: var(--paper-3); }
+.edu-seg button.active { background: var(--yellow); color: var(--yellow-ink); }
+.edu-seg button:focus-visible, .edu-btn:focus-visible, .ghost-btn:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid var(--transparent); box-shadow: var(--focus-ring); }
+.ghost-btn { font-family: var(--font-sans); font-weight: 600; font-size: var(--body-sm); background: var(--transparent); color: var(--ink);
+  border: 1px solid var(--line-strong); border-radius: var(--r-pill); padding: 10px 16px; cursor: pointer; transition: background-color .15s; white-space: nowrap; }
+.ghost-btn:hover { background: var(--paper-2); }
+.field { display: flex; flex-direction: column; justify-content: flex-end; gap: 5px; margin-bottom: var(--sp-2); min-width: 0; }
+.field label, .field .field-label { font-family: var(--font-sans); font-weight: 600; font-size: var(--field-label-size); color: var(--ink); }
+.field input, .field select { font-family: var(--font-sans); font-size: var(--body-sm); color: var(--ink); background: var(--surface);
+  border: 1px solid var(--line-strong); border-radius: var(--r-sm); padding: var(--sp-2) 10px; width: 100%; }
+.field select { cursor: pointer; }
+.fields-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2) var(--sp-3); }
+.fields-grid > .field-wide { grid-column: 1 / -1; }
+.hint { font-size: var(--small-size); color: var(--ink-3); margin: 0; line-height: var(--line-height-tight); overflow-wrap: anywhere; }
+.check { display: flex; gap: 8px; align-items: center; font-size: var(--body-sm); color: var(--ink-2); margin-bottom: var(--sp-3); cursor: pointer; }
+.check input { accent-color: var(--yellow); width: 16px; height: 16px; }
+.field-error { font-size: var(--small-size); color: var(--red-600); font-weight: 600; margin: 0; line-height: var(--line-height-tight); }
+.field-error:empty { display: none; }
+input[aria-invalid="true"], select[aria-invalid="true"] { border-color: var(--red); outline: 2px solid var(--red); outline-offset: 1px; }
+
+/* ─── Cards and tiles ─── */
+.card { background: var(--surface); border: 1px solid var(--line-2); border-radius: var(--r-lg); box-shadow: var(--shadow-sm); padding: 22px 24px; }
+.card-head { display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-3); margin-bottom: var(--sp-4); }
+.grid-4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.stat { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.stat span { font-family: var(--font-sans); font-weight: 600; font-size: var(--label-size); color: var(--ink-2); }
+.stat b { font-family: var(--font-display); font-weight: 600; font-size: var(--stat-size); color: var(--ink); overflow-wrap: anywhere; }
+.verdict { font-family: var(--font-display); font-size: var(--h4); font-weight: 600; color: var(--ink); margin: 0 0 var(--sp-3); line-height: 1.35; }
+.edu-chip { font-family: var(--font-sans); font-weight: 700; font-size: var(--label-size); padding: 4px 10px; border-radius: var(--r-pill); white-space: nowrap; }
+.chip-win { background: var(--success-chip); color: var(--success-chip-ink); }
+.chip-warn { background: var(--red-soft); color: var(--red-ink); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+footer.shortcuts { color: var(--ink-3); font-size: var(--small-size); text-align: var(--align-start); margin-top: var(--sp-6); }
+
+/* Accent boxes: the colour goes all the way around, never a left-only stripe. */
+[data-accent] { border: 1.5px solid var(--accent, var(--line-2)); }
+[data-accent="seats"] { --accent: var(--blue); }
+[data-accent="agent"] { --accent: var(--green); }
+[data-accent="roi"] { --accent: var(--yellow); }
+
+/* ─── ROI panel ─── */
+.roi-panel { margin-bottom: var(--sp-5); }
+.roi-tiles { margin-bottom: var(--sp-4); }
+.roi-tile { background: var(--paper-2); border-radius: var(--r-md); padding: var(--sp-3) var(--sp-4); }
+.roi-sentence { color: var(--ink-2); font-size: var(--body-sm); margin: 0 0 var(--sp-4); }
+.roi-panel[data-on="false"] .roi-body { display: none; }
+.roi-off { margin: 0; }
+.roi-panel[data-on="true"] .roi-off { display: none; }
+
+/* ─── Charts ─── */
+.chart-card { margin: 0 0 var(--sp-3); }
+.chart-title { font-family: var(--font-display); font-weight: 600; font-size: var(--body); margin: 0 0 2px; color: var(--ink); }
+.chart-sub { font-size: var(--caption); color: var(--ink-3); margin: 0 0 var(--sp-2); }
+.chart-wrap { position: relative; width: 100%; min-width: 0; }
+.chart-wrap svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart-grid { stroke: var(--line); stroke-width: 1; }
+.chart-zero { stroke: var(--line-strong); stroke-width: 1.5; }
+.chart-line { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.chart-payback-rule { stroke: var(--green-600); stroke-width: 1.5; stroke-dasharray: 4 4; }
+.chart-payback-dot { fill: var(--yellow); stroke: var(--ink); stroke-width: 2; }
+.chart-payback-label { fill: var(--ink); font-family: var(--font-sans); font-size: var(--chart-label-size); font-weight: 700; }
+.chart-tick { fill: var(--ink-3); font-family: var(--font-mono); font-size: var(--chart-tick-size); }
+.chart-axis { fill: var(--ink-2); font-family: var(--font-sans); font-size: var(--chart-label-size); font-weight: 600; }
+.chart-hit { fill: var(--transparent); stroke: none; cursor: crosshair; }
+.chart-hit:hover { fill: var(--ink); fill-opacity: .25; }
+
+/* ─── Invalid input pauses derived results ─── */
+.invalid-note { display: none; color: var(--red-ink); background: var(--red-soft); border-radius: var(--r-md); padding: var(--sp-3) var(--sp-4); margin: 0 0 var(--sp-4); font-size: var(--body-sm); }
+body[data-state="invalid"] .invalid-note { display: block; }
+body[data-state="invalid"] [data-results] { display: none; }
+
+/* ─── Checks panel (?verify=1) ─── */
+details.panel { background: var(--surface); border: 1px solid var(--line-2); border-radius: var(--r-lg); box-shadow: var(--shadow-sm); margin-bottom: var(--sp-4); overflow: hidden; }
+details.panel > summary { cursor: pointer; list-style: none; padding: 16px 24px; font-family: var(--font-display); font-weight: 600; font-size: var(--h4); color: var(--ink); background: var(--paper-2); }
+details.panel > summary::-webkit-details-marker { display: none; }
+details.panel > :not(summary) { margin-left: 24px; margin-right: 24px; }
+details.panel[open] { padding-bottom: 16px; }
+#checksResults { padding-left: 0; list-style: none; font-size: var(--body-sm); color: var(--ink-2); }
+#checksResults li[data-pass="false"] { color: var(--red-600); font-weight: 600; }
+
+/* ─── Settings sidebar and results workspace ─── */
+#settingsPanel { min-height: 0; overflow-y: auto; overscroll-behavior: contain; border-right: 1px solid var(--line); background: var(--surface); scrollbar-gutter: stable; }
+.settings-head { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2); padding: var(--sp-4) var(--sp-5); background: var(--surface); border-bottom: 1px solid var(--line); }
+.settings-head h2 { margin: 0; font: 600 var(--h4)/var(--line-height-tight) var(--font-display); }
+.settings-body { padding: var(--sp-5) var(--sp-4) var(--sp-8); }
+.settings-group { margin-bottom: var(--sp-6); }
+.settings-group[data-accent] { border-radius: var(--r-md); padding: var(--sp-3); }
+.group-title { font-family: var(--font-sans); font-weight: 700; font-size: var(--label-size); color: var(--ink-3); margin: 0 0 var(--sp-2); padding: 0 2px; display: flex; align-items: center; gap: 8px; }
+.group-title::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+.settings-body .edu-seg { margin-bottom: var(--sp-3); }
+.settings-body .edu-seg button { padding: 6px 8px; flex: 1 1 0; min-width: 0; font-size: var(--small-size); line-height: var(--line-height-tight); }
+.settings-body .edu-seg { display: flex; flex-wrap: nowrap; }
+.settings-body .hint { margin-bottom: var(--sp-2); }
+#resultsPanel { min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: var(--sp-6) clamp(20px, 2.5vw, 40px) var(--sp-8); scrollbar-gutter: stable; }
+#settingsToggle, #settingsClose, #settingsBackdrop { display: none; }
+#resultsPanel:focus-visible { outline: 3px solid var(--transparent); box-shadow: var(--focus-ring); }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+@media (min-width: 769px) and (max-width: 1200px) {
+  :root { --sidebar-width: 290px; }
+  .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .edu-wordmark { display: none; }
+  .sub-nav { margin-left: 0; }
+}
+@media (max-width: 768px) {
+  :root { --header-height: 64px; }
+  main { display: block; padding: 0; }
+  .edu-header-inner { flex-wrap: wrap; padding: var(--sp-1) var(--sp-3) var(--sp-2); gap: var(--sp-2); }
+  .edu-header .edu-logo { width: 48px; height: 48px; }
+  .edu-header .edu-wordmark { display: none; }
+  .edu-header .ghost-btn, .edu-header .edu-seg button { font-size: var(--small-size); padding: 8px 10px; }
+  .sub-nav { order: 10; flex: 1 1 100%; margin: 0; gap: 2px; }
+  .sub-nav a { font-size: var(--small-size); padding: 5px 9px; }
+  #settingsToggle, #settingsClose { display: inline-flex; }
+  #settingsToggle { background: var(--yellow); color: var(--yellow-ink); border-color: var(--yellow); }
+  #settingsPanel { display: none; position: fixed; inset: 0 auto 0 0; z-index: 80; width: min(360px, calc(100% - 32px)); box-shadow: var(--shadow-lg); }
+  #app[data-settings="open"] #settingsPanel { display: block; animation: fadeIn .18s ease-out; }
+  #app[data-settings="open"] #settingsBackdrop:not([hidden]) { display: block; position: fixed; inset: 0; z-index: 70; width: 100%; height: 100%; padding: 0; border: 0; background: var(--dialog-backdrop); }
+  #resultsPanel { height: 100%; padding: var(--sp-5) var(--sp-4) var(--sp-8); }
+  .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2); }
+  .card { padding: var(--sp-4); }
+  .app-title { font-size: var(--h3); }
+  .edu-lead { font-size: var(--body); }
+}
+@media (prefers-reduced-motion: reduce) { #app[data-settings="open"] #settingsPanel { animation: none; } }
