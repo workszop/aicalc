@@ -43,6 +43,13 @@ const setField = (id, value) => {
 };
 const click = (sel) => { const n = $(sel); expect(n, `control ${sel} missing`); n.click(); };
 const finish = (payload) => document.body.setAttribute('data-sub-smoke', encodeURIComponent(JSON.stringify(payload)));
+// The text colour must differ from the background of the nearest card ancestor that paints one.
+const visibleOn = (node) => {
+  const color = getComputedStyle(node).color;
+  let a = node.parentElement;
+  while (a) { const bg = getComputedStyle(a).backgroundColor; if (bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') return color !== bg; a = a.parentElement; }
+  return color !== getComputedStyle(document.body).backgroundColor;
+};
 const viewport = () => ({ width: window.innerWidth, scrollWidth: document.documentElement.scrollWidth });
 """
 
@@ -183,6 +190,13 @@ SEATS_FLOW = r"""
     const winners = cards.querySelectorAll('[data-win="true"]');
     expect(winners.length === 1 && winners[0].dataset.option === want.winner, `winner ${winners[0] && winners[0].dataset.option}, expected ${want.winner}`);
     expect(near(card('api').dataset.monthly, want.api.monthly) && near(card('sub').dataset.monthly, want.sub.monthly), 'card amounts differ from core');
+    // ineligible API option: the warning must be readable
+    setField('inTok', 250000);
+    setField('model', 'Anthropic Claude Haiku 4.5');
+    expect(card('api').dataset.eligible === 'false' && card('api').querySelector('.seat-warn'), 'api card did not show the warning');
+    expect(visibleOn(card('api').querySelector('.seat-warn')), 'seats warning has the same colour as its card background');
+    setField('model', core.defaultsOf(core.SEAT_FIELDS).model);
+    setField('inTok', 3000);
     setField('chatsPerDay', 0);
     expect(!/NaN|Infinity/.test($('#resultsPanel').textContent), 'zero chats produced NaN or Infinity');
     setField('inTok', 0); setField('outTok', 0);
@@ -247,7 +261,8 @@ AGENT_FLOW = r"""
     setField('runs', 21);
     expect($('[data-preset="report"]').getAttribute('aria-pressed') === 'false', 'preset stays pressed after edit');
     click('[data-preset="mail"]');
-    expect(card.dataset.perRun === '0.6768' || Number(card.dataset.perRun) > 0, 'mail preset broke the card');
+    const mailWant = core.computeAgentResults(Object.assign({}, defaults, { runs: 3000, steps: 4, manualMin: 6 }), core.MODELS);
+    expect(card.dataset.perRun === SubUI.dataNum(mailWant.perRun, 4) && near(card.dataset.monthly, mailWant.monthly), `mail preset per run ${card.dataset.perRun}, expected ${SubUI.dataNum(mailWant.perRun, 4)}`);
     // ineligible model
     setField('inTok', 2000000);
     expect(document.body.dataset.state === 'invalid', 'inTok above schema max must be invalid');
@@ -256,6 +271,7 @@ AGENT_FLOW = r"""
     setField('model', 'Anthropic Claude Haiku 4.5');
     expect(card.dataset.eligible === 'false', `eligible ${card.dataset.eligible} for a context over the model window`);
     expect(/Niedostępne/.test(card.textContent) && /Za długi kontekst/.test(card.textContent), 'ineligible copy missing');
+    expect(visibleOn(card.querySelector('.agent-warn')), 'ineligible reason has the same colour as its card background');
     expect(roi.dataset.on === 'false', 'roi panel should be off for an ineligible model');
     expect(!/NaN|Infinity/.test($('#resultsPanel').textContent), 'NaN in ineligible state');
     setField('model', core.defaultsOf(core.AGENT_FIELDS).model);

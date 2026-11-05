@@ -311,12 +311,12 @@ details.panel[open] { padding-bottom: 16px; }
 .seat-card p { margin: 0 0 var(--sp-2); }
 .seat-monthly { font-family: var(--font-display); font-weight: 600; font-size: var(--stat-size); color: var(--ink); overflow-wrap: anywhere; }
 .seat-peruser { color: var(--ink-2); font-size: var(--body-sm); }
-.seat-warn { color: var(--red-ink); font-weight: 600; }
+.seat-warn { color: var(--red-600); font-weight: 600; }
 .seat-bars { margin-bottom: var(--sp-5); }
 .seat-bar-row { display: grid; grid-template-columns: minmax(110px, 190px) minmax(0, 1fr) minmax(90px, auto); align-items: center; gap: var(--sp-3); margin-bottom: var(--sp-2); font-size: var(--body-sm); }
 .seat-bar-label { color: var(--ink-2); font-weight: 600; }
 .seat-bar-track { display: block; height: 18px; background: var(--paper-2); border-radius: var(--r-sm); overflow: hidden; }
-.seat-bar-fill { display: block; height: 100%; background: var(--paper-3); border-right: 3px solid var(--blue); box-sizing: border-box; }
+.seat-bar-fill { display: block; height: 100%; background: var(--paper-3); }
 .seat-bar-row[data-win="true"] .seat-bar-fill { background: var(--blue); }
 .seat-bar-value { font-family: var(--font-mono); font-weight: 500; text-align: right; color: var(--ink); }
 @media (max-width: 1200px) { .seat-cards { grid-template-columns: minmax(0, 1fr); } }
@@ -332,7 +332,7 @@ details.panel[open] { padding-bottom: 16px; }
 .agent-main { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--sp-4); margin-bottom: var(--sp-3); }
 .agent-big { font-family: var(--font-display); font-weight: 600; font-size: var(--stat-size); color: var(--ink); overflow-wrap: anywhere; }
 .agent-cap { color: var(--ink-2); font-size: var(--body-sm); font-weight: 600; }
-.agent-warn { color: var(--red-ink); font-weight: 600; font-size: var(--body-sm); }
+.agent-warn { color: var(--red-600); font-weight: 600; font-size: var(--body-sm); }
 .agent-bars { margin-bottom: var(--sp-5); }
 .agent-bar-row { display: grid; grid-template-columns: minmax(110px, 190px) minmax(0, 1fr) minmax(90px, auto); align-items: center; gap: var(--sp-3); margin-bottom: var(--sp-2); font-size: var(--body-sm); }
 .agent-bar-label { color: var(--ink-2); font-weight: 600; }
