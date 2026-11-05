@@ -24,11 +24,11 @@ const TOK_PER_WORD = {
 const BASE_FAMILY = 'openai';
 const EN_WORD_FACTOR = 502 / 443;
 const THINK_MULT = 3;
-// usd values are placeholders until verified (checkedAt: null means "price to verify").
+// usd = monthly-billed list price per seat (USD), checked 2026-11-05 (checkedAt: null means "price to verify").
 const SEAT_PLANS = [
-  { id: 'chatgpt-business', name: 'ChatGPT Business', usd: 30, checkedAt: null, source: 'https://openai.com/chatgpt/pricing/' },
-  { id: 'm365-copilot',     name: 'Microsoft 365 Copilot', usd: 30, checkedAt: null, source: 'https://www.microsoft.com/microsoft-365/copilot/business', noteKey: 'needsM365' },
-  { id: 'claude-team',      name: 'Claude Team', usd: 30, checkedAt: null, source: 'https://claude.com/pricing' },
+  { id: 'chatgpt-business', name: 'ChatGPT Business', usd: 25, checkedAt: '2026-11-05', source: 'https://help.openai.com/en/articles/8792828-chatgpt-business-overview' },
+  { id: 'm365-copilot',     name: 'Microsoft 365 Copilot', usd: 25.2, checkedAt: '2026-11-05', source: 'https://www.microsoft.com/en-us/copilot/pricing/business', noteKey: 'needsM365' },
+  { id: 'claude-team',      name: 'Claude Team', usd: 25, checkedAt: '2026-11-05', source: 'https://claude.com/pricing' },
 ];
 
 // ─── Field schemas ───
@@ -145,11 +145,48 @@ function chatCost(m, s, inTok, outTok) {
   return { perCall, inTok: inT, outTok: outT, eligible: reason === null, reason };
 }
 
+function modelOf(s, models) {
+  return models.find((m) => m.name === s.model) || models[0];
+}
+
+function seatPlanOf(s) {
+  if (s.plan === 'custom') return { id: 'custom', name: 'Custom', usd: s.customUsd, checkedAt: null };
+  return SEAT_PLANS.find((p) => p.id === s.plan) || SEAT_PLANS[0];
+}
+
+function computeSeatResults(s, models) {
+  const model = modelOf(s, models);
+  const plan = seatPlanOf(s);
+  const chat = chatCost(model, s, s.inTok, s.outTok);
+  const perChat = chat.perCall;
+  const seatPln = plan.usd * s.fx;
+  const chatsPerMonth = s.chatsPerDay * s.workDays / 12;
+  const subMonthly = s.users * seatPln;
+  const apiMonthly = s.users * chatsPerMonth * perChat + s.uiOps;
+  const units = Math.ceil(s.users / s.localMaxUsers);
+  const localMonthly = units * (s.localCapex / s.localAmort + s.localPower / 1000 * 24 * 30.4 * s.kwh) + s.localOps + s.uiOps;
+  const options = [['sub', subMonthly], ['api', apiMonthly], ['local', localMonthly]]
+    .filter(([id]) => id !== 'api' || chat.eligible);
+  // First minimum in the order sub, api, local wins ties.
+  const winner = options.reduce((best, cur) => (cur[1] < best[1] ? cur : best))[0];
+  const perChatMonthly = perChat * s.workDays / 12;
+  const numerator = seatPln - s.uiOps / s.users;
+  const breakEvenChats = numerator <= 0 || perChatMonthly === 0 ? null : numerator / perChatMonthly;
+  return {
+    model, plan,
+    sub: { monthly: subMonthly, perUser: subMonthly / s.users },
+    api: { monthly: apiMonthly, perUser: apiMonthly / s.users, perChat, eligible: chat.eligible, reason: chat.reason },
+    local: { monthly: localMonthly, perUser: localMonthly / s.users, units },
+    winner, breakEvenChats,
+  };
+}
+
 // ─── Exports ───
 globalThis.SubCore = {
   MODELS, TOK_PER_WORD, BASE_FAMILY, EN_WORD_FACTOR, THINK_MULT, SEAT_PLANS,
   SHARED_FIELDS, SEAT_FIELDS, AGENT_FIELDS, ROI_FIELDS, ROI_PAGE_FIELDS,
   defaultsOf, validateValue, loadState, familyFactor, modelRates, chatCost,
+  seatPlanOf, computeSeatResults,
 };
 if (typeof module !== 'undefined') module.exports = globalThis.SubCore;
 })();

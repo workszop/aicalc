@@ -6,7 +6,12 @@ const path = require('node:path');
 const context = vm.createContext({ console });
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../sub/core.js'), 'utf8'), context);
 const C = vm.runInContext('globalThis.SubCore', context);
-const { MODELS, SHARED_FIELDS, SEAT_FIELDS, AGENT_FIELDS } = C;
+const { MODELS, SHARED_FIELDS, SEAT_FIELDS, AGENT_FIELDS, ROI_FIELDS } = C;
+const near = (a, b, tol) => Math.abs(a - b) <= tol;
+const noNaN = (o, p = '') => Object.entries(o).forEach(([k, v]) => {
+  if (v && typeof v === 'object' && !Array.isArray(v) && !(typeof v.name === 'string' && v.pin !== undefined)) noNaN(v, p + k + '.');
+  else assert.ok(!(typeof v === 'number' && Number.isNaN(v)), 'NaN at ' + p + k);
+});
 const find = (name) => MODELS.find((m) => m.name.includes(name));
 
 assert.equal(C.validateValue(SEAT_FIELDS.chatsPerDay, 1001).error, 'range');
@@ -38,4 +43,38 @@ assert.equal(C.modelRates(terra, 300000).tiered, true);
 assert.equal(C.modelRates(terra, 300000).pin, 4);
 assert.equal(C.modelRates(terra, 1000).pin, 2);
 assert.equal(C.modelRates(find('Opus'), 900000).tiered, false);
+
+// ─── Seats model ───
+const seatBase = () => ({ ...C.defaultsOf(SHARED_FIELDS, SEAT_FIELDS, ROI_FIELDS) });
+{
+  const r = C.computeSeatResults(seatBase(), MODELS);
+  assert.ok(near(r.sub.monthly, 1865, 0.01));
+  assert.ok(near(r.sub.perUser, 93.25, 0.01));
+  assert.ok(near(r.api.monthly, 835.7, 0.01));
+  assert.equal(r.local.units, 1);
+  assert.ok(near(r.local.monthly, 1647.33, 0.01));
+  assert.equal(r.winner, 'api');
+  assert.ok(near(r.breakEvenChats, 60.99, 0.01));
+  assert.equal(r.model, terra);
+  assert.equal(r.plan.id, 'chatgpt-business');
+  noNaN(r);
+  const z = C.computeSeatResults({ ...seatBase(), chatsPerDay: 0 }, MODELS);
+  assert.equal(z.api.monthly, 500);
+  assert.ok(Number.isFinite(z.breakEvenChats));
+  noNaN(z);
+  assert.equal(C.computeSeatResults({ ...seatBase(), users: 101 }, MODELS).local.units, 2);
+  assert.equal(C.computeSeatResults({ ...seatBase(), model: 'missing' }, MODELS).model, MODELS[0]);
+  const cu = C.computeSeatResults({ ...seatBase(), plan: 'custom', customUsd: 0 }, MODELS);
+  assert.equal(cu.breakEvenChats, null);
+  assert.equal(cu.plan.id, 'custom');
+  assert.equal(cu.plan.usd, 0);
+  noNaN(cu);
+  // ineligible API is excluded from the winner choice
+  const bad = C.computeSeatResults({ ...seatBase(), inTok: 2000000 }, MODELS);
+  assert.equal(bad.api.eligible, false);
+  assert.equal(bad.api.reason, 'ctxOver');
+  assert.notEqual(bad.winner, 'api');
+  noNaN(bad);
+  assert.equal(C.seatPlanOf({ plan: 'nope', customUsd: 7 }).id, 'chatgpt-business');
+}
 console.log('sub-core tests passed');
