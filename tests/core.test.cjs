@@ -377,8 +377,11 @@ assert.ok(verdict20.v.runnerUp && verdict20.v.runnerUp !== verdict20.v.winner, '
 const verdict300 = run('verdict(computeResults({ ...DEFAULTS, users: 300 }, models))');
 assert.notEqual(verdict300.runnerUp, 'small', 'ineligible Dell never runner-up');
 assert.notEqual(verdict300.winner, 'small', 'ineligible Dell never winner');
-for (const key of ['verdictText', 'verdictSingle', 'aApiVsCloud', 'aApiVsSmall', 'aApiVsOwn', 'aPaybackSmall', 'aPayback', 'aMinute'])
-  for (const lang of ['pl', 'en']) assert.ok(/\{(n|cost|pct|minute|users|winner|monthly|runnerUp)\}/.test(run(`T.${lang}.${key}`)), `${lang}.${key} is a sentence template`);
+for (const key of ['verdictText', 'verdictSingle', 'aApiVsCloud', 'aApiVsSmall', 'aApiVsOwn', 'aPaybackSmall', 'aPayback'])
+  for (const lang of ['pl', 'en']) assert.ok(/\{(n|cost|pct|users|winner|monthly|runnerUp)\}/.test(run(`T.${lang}.${key}`)), `${lang}.${key} is a sentence template`);
+// No comparison with the cost of a person's working time (2026-11-05): no minute-of-work constant or answer.
+for (const lang of ['pl', 'en']) assert.equal(run(`T.${lang}.aMinute`), undefined, `${lang}.aMinute is removed`);
+assert.ok(!/MINUTE_OF_WORK|Minuta pracy|Minute of work/.test(html), 'index.html has no minute-of-work comparison');
 
 // Task 10: price-check metadata is exposed per model
 assert.equal(models[0].checkedAt, '2026-09-13', 'checkedAt parsed from CSV');

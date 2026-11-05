@@ -212,15 +212,30 @@ CAPACITY_SMOKE_SCRIPT = r"""
     expect(document.documentElement.lang === 'en' && app.dataset.lang === 'en', 'English toggle');
     click('[data-lang="pl"]');
     expect(document.documentElement.lang === 'pl' && app.dataset.lang === 'pl', 'Polish toggle');
+    // Regression: the S1/S2/S3 card amounts stay exactly as before the labour-cost removal (2026-11-05).
+    const expectMonthly = (label, want) => Object.entries(want).forEach(([key, value]) => {
+      const node = document.querySelector(cardId(key));
+      if (value === null) expect(node.dataset.eligible === 'false' && node.dataset.monthly === '', `${label} ${key}: expected unavailable`);
+      else expect(node.dataset.monthly === value.toFixed(2), `${label} ${key}: data-monthly ${node.dataset.monthly}, expected ${value.toFixed(2)}`);
+    });
+    // No answer compares the cost with a person's working time.
+    const expectNoLabour = (label) => expect(!/minut[ay]? pracy|minute of (staff )?(time|work)/i.test(document.querySelector('#answers').textContent), `${label}: answers still compare with a minute of work`);
     click('[data-preset="S2"]');
     expect(document.querySelector('#users').value === '100', 'S2 preset users');
     assertSized('small', 2, 100);
+    expectMonthly('S2', { api: 10196.25, cloud: 15000, small: 8127.99, own: 13434.42 });
+    expectNoLabour('S2');
     click('[data-preset="S3"]');
     expect(document.querySelector('#users').value === '300', 'S3 preset users');
     assertUnavailable('small');
+    expectMonthly('S3', { api: 18588.75, cloud: 15000, small: null, own: 13434.42 });
     click('[data-preset="S1"]');
     expect(document.querySelector('#users').value === '20', 'S1 preset users');
     assertSized('small', 1, 20);
+    expectMonthly('S1', { api: 6839.25, cloud: 15000, small: 6980.66, own: 13434.42 });
+    expectNoLabour('S1');
+    const answerCount = document.querySelectorAll('#answers li:not(.hint)').length;
+    expect(answerCount === 5, `S1: ${answerCount} answers, expected 5 (three break-evens, two paybacks)`);
 
     // Save, serialize/import and apply the scenario with a non-default ceiling.
     setInput('maxUtilization', 73);

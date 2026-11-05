@@ -897,7 +897,6 @@ DeepSeek V4 Pro 0813,1.32,3.96,1000000,frontier,Stawka standardowa bez cache i B
 const CURRENCY = 'PLN';
 const COLORS = {};
 const CHART_TYPE = {};
-const MINUTE_OF_WORK = 15000 / (168 * 60); // 1.49 PLN
 const HOURS_MONTH = 730;
 // Token conversion assumptions are explicit so pricing and capability metadata stay independent.
 const TOK_PER_WORD = {
@@ -1034,7 +1033,7 @@ const T = {
     verdictRecommended: 'Przy {users} {usersWord} najtaniej wychodzi {winner} ({monthly} miesięcznie), ale od {from} użytkowników rekomendujemy {recommended}: {recMonthly} miesięcznie.',
     aApiVsCloud: 'API jest tańsze od chmury GPU do ok. {n}.', aApiVsOwn: 'API jest tańsze od własnego serwera do ok. {n}.',
     aApiVsSmall: 'API jest tańsze od Dell GB10 do ok. {n}.', aPaybackSmall: 'Dell GB10 zwraca się wobec chmury po {n}.',
-    aPayback: 'Własny serwer zwraca się wobec chmury po {n}.', aMinute: 'Jedno zapytanie API kosztuje {cost}, czyli {pct} minuty pracy pracownika ({minute}).',
+    aPayback: 'Własny serwer zwraca się wobec chmury po {n}.',
     aApiVsCloudNever: 'API nie jest tańsze od chmury GPU nawet przy 1 osobie.', aApiVsCloudAlways: 'API jest tańsze od chmury GPU co najmniej do 20 000 użytkowników.',
     aApiVsSmallNever: 'API nie jest tańsze od Dell GB10 nawet przy 1 osobie.', aApiVsSmallAlways: 'API jest tańsze od Dell GB10 co najmniej do 20 000 użytkowników.',
     aApiVsOwnNever: 'API nie jest tańsze od własnego serwera nawet przy 1 osobie.', aApiVsOwnAlways: 'API jest tańsze od własnego serwera co najmniej do 20 000 użytkowników.',
@@ -1102,7 +1101,7 @@ const T = {
     verdictRecommended: 'With {users} {usersWord} the cheapest option is {winner} ({monthly} per month), but from {from} users we recommend {recommended}: {recMonthly} per month.',
     aApiVsCloud: 'API is cheaper than cloud GPU up to about {n}.', aApiVsOwn: 'API is cheaper than an own server up to about {n}.',
     aApiVsSmall: 'API is cheaper than Dell GB10 up to about {n}.', aPaybackSmall: 'Dell GB10 pays back against cloud after {n}.',
-    aPayback: 'An own server pays back against cloud after {n}.', aMinute: 'One API request costs {cost}, which is {pct} of a minute of staff time ({minute}).',
+    aPayback: 'An own server pays back against cloud after {n}.',
     aApiVsCloudNever: 'API is not cheaper than cloud GPU even for 1 user.', aApiVsCloudAlways: 'API stays cheaper than cloud GPU up to at least 20,000 users.',
     aApiVsSmallNever: 'API is not cheaper than Dell GB10 even for 1 user.', aApiVsSmallAlways: 'API stays cheaper than Dell GB10 up to at least 20,000 users.',
     aApiVsOwnNever: 'API is not cheaper than an own server even for 1 user.', aApiVsOwnAlways: 'API stays cheaper than an own server up to at least 20,000 users.',
@@ -2009,7 +2008,6 @@ function render() {
   const beSentence = (key, n) => n === 0 ? t(key + 'Never') : n >= maxU ? t(key + 'Always') : t(key, { n: fmtNum(n) + ' ' + t('usersWord') });
   const pbSentence = (key, m) => m == null ? t(key + 'Never') : t(key, { n: m + ' ' + monthsPhrase(m) });
   const pbCloud = result.payback, pbSmall = result.paybackSmall;
-  const minuteRatio = api.perReq / MINUTE_OF_WORK;
   const v = verdict(result);
   const verdictVars = { users: fmtNum(s.users), usersWord: usersPhrase(s.users), winner: t(v.winner + 'Path'), monthly: money(v.monthly, 0), pct: pct(v.savingsPct || 0), runnerUp: t((v.runnerUp || '') + 'Path'), from: fmtNum(s.smallRecommendFrom), recommended: t((v.recommended || '') + 'Path'), recMonthly: money(v.recommendedMonthly || 0, 0) };
   const roiKey = recommended || winner, roiPick = result[roiKey];
@@ -2029,7 +2027,6 @@ function render() {
   }
   if (small.eligible) answers.push(pbSentence('aPaybackSmall', pbSmall));
   answers.push(pbSentence('aPayback', pbCloud));
-  if (api.eligible) answers.push(t('aMinute', { cost: money(api.perReq, 2), pct: minuteRatio < 0.01 ? '<1%' : pct(minuteRatio), minute: money(MINUTE_OF_WORK, 2) }));
   $('answers').replaceChildren(...answers.map((text, i) => el('li', { class: i === 0 ? 'key' : '' }, text)));
   $('answers').append(el('li', { class: 'hint' }, t('firstCrossNote')));
 
@@ -2217,7 +2214,6 @@ function buildAssumptions() {
       [P('Szczyt użycia', 'Peak'), now('×' + fmtNum(s.peak, 1) + ' · ' + s.workHours + ' h'), P('Ruch dzienny rozłożony na godziny pracy i pomnożony przez mnożnik szczytu.', 'Daily traffic spread over working hours and multiplied by the peak multiplier.')],
     ]},
     { title: P('Nie tylko koszt', 'Not just cost'), rows: [
-      [P('Minuta pracy', 'Minute of work'), fmtNum(MINUTE_OF_WORK, 2) + ' PLN', P('15 000 PLN / 168 h / 60 min.', '15,000 PLN / 168 h / 60 min.')],
       [P('API', 'API'), P('dane poza firmą', 'data leaves the company'), P('RODO i umowa powierzenia, zależność od dostawcy.', 'GDPR and a data processing agreement, vendor lock-in.')],
       [P('GPU', 'GPU'), P('jakość i utrzymanie', 'quality and upkeep'), P('Model open-source może różnić się jakością po polsku; ktoś musi go aktualizować i zabezpieczać. Kalkulator nie ocenia jakości ani pojemności.', 'Open-source models can vary in Polish quality; someone must update and secure them. The calculator does not assess quality or capacity.')],
       [P('Pominięte', 'Left out'), P('budowa aplikacji, VAT', 'app build, VAT'), P('Bez wdrożenia i integracji u klienta, redundancji, VAT i spadku cen API w czasie.', 'No on-site implementation or integration, redundancy, VAT or API price drops over time.')],
