@@ -9,7 +9,7 @@ const PRESETS = { mail: { runs: 3000, steps: 4, manualMin: 6 }, report: { runs: 
 SubUI.addStrings({
   pl: {
     agentPageTitle: 'Agent / automatyzacja – koszt i zwrot',
-    agentLead: 'Proces wraca N razy w miesiącu. Agent robi go w kilku krokach modelu, korzysta z narzędzi, a człowiek sprawdza część wyników. Ile to kosztuje i ile kosztowałaby praca ręczna?',
+    agentLead: 'Proces powtarza się wiele razy w miesiącu. Agent wykonuje go w kilku krokach modelu, korzysta z narzędzi, a człowiek sprawdza część wyników. Ile to kosztuje i ile kosztowałaby praca ręczna?',
     groupProcess: 'Proces', agentPresetsLabel: 'Gotowe scenariusze', presetMail: 'Obsługa maili', presetReport: 'Raport sprzedaży', presetInvoice: 'Faktury',
     presetsHint: 'Scenariusze to przykład poglądowy, nie pomiar. Dopasuj liczby do swojego procesu.',
     runs: 'Uruchomienia w miesiącu', manualMin: 'Czas pracy ręcznej na jedno uruchomienie (min)',
@@ -29,7 +29,7 @@ SubUI.addStrings({
   },
   en: {
     agentPageTitle: 'Agent / automation – cost and return',
-    agentLead: 'A process runs N times a month. An agent does it in a few model steps, uses tools, and a person checks some of the results. What does it cost, and what would the manual work cost?',
+    agentLead: 'A process repeats many times a month. An agent does it in a few model steps, uses tools, and a person checks some of the results. What does it cost, and what would the manual work cost?',
     groupProcess: 'Process', agentPresetsLabel: 'Ready scenarios', presetMail: 'E-mail handling', presetReport: 'Sales report', presetInvoice: 'Invoices',
     presetsHint: 'The scenarios are an illustrative example, not a measurement. Adjust the numbers to your process.',
     runs: 'Runs per month', manualMin: 'Manual work per run (min)',

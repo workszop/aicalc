@@ -92,6 +92,15 @@ function moneyShort(v) {
   if (a >= 1e3) return fmtNum(v / 1e3, 0) + (lang === 'pl' ? ' tys.' : 'k');
   return fmtNum(v, 0);
 }
+// Polish plural form for a whole count: 1 -> one, 2-4 / 22-24 ... (not 12-14) -> few, else many.
+// English needs only one / other, so pass the plural twice: plural(n, 'chat', 'chats', 'chats').
+function plural(n, one, few, many) {
+  const a = Math.abs(n);
+  if (a === 1) return one;
+  const d = a % 10;
+  const h = a % 100;
+  return d >= 2 && d <= 4 && (h < 12 || h > 14) ? few : many;
+}
 // Raw number for a data-* attribute: rounded to d decimals, '' for null / non-finite.
 function dataNum(v, d = 2) {
   if (v === null || v === undefined || !Number.isFinite(v)) return '';
@@ -356,7 +365,8 @@ function buildRoiPanel(node) {
   node.roiParts = parts;
   return parts;
 }
-function renderRoiPanel(node, roi, state) {
+// opts.caveat (default true): show the "time saved is value, not cash" note; pages whose benefit is not time turn it off.
+function renderRoiPanel(node, roi, state, opts = {}) {
   const parts = node.roiParts || buildRoiPanel(node);
   const on = state.roiOn !== false && Boolean(roi);
   const horizon = roi ? roi.horizon : state.horizon;
@@ -367,7 +377,7 @@ function renderRoiPanel(node, roi, state) {
     netMonthly: roi ? dataNum(roi.netMonthly) : '',
     oneOff: roi ? dataNum(roi.oneOff) : '',
     paybackMonth: roi && roi.paybackMonth !== null ? String(roi.paybackMonth) : '',
-    roiPct: roi && roi.roiPct !== null ? roi.roiPct.toFixed(1) : '',
+    roiPct: roi ? dataNum(roi.roiPct, 1) : '',
     seriesLength: roi ? String(roi.series.length) : '',
     horizon: String(horizon),
   });
@@ -382,6 +392,7 @@ function renderRoiPanel(node, roi, state) {
   if (parts.payback.textContent !== paybackText) parts.payback.textContent = paybackText;
   parts.sentence.textContent = roi.roiPct === null ? t('roiUndefined')
     : t('roiSentence', { horizon, pct: fmtNum(roi.roiPct, 1) + '%', benefit: money(roi.sumBenefit), cost: money(roi.sumCost + roi.oneOff) });
+  parts.caveat.hidden = opts.caveat === false;
   parts.caveat.textContent = t('roiCaveat');
   parts.svg.setAttribute('aria-label', t('chartAria', { horizon, payback: paybackText }));
   renderLineChart(parts.svg, roi.series, { paybackMonth: pay });
@@ -487,7 +498,7 @@ function runChecks(checks) {
 // ─── Exports ───
 globalThis.SubUI = {
   T, LS_LANG, NAV_PAGES, t, addStrings, getLang, setLang, onLangChange, onReset, applyI18n,
-  money, moneyShort, fmtNum, dataNum, el, svgEl, announce, isVerify,
+  money, moneyShort, fmtNum, plural, dataNum, el, svgEl, announce, isVerify,
   bindFields, fillSelect, persist, restore,
   renderNav, setDrawer, renderRoiPanel, renderLineChart, roiPanelChecks, runChecks,
 };

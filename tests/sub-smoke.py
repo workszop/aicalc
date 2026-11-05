@@ -86,18 +86,21 @@ ROI_FLOW = r"""
     expect(panel.dataset.seriesLength === '13', 'invalid input reached the results');
     setField('horizon', 12);
     expect(document.body.dataset.state === 'ready', 'state not ready after fixing the field');
-    // language switch: caveat changes, numbers do not
-    const before = { caveat: panel.querySelector('[data-roi="caveat"]').textContent, roi: panel.dataset.roiPct, pay: panel.dataset.paybackMonth };
+    // the "time is value, not cash" caveat belongs to time mode only
+    const caveatNode = panel.querySelector('[data-roi="caveat"]');
+    expect(caveatNode.hidden, 'time caveat visible in amount mode');
+    // language switch: text changes, numbers do not
+    const before = { roi: panel.dataset.roiPct, pay: panel.dataset.paybackMonth };
     const axisBefore = panel.querySelector('svg [data-axis="x"]').textContent;
     click('[data-lang="en"]');
-    const caveat = panel.querySelector('[data-roi="caveat"]').textContent;
     expect(document.documentElement.lang === 'en', 'html lang not en');
-    expect(caveat !== before.caveat && /Time saved/.test(caveat), 'caveat did not switch to EN');
+    expect(caveatNode.hidden, 'time caveat visible in amount mode after the language switch');
     expect(panel.querySelector('svg [data-axis="x"]').textContent !== axisBefore, 'chart axis label did not switch');
     expect(panel.dataset.roiPct === before.roi && panel.dataset.paybackMonth === before.pay, 'numbers changed on language switch');
     expect($('nav a[aria-current="page"]').getAttribute('href') === 'roi.html', 'nav current link wrong');
     // an invalid field in the inactive benefit mode must not block the other mode
     click('[data-field="benefitMode"] [data-value="time"]');
+    expect(!caveatNode.hidden && /Time saved/.test(caveatNode.textContent), 'time caveat missing or not EN in time mode');
     setField('adoption', 500);
     expect(document.body.dataset.state === 'invalid', 'adoption 500 did not set invalid');
     click('[data-field="benefitMode"] [data-value="amount"]');
@@ -111,6 +114,11 @@ ROI_FLOW = r"""
     expect(document.body.dataset.state === 'ready', 'fixing adoption did not restore ready');
     click('[data-field="benefitMode"] [data-value="amount"]');
     expect(panel.dataset.paybackMonth === before.pay, 'payback changed after the mode round trip');
+    // data-roi-pct goes through dataNum: an ROI that rounds to zero prints "0", never "-0.0"
+    setField('benefitMonthly', 1999.9);
+    setField('costMonthly', 0); setField('setup', 72000); setField('training', 0); setField('ramp', 0); setField('horizon', 36);
+    expect(panel.dataset.roiPct === '0', `near-zero roi-pct ${panel.dataset.roiPct}, expected 0`);
+    setField('benefitMonthly', 5000); setField('costMonthly', 1000); setField('setup', 25000); setField('ramp', 3); setField('horizon', 12);
     if (window.matchMedia('(max-width: 768px)').matches) {
       click('#settingsToggle');
       expect($('#app').dataset.settings === 'open' && $('#settingsToggle').getAttribute('aria-expanded') === 'true', 'drawer did not open');
@@ -155,7 +163,25 @@ SEATS_FLOW = r"""
     expect(near(card('api').dataset.monthly, 835.70), `api monthly ${card('api').dataset.monthly}`);
     expect(near(card('sub').dataset.monthly, 1865.00), `sub monthly ${card('sub').dataset.monthly}`);
     expect(cards.dataset.breakEvenChats === '61.0', `break-even ${cards.dataset.breakEvenChats}`);
-    expect($('#verdict').getAttribute('aria-live') === 'polite' && /61/.test($('#verdict').textContent), 'verdict sentence missing');
+    expect(cards.dataset.breakEvenKind === 'from', `break-even kind ${cards.dataset.breakEvenKind}, expected from`);
+    const verdictText = () => $('#verdict').textContent;
+    expect($('#verdict').getAttribute('aria-live') === 'polite', 'verdict is not a polite live region');
+    expect(verdictText() === 'Przy 15 rozmowach dziennie na osobę najtaniej wychodzi API z własnym czatem. Subskrypcja wychodzi taniej niż API od 61 rozmów dziennie na osobę. Lokalnie jest taniej niż subskrypcja przy tym zespole.', `default verdict: ${verdictText()}`);
+    expect(/na osobę miesięcznie/.test(card('sub').querySelector('.seat-peruser').textContent), 'per-person line is not "na osobę miesięcznie"');
+    // Polish plurals
+    expect(SubUI.plural(1, 'a', 'b', 'c') === 'a' && SubUI.plural(2, 'a', 'b', 'c') === 'b' && SubUI.plural(4, 'a', 'b', 'c') === 'b' && SubUI.plural(5, 'a', 'b', 'c') === 'c'
+      && SubUI.plural(12, 'a', 'b', 'c') === 'c' && SubUI.plural(22, 'a', 'b', 'c') === 'b' && SubUI.plural(0, 'a', 'b', 'c') === 'c', 'SubUI.plural rules');
+    setField('chatsPerDay', 1);
+    expect(/^Przy 1 rozmowie dziennie/.test(verdictText()), `singular chats verdict: ${verdictText()}`);
+    setField('chatsPerDay', 15);
+    // 3 people: seats win and are cheaper than the API at any usage; no contradiction
+    setField('users', 3);
+    expect(cards.dataset.breakEvenKind === 'always' && cards.dataset.breakEvenChats === '', `users 3: kind ${cards.dataset.breakEvenKind}`);
+    expect(card('sub').dataset.win === 'true', 'users 3: seats do not win');
+    expect(/najtaniej wychodzi subskrypcja\. Subskrypcja jest tańsza od API przy każdym użyciu\./.test(verdictText()) && !/nie wychodzi taniej/.test(verdictText()), `users 3 verdict contradicts itself: ${verdictText()}`);
+    setField('users', 20);
+    // plan labels use the page number format
+    expect(/25,2 USD/.test($('[data-field="plan"] option[value="m365-copilot"]').textContent), 'PL plan label is not localised');
     // roi panel follows the winner
     const roi = $('#roiPanel');
     const defaults = core.defaultsOf(...schemas);
@@ -194,6 +220,7 @@ SEATS_FLOW = r"""
     setField('inTok', 250000);
     setField('model', 'Anthropic Claude Haiku 4.5');
     expect(card('api').dataset.eligible === 'false' && card('api').querySelector('.seat-warn'), 'api card did not show the warning');
+    expect(!/API od|od API|niż API/.test(verdictText()), `ineligible API still has a break-even sentence: ${verdictText()}`);
     expect(visibleOn(card('api').querySelector('.seat-warn')), 'seats warning has the same colour as its card background');
     setField('model', core.defaultsOf(core.SEAT_FIELDS).model);
     setField('inTok', 3000);
@@ -201,17 +228,21 @@ SEATS_FLOW = r"""
     expect(!/NaN|Infinity/.test($('#resultsPanel').textContent), 'zero chats produced NaN or Infinity');
     setField('inTok', 0); setField('outTok', 0);
     expect(cards.dataset.breakEvenChats === '' && !/NaN|Infinity/.test($('#resultsPanel').textContent), 'zero tokens must give an empty break-even and no NaN');
-    expect(/nie wychodzi taniej/.test($('#verdict').textContent), 'no-break-even verdict missing');
+    expect(cards.dataset.breakEvenKind === 'never', `zero tokens: kind ${cards.dataset.breakEvenKind}, expected never`);
+    expect(/Subskrypcja nie wychodzi taniej niż API przy żadnym użyciu\./.test(verdictText()), `never verdict missing: ${verdictText()}`);
     // roi toggle
     setField('inTok', 3000); setField('outTok', 700);
     click('[data-field="roiOn"]');
     expect(roi.dataset.on === 'false', 'roi toggle did not hide the panel');
     click('[data-field="roiOn"]');
+    setField('chatsPerDay', 15);
     // language switch keeps numbers
     const monthly = card('sub').dataset.monthly;
     const verdictPl = $('#verdict').textContent;
     click('[data-lang="en"]');
     expect($('#verdict').textContent !== verdictPl && card('sub').dataset.monthly === monthly, 'EN switch changed numbers or did not translate');
+    expect(verdictText() === 'At 15 chats per person per day, the API with your own chat is the cheapest. A subscription is cheaper than the API from 61 chats per person per day. Local hosting is cheaper than the subscription for this team.', `EN verdict: ${verdictText()}`);
+    expect(/25\.2 USD/.test($('[data-field="plan"] option[value="m365-copilot"]').textContent), 'EN plan label not refreshed on language change');
     expect($('nav a[aria-current="page"]').getAttribute('href') === 'seats.html', 'nav current link wrong');
     click('[data-lang="pl"]');
     if (window.matchMedia('(max-width: 768px)').matches) {
@@ -241,6 +272,8 @@ AGENT_FLOW = r"""
     const roi = $('#roiPanel');
     const near = (a, b) => Math.abs(Number(a) - b) < 0.011;
     expect(document.body.dataset.page === 'agent', 'body[data-page] is not agent');
+    const leadNode = $('.page-head .edu-lead');
+    expect(leadNode && !/\bN\b/.test(leadNode.textContent) && /powtarza się/.test(leadNode.textContent), `agent lead still has a literal N: ${leadNode && leadNode.textContent}`);
     expect(document.body.dataset.state === 'ready', 'body[data-state] is not ready on load');
     expect(card && near(card.dataset.monthly, 1653.56), `monthly ${card && card.dataset.monthly}`);
     expect(card.dataset.perRun === '0.6768', `per run ${card.dataset.perRun}`);

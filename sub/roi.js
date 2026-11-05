@@ -60,7 +60,8 @@ function render() {
   timeFields.hidden = !timeMode;
   amountFields.hidden = timeMode;
   timeValue.textContent = SubUI.t('timeBenefitValue', { value: SubUI.money(SubCore.timeBenefit(state)) });
-  SubUI.renderRoiPanel(roiPanel, compute(state), state);
+  // In amount mode the benefit is a sum of money, so the time caveat does not apply.
+  SubUI.renderRoiPanel(roiPanel, compute(state), state, { caveat: timeMode });
 }
 
 // ─── Listeners ───

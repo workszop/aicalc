@@ -21,17 +21,22 @@ SubUI.addStrings({
     groupRoi: 'Zwrot',
     optSub: 'Subskrypcja', optApi: 'API + własny czat', optLocal: 'Lokalnie (GB10)',
     winSub: 'subskrypcja', winApi: 'API z własnym czatem', winLocal: 'lokalny serwer GB10',
-    cheapest: 'Najtańsze', perUserMonth: '{value} / osobę mies.', perMonthTotal: '{value} mies.',
+    cheapest: 'Najtańsze', perUserMonth: '{value} na osobę miesięcznie', perMonthTotal: '{value} mies.',
     brkSub: '{users} os. × {usd} USD × kurs {fx}',
-    brkApi: '{users} os. × {chats} rozmów mies. × {perChat} + {ui} utrzymania czatu',
+    // {chats} always has one decimal place, and a fractional count takes the genitive singular: "312,5 rozmowy".
+    brkApi: '{users} os. × {chats} rozmowy mies. × {perChat} + {ui} utrzymania czatu',
     brkLocal: '{units} × GB10: rata {rate}, prąd {power}, obsługa {ops}, czat {ui}',
     localNote: 'Przepustowość GB10 nie jest tu sprawdzana – sprawdź ją w kalkulatorze RAG.',
     apiCtxOver: 'Model nie mieści tej rozmowy w oknie kontekstu.', apiOutputOver: 'Odpowiedź przekracza limit wyjścia modelu.',
-    verdict: 'Przy {chats} rozmowach dziennie na osobę najtaniej wychodzi {winner}.',
-    verdictBreak: ' Subskrypcja opłaca się od {breakEven} rozmów dziennie.',
-    verdictNoBreak: ' Subskrypcja nie wychodzi taniej przy żadnym użyciu.',
+    verdict: 'Przy {chats} {chatsWord} dziennie na osobę najtaniej wychodzi {winner}.',
+    chatsLocOne: 'rozmowie', chatsLocFew: 'rozmowach', chatsLocMany: 'rozmowach',
+    chatsGenOne: 'rozmowy', chatsGenFew: 'rozmów', chatsGenMany: 'rozmów',
+    breakFrom: ' Subskrypcja wychodzi taniej niż API od {n} {chatsWord} dziennie na osobę.',
+    breakAlways: ' Subskrypcja jest tańsza od API przy każdym użyciu.',
+    breakNever: ' Subskrypcja nie wychodzi taniej niż API przy żadnym użyciu.',
+    localBeatsSub: ' Lokalnie jest taniej niż subskrypcja przy tym zespole.',
     barsTitle: 'Koszt miesięczny: porównanie', barsAria: 'Wykres słupkowy kosztu miesięcznego trzech wariantów',
-    checkCards: 'Seats: karty mają liczbowe koszty', checkWin: 'Seats: dokładnie jedna karta wygrywa', checkBreak: 'Seats: próg opłacalności jest liczbą lub pusty',
+    checkCards: 'Seats: karty mają liczbowe koszty', checkWin: 'Seats: dokładnie jedna karta wygrywa', checkBreak: 'Seats: próg opłacalności jest liczbą tylko wtedy, gdy istnieje',
     checkCore: 'Seats: karty zgadzają się z rdzeniem', checkRoi: 'Seats: panel zwrotu liczy koszt zwycięzcy',
   },
   en: {
@@ -55,11 +60,15 @@ SubUI.addStrings({
     brkLocal: '{units} × GB10: instalment {rate}, power {power}, upkeep {ops}, chat {ui}',
     localNote: 'GB10 throughput is not checked here – check it in the RAG calculator.',
     apiCtxOver: 'The model cannot fit this chat in its context window.', apiOutputOver: 'The reply exceeds the model output limit.',
-    verdict: 'At {chats} chats per person per day, {winner} is the cheapest.',
-    verdictBreak: ' Seats pay off from {breakEven} chats per day.',
-    verdictNoBreak: ' Seats are not cheaper at any usage level.',
+    verdict: 'At {chats} {chatsWord} per person per day, {winner} is the cheapest.',
+    chatsLocOne: 'chat', chatsLocFew: 'chats', chatsLocMany: 'chats',
+    chatsGenOne: 'chat', chatsGenFew: 'chats', chatsGenMany: 'chats',
+    breakFrom: ' A subscription is cheaper than the API from {n} {chatsWord} per person per day.',
+    breakAlways: ' A subscription is cheaper than the API at any usage.',
+    breakNever: ' A subscription is never cheaper than the API.',
+    localBeatsSub: ' Local hosting is cheaper than the subscription for this team.',
     barsTitle: 'Monthly cost: comparison', barsAria: 'Bar chart of the monthly cost of the three options',
-    checkCards: 'Seats: cards carry numeric costs', checkWin: 'Seats: exactly one card wins', checkBreak: 'Seats: break-even is numeric or empty',
+    checkCards: 'Seats: cards carry numeric costs', checkWin: 'Seats: exactly one card wins', checkBreak: 'Seats: break-even is a number only when one exists',
     checkCore: 'Seats: cards match the core', checkRoi: 'Seats: ROI panel uses the winner cost',
   },
 });
@@ -90,6 +99,9 @@ function compute(s) { return SubCore.computeSeatResults(s, MODELS); }
 function roiOf(s, r) {
   return SubCore.computeRoi({ costMonthly: r[r.winner].monthly, benefitMonthly: SubCore.timeBenefit(s), oneOff: s.setup + s.training, ramp: s.ramp, horizon: s.horizon });
 }
+// Polish case forms of "rozmowa": loc after "Przy {n}", gen after "od {n}".
+function chatsWord(n, kase) { return SubUI.plural(n, t('chats' + kase + 'One'), t('chats' + kase + 'Few'), t('chats' + kase + 'Many')); }
+function usdText(usd) { return SubUI.fmtNum(usd, Number.isInteger(usd) ? 0 : String(usd).split('.')[1].length) + ' USD'; }
 function optionText(id) { return t({ sub: 'optSub', api: 'optApi', local: 'optLocal' }[id]); }
 function breakdown(id, s, r) {
   const chats = s.chatsPerDay * s.workDays / 12;
@@ -107,10 +119,11 @@ function pageChecks() {
   const cards = [...seatCards.querySelectorAll('[data-option]')];
   const numeric = (v) => v !== '' && Number.isFinite(Number(v));
   const be = seatCards.dataset.breakEvenChats;
+  const kind = seatCards.dataset.breakEvenKind;
   return [
     { name: t('checkCards'), pass: cards.length === 3 && cards.every((c) => numeric(c.dataset.monthly) && numeric(c.dataset.perUser)) },
     { name: t('checkWin'), pass: cards.filter((c) => c.dataset.win === 'true').length === 1 },
-    { name: t('checkBreak'), pass: be === '' || numeric(be) },
+    { name: t('checkBreak'), pass: kind === r.breakEven.kind && (kind === 'from' ? numeric(be) : be === '') },
     { name: t('checkCore'), pass: cards.every((c) => c.dataset.monthly === SubUI.dataNum(r[c.dataset.option].monthly)) && seatCards.querySelector('[data-win="true"]').dataset.option === r.winner },
     { name: t('checkRoi'), pass: roiPanel.dataset.costMonthly === SubUI.dataNum(r[r.winner].monthly) },
     ...SubUI.roiPanelChecks(roiPanel, state.horizon),
@@ -119,6 +132,7 @@ function pageChecks() {
 
 // ─── Render ───
 function renderPlan(r) {
+  SEAT_PLANS.forEach((p) => { planSelect.querySelector(`option[value="${p.id}"]`).textContent = `${p.name} – ${usdText(p.usd)}`; });
   planSelect.querySelector('option[value="custom"]').textContent = t('planCustom');
   customUsdField.hidden = state.plan !== 'custom';
   const note = r.plan.noteKey ? t(r.plan.noteKey) : '';
@@ -133,6 +147,7 @@ function renderPlan(r) {
 }
 function renderCards(r) {
   seatCards.dataset.breakEvenChats = r.breakEvenChats === null ? '' : r.breakEvenChats.toFixed(1);
+  seatCards.dataset.breakEvenKind = r.breakEven.kind;
   seatCards.replaceChildren(...OPTIONS.map((id) => {
     const o = r[id];
     const win = r.winner === id;
@@ -167,8 +182,16 @@ function renderBars(r) {
 }
 function renderVerdict(r) {
   const winner = t({ sub: 'winSub', api: 'winApi', local: 'winLocal' }[r.winner]);
-  let text = t('verdict', { chats: SubUI.fmtNum(state.chatsPerDay), winner });
-  text += r.breakEvenChats === null ? t('verdictNoBreak') : t('verdictBreak', { breakEven: SubUI.fmtNum(r.breakEvenChats, 1) });
+  let text = t('verdict', { chats: SubUI.fmtNum(state.chatsPerDay), chatsWord: chatsWord(state.chatsPerDay, 'Loc'), winner });
+  // The break-even compares seats with the API only, so it is dropped when the API option is out.
+  if (r.api.eligible) {
+    const kind = r.breakEven.kind;
+    if (kind === 'from') {
+      const n = Math.ceil(r.breakEven.value);
+      text += t('breakFrom', { n: SubUI.fmtNum(n), chatsWord: chatsWord(n, 'Gen') });
+    } else text += t(kind === 'always' ? 'breakAlways' : 'breakNever');
+  }
+  if (r.local.monthly < r.sub.monthly) text += t('localBeatsSub');
   if (verdict.textContent !== text) verdict.textContent = text;
 }
 function render() {
@@ -206,7 +229,8 @@ SubUI.onLangChange(render);
 
 // ─── Init ───
 document.body.dataset.page = 'seats';
-SubUI.fillSelect(planSelect, SEAT_PLANS.map((p) => ({ value: p.id, label: `${p.name} – ${p.usd} USD` })).concat({ value: 'custom', label: t('planCustom') }));
+// Labels are filled in renderPlan, so they follow the language.
+SubUI.fillSelect(planSelect, SEAT_PLANS.map((p) => ({ value: p.id, label: p.name })).concat({ value: 'custom', label: t('planCustom') }));
 SubUI.fillSelect(modelSelect, MODELS.map((m) => ({ value: m.name, label: m.name })));
 SubUI.renderNav('seats', { onReset: reset });
 renderPlan(compute(state));
