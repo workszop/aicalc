@@ -74,7 +74,7 @@ function pageStrings(file) {
   assert.equal(captured.length, 1, file + ' registers its strings with SubUI.addStrings before touching the DOM');
   return captured[0];
 }
-['roi.js', 'seats.js'].forEach((file) => {
+['roi.js', 'seats.js', 'agent.js'].forEach((file) => {
   const strings = pageStrings(file);
   assert.deepEqual(Object.keys(strings.en), Object.keys(strings.pl), file + ': pl and en string keys match');
   Object.entries(strings).forEach(([lang, table]) => Object.entries(table).forEach(([key, value]) => {

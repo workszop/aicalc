@@ -217,6 +217,86 @@ SEATS_FLOW = r"""
 </script>
 """
 
+AGENT_FLOW = r"""
+<script>
+(() => {
+""" + PRELUDE + r"""
+  try {
+    const core = SubCore;
+    const card = $('#agentCard');
+    const roi = $('#roiPanel');
+    const near = (a, b) => Math.abs(Number(a) - b) < 0.011;
+    expect(document.body.dataset.page === 'agent', 'body[data-page] is not agent');
+    expect(document.body.dataset.state === 'ready', 'body[data-state] is not ready on load');
+    expect(card && near(card.dataset.monthly, 1653.56), `monthly ${card && card.dataset.monthly}`);
+    expect(card.dataset.perRun === '0.6768', `per run ${card.dataset.perRun}`);
+    expect(card.dataset.eligible === 'true', 'default model not eligible');
+    expect(roi.dataset.paybackMonth === '2', `payback month ${roi.dataset.paybackMonth}`);
+    expect(roi.dataset.on === 'true', 'roi panel not on');
+    const defaults = core.defaultsOf(core.SHARED_FIELDS, core.AGENT_FIELDS, core.ROI_FIELDS);
+    const want = core.computeAgentResults(defaults, core.MODELS);
+    expect(near(card.dataset.manualMonthly, want.manualMonthly) && near(roi.dataset.benefitMonthly, want.manualMonthly), 'manual / benefit differ from core');
+    expect(near(roi.dataset.costMonthly, want.monthly), 'roi cost is not the agent monthly');
+    expect(near(card.dataset.savedHours, want.savedHours), 'saved hours differ from core');
+    expect($('#agentBars [data-bar="agent"]') && $('#agentBars [data-bar="manual"]'), 'bars missing');
+    expect(/Obsługa maili|Raport|Faktury/.test($('#presets').textContent) && /przykład/.test($("#settingsPanel").textContent), 'presets or example label missing');
+    // preset
+    click('[data-preset="report"]');
+    expect($('[data-field="runs"]').value === '20' && $('[data-field="steps"]').value === '12' && $('[data-field="manualMin"]').value === '90', 'report preset values wrong');
+    expect($('[data-preset="report"]').getAttribute('aria-pressed') === 'true' && $('[data-preset="mail"]').getAttribute('aria-pressed') === 'false', 'preset aria-pressed wrong');
+    setField('runs', 21);
+    expect($('[data-preset="report"]').getAttribute('aria-pressed') === 'false', 'preset stays pressed after edit');
+    click('[data-preset="mail"]');
+    expect(card.dataset.perRun === '0.6768' || Number(card.dataset.perRun) > 0, 'mail preset broke the card');
+    // ineligible model
+    setField('inTok', 2000000);
+    expect(document.body.dataset.state === 'invalid', 'inTok above schema max must be invalid');
+    setField('inTok', 250000);
+    expect(card.dataset.eligible === 'true', 'Luna should still fit 250k tokens');
+    setField('model', 'Anthropic Claude Haiku 4.5');
+    expect(card.dataset.eligible === 'false', `eligible ${card.dataset.eligible} for a context over the model window`);
+    expect(/Niedostępne/.test(card.textContent) && /Za długi kontekst/.test(card.textContent), 'ineligible copy missing');
+    expect(roi.dataset.on === 'false', 'roi panel should be off for an ineligible model');
+    expect(!/NaN|Infinity/.test($('#resultsPanel').textContent), 'NaN in ineligible state');
+    setField('model', core.defaultsOf(core.AGENT_FIELDS).model);
+    setField('inTok', 4000);
+    setField('outTok', 200000);
+    expect(card.dataset.eligible === 'false' && /Za długa odpowiedź/.test(card.textContent), 'output-over reason missing');
+    setField('outTok', 400);
+    expect(card.dataset.eligible === 'true' && roi.dataset.on === 'true', 'did not recover');
+    // zero runs
+    setField('runs', 0);
+    expect(!/NaN|Infinity/.test($('#resultsPanel').textContent), 'zero runs produced NaN');
+    setField('runs', 2000);
+    // roi toggle
+    click('[data-field="roiOn"]');
+    expect(roi.dataset.on === 'false', 'roi toggle did not hide the panel');
+    click('[data-field="roiOn"]');
+    // language
+    const monthly = card.dataset.monthly;
+    const before = card.textContent;
+    click('[data-lang="en"]');
+    expect(card.textContent !== before && /Manual/.test(card.textContent) && card.dataset.monthly === monthly, 'EN switch changed numbers or did not translate');
+    expect($('nav a[aria-current="page"]').getAttribute('href') === 'agent.html', 'nav current link wrong');
+    click('[data-lang="pl"]');
+    if (window.matchMedia('(max-width: 768px)').matches) {
+      click('#settingsToggle');
+      expect($('#app').dataset.settings === 'open', 'drawer did not open');
+      click('#settingsBackdrop');
+      expect($('#app').dataset.settings === 'closed', 'backdrop did not close the drawer');
+    }
+    const vp = viewport();
+    setField('steps', 7);
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'r', code: 'KeyR', altKey: true, bubbles: true }));
+    expect($('[data-field="steps"]').value === '6' && card.dataset.perRun === '0.6768', 'Alt+R did not reset');
+    finish({ ok: true, assertions: assertions.n, viewport: vp });
+  } catch (error) {
+    finish({ ok: false, error: String(error && error.message || error), assertions: assertions.n });
+  }
+})();
+</script>
+"""
+
 # Runs before the page scripts: plants a stale state, as an old save from an earlier version would leave it.
 SEATS_PLANT_HEAD = """<script>try { localStorage.setItem('edulab-aicalc-seats-v1', '{"model":"gone","users":"x"}'); } catch (e) {}</script>"""
 SEATS_PLANT_FLOW = r"""
@@ -364,6 +444,7 @@ def run() -> list[str]:
     lines: list[str] = []
     run_page(browser, "roi.html", "roi", ROI_FLOW, "?cost=1000&oneOff=25000", lines)
     run_page(browser, "seats.html", "seats", SEATS_FLOW, "", lines, head_flows=[("stale-state", SEATS_PLANT_FLOW, SEATS_PLANT_HEAD)])
+    run_page(browser, "agent.html", "agent", AGENT_FLOW, "", lines)
     return lines
 
 
