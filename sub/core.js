@@ -181,12 +181,29 @@ function computeSeatResults(s, models) {
   };
 }
 
+function computeAgentResults(s, models) {
+  const model = modelOf(s, models);
+  const step = chatCost(model, s, s.inTok, s.outTok);
+  const perStep = step.perCall;
+  const llmPerRun = perStep * s.steps * (1 + s.retryPct / 100);
+  const toolsPerRun = s.toolPln;
+  const reviewPerRun = s.reviewPct / 100 * s.reviewMin * s.hourlyRate / 60;
+  const perRun = llmPerRun + toolsPerRun + reviewPerRun;
+  return {
+    model, perStep, llmPerRun, toolsPerRun, reviewPerRun, perRun,
+    monthly: s.runs * perRun + s.platform,
+    manualMonthly: s.runs * s.manualMin * s.hourlyRate / 60,
+    savedHours: Math.max(0, s.runs * (s.manualMin - s.reviewPct / 100 * s.reviewMin) / 60),
+    eligible: step.eligible, reason: step.reason,
+  };
+}
+
 // ─── Exports ───
 globalThis.SubCore = {
   MODELS, TOK_PER_WORD, BASE_FAMILY, EN_WORD_FACTOR, THINK_MULT, SEAT_PLANS,
   SHARED_FIELDS, SEAT_FIELDS, AGENT_FIELDS, ROI_FIELDS, ROI_PAGE_FIELDS,
   defaultsOf, validateValue, loadState, familyFactor, modelRates, chatCost,
-  seatPlanOf, computeSeatResults,
+  seatPlanOf, computeSeatResults, computeAgentResults,
 };
 if (typeof module !== 'undefined') module.exports = globalThis.SubCore;
 })();

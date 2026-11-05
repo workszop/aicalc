@@ -77,4 +77,33 @@ const seatBase = () => ({ ...C.defaultsOf(SHARED_FIELDS, SEAT_FIELDS, ROI_FIELDS
   noNaN(bad);
   assert.equal(C.seatPlanOf({ plan: 'nope', customUsd: 7 }).id, 'chatgpt-business');
 }
+
+// ─── Agent model ───
+const agentBase = () => ({ ...C.defaultsOf(SHARED_FIELDS, AGENT_FIELDS, ROI_FIELDS) });
+{
+  const r = C.computeAgentResults(agentBase(), MODELS);
+  assert.equal(r.model, find('Luna'));
+  assert.ok(near(r.perStep, 0.0047744, 1e-7));
+  assert.ok(near(r.llmPerRun, 0.03151104, 1e-7));
+  assert.equal(r.toolsPerRun, 0.05);
+  assert.ok(near(r.reviewPerRun, 0.595267, 1e-6));
+  assert.ok(near(r.perRun, 0.676778, 1e-6));
+  assert.ok(near(r.monthly, 1653.56, 0.01));
+  assert.ok(near(r.manualMonthly, 35716, 0.01));
+  assert.ok(near(r.savedHours, 386.67, 0.01));
+  assert.equal(r.eligible, true);
+  assert.equal(r.reason, null);
+  noNaN(r);
+  const z = C.computeAgentResults({ ...agentBase(), runs: 0 }, MODELS);
+  assert.equal(z.monthly, 300);
+  assert.equal(z.manualMonthly, 0);
+  noNaN(z);
+  const big = C.computeAgentResults({ ...agentBase(), inTok: 2000000 }, MODELS);
+  assert.equal(big.eligible, false);
+  assert.equal(big.reason, 'ctxOver');
+  const nm = C.computeAgentResults({ ...agentBase(), manualMin: 0 }, MODELS);
+  assert.equal(nm.savedHours, 0);
+  noNaN(nm);
+  assert.equal(C.computeAgentResults({ ...agentBase(), model: 'missing' }, MODELS).model, MODELS[0]);
+}
 console.log('sub-core tests passed');
