@@ -49,6 +49,148 @@ Następnie otwórz <http://127.0.0.1:8000/index.html>.
 
 Wersja online: <https://workszop.github.io/aicalc/>.
 
+## Kalkulatory dodatkowe
+
+Obok kalkulatora RAG (`index.html`) są trzy strony pomocnicze. Wszystkie
+działają tak samo jak główna: bez buildu, z `file://`, z przełącznikiem PL/EN
+i z paskiem nawigacji w nagłówku. Wersje online (po wdrożeniu gałęzi, na razie
+jeszcze niedostępne):
+
+- <https://workszop.github.io/aicalc/seats.html>
+- <https://workszop.github.io/aicalc/agent.html>
+- <https://workszop.github.io/aicalc/roi.html>
+
+Wspólne założenia: kwoty są szacunkami, w PLN netto (bez VAT); kurs `fx` =
+3,73 PLN/USD, `workDays` = 250 dni w roku, `hourlyRate` = 89,29 PLN/h,
+`horizon` = 36 mies., `users` = 20. Ceny modeli i współczynniki tokenów
+pochodzą z tej samej migawki co `index.html` (pilnuje tego
+`tests/sub-sync.test.cjs`).
+
+### Subskrypcje vs API vs lokalnie
+
+Strona `seats.html`: ile kosztuje zespół, gdy każdy ma płatne miejsce
+(subskrypcję), gdy używa się API przez własny interfejs czatu albo gdy model
+działa lokalnie na sprzęcie firmy.
+
+Wzory (miesięcznie):
+
+- subskrypcje: `users × cena_miejsca_USD × fx`,
+- API: `users × (chatsPerDay × workDays / 12) × koszt_jednego_czatu + uiOps`,
+  gdzie koszt czatu to `(inTok × cena_wejścia + outTok × cena_wyjścia) / 1M × fx`
+  (tokeny przeliczone współczynnikiem rodziny modelu i języka dokumentów),
+- lokalnie: `ceil(users / localMaxUsers) × (localCapex / localAmort +
+  localPower / 1000 × 24 × 30,4 × kwh) + localOps + uiOps`,
+- punkt przecięcia: liczba czatów dziennie na osobę, od której subskrypcja
+  jest tańsza niż API.
+
+| Parametr | Domyślnie |
+| --- | --- |
+| `plan` | ChatGPT Business (lub inny plan z listy, lub własna cena `customUsd` = 30 USD) |
+| `chatsPerDay` | 15 |
+| `inTok` / `outTok` | 3 000 / 700 tokenów na czat |
+| `model` | OpenAI GPT-5.6 Terra |
+| `uiOps` | 500 PLN / mies. (interfejs czatu przy API i lokalnie) |
+| `localCapex` / `localAmort` | 35 000 PLN / 36 mies. |
+| `localPower` / `kwh` | 240 W / 1,00 PLN za kWh |
+| `localOps` | 0 PLN / mies. |
+| `localMaxUsers` | 100 użytkowników na jednostkę |
+
+Ceny miejsc, sprawdzone **2026-11-05** (USD za miejsce za miesiąc, rozliczenie
+miesięczne, bez VAT):
+
+| Plan | Cena | Źródło |
+| --- | --- | --- |
+| ChatGPT Business | 25 USD | <https://help.openai.com/en/articles/8792828-chatgpt-business-overview> |
+| Microsoft 365 Copilot | 25,2 USD | <https://www.microsoft.com/en-us/copilot/pricing/business> |
+| Claude Team | 25 USD | <https://claude.com/pricing> |
+
+Microsoft 365 Copilot wymaga bazowej licencji Microsoft 365, której cena nie
+jest tu doliczana (strona pokazuje o tym osobną uwagę).
+
+Zastrzeżenia: to szacunki, nie oferta; ceny listowe zmieniają się, a plany
+mają limity użycia i funkcje, których kalkulator nie porównuje; kwoty netto w
+PLN; przepustowość GB10 (`localMaxUsers`) nie została sprawdzona na stronie
+miejsc – to założenie, które trzeba zmierzyć na własnym modelu.
+
+### Agent / automatyzacja
+
+Strona `agent.html`: koszt agenta, który wykonuje zadania w kilku krokach
+(wywołaniach modelu), i porównanie z pracą ręczną.
+
+Wzory:
+
+- koszt modelu na zadanie: `kroki × koszt_jednego_kroku × (1 + retryPct / 100)`,
+- narzędzia na zadanie: `toolPln`,
+- nadzór człowieka na zadanie: `reviewPct / 100 × reviewMin × hourlyRate / 60`,
+- koszt zadania = suma trzech powyższych; miesięcznie: `runs × koszt_zadania + platform`,
+- praca ręczna miesięcznie: `runs × manualMin × hourlyRate / 60`,
+- zaoszczędzone godziny: `runs × (manualMin − reviewPct / 100 × reviewMin) / 60`
+  (nie mniej niż 0).
+
+| Parametr | Domyślnie |
+| --- | --- |
+| `model` | OpenAI GPT-5.6 Luna |
+| `runs` | 2 000 zadań / mies. |
+| `steps` | 6 kroków na zadanie |
+| `inTok` / `outTok` | 4 000 / 400 tokenów na krok |
+| `retryPct` | 10% (powtórzenia) |
+| `toolPln` | 0,05 PLN na zadanie |
+| `platform` | 300 PLN / mies. |
+| `reviewPct` / `reviewMin` | 20% zadań / 2 min przeglądu |
+| `manualMin` | 12 min ręcznie |
+
+Zastrzeżenia: liczba kroków i tokenów mocno zależy od konkretnego agenta –
+wartości domyślne są ilustracyjne; porównanie z pracą ręczną traktuje czas jako
+wartość (stawka `hourlyRate`), a nie gotówkę.
+
+### Zwrot z inwestycji
+
+Strona `roi.html` oraz panel ROI na stronach `seats.html` i `agent.html`
+(przełącznik `roiOn`). Strona samodzielna przyjmuje parametry w adresie, np.
+`roi.html?cost=2500&oneOff=150000&users=20`; link „Policz zwrot z
+inwestycji →” pod werdyktem w `index.html` podstawia tam koszt miesięczny
+rekomendowanej (a bez rekomendacji najtańszej) opcji, jej koszt jednorazowy
+(licencja oprogramowania przy własnym serwerze lub GB10, gdy warstwa
+oprogramowania jest włączona, inaczej 0) oraz liczbę użytkowników. Nieprawidłowe
+parametry w adresie są ignorowane i zostają wartości domyślne.
+
+Wzory:
+
+- korzyść z czasu: `users × adoption / 100 × minPerDay × workDays / 12 × hourlyRate / 60`
+  (albo wpisana ręcznie kwota miesięczna),
+- skumulowany wynik w miesiącu `m`: `−jednorazowe + Σ (korzyść × min(1, m / ramp) − koszt)`;
+  korzyść narasta liniowo przez `ramp` miesięcy,
+- jednorazowe = `setup + training`,
+- zwrot następuje w pierwszym miesiącu, w którym skumulowany wynik jest nie
+  mniejszy niż 0 (brak zwrotu w horyzoncie jest zgłaszany wprost),
+- ROI % = `(suma korzyści − suma kosztów − jednorazowe) / (suma kosztów + jednorazowe) × 100`
+  w horyzoncie `horizon`.
+
+| Parametr | Domyślnie |
+| --- | --- |
+| `costMonthly` (strona samodzielna) | 1 000 PLN / mies. |
+| `benefitMode` | czas (`time`) lub kwota (`amount`, domyślnie 5 000 PLN / mies.) |
+| `minPerDay` | 20 min dziennie na osobę |
+| `adoption` | 60% użytkowników |
+| `ramp` | 3 mies. narastania |
+| `setup` / `training` | 20 000 / 5 000 PLN jednorazowo |
+| `horizon` | 36 mies. |
+
+Zastrzeżenia: to szacunek, nie obietnica; oszczędzony czas to **wartość, nie
+gotówka** – zamienia się w pieniądze dopiero, gdy ludzie wykorzystają go na
+inną pracę; model nie dyskontuje przyszłych przepływów (brak NPV).
+
+### Pliki w `sub/`
+
+| Plik | Zawartość |
+| --- | --- |
+| `sub/core.js` | czysty rdzeń bez DOM: ceny modeli, plany miejsc (`SEAT_PLANS`), schematy pól, `computeSeatResults`, `computeAgentResults`, `computeRoi`, `parseRoiQuery` |
+| `sub/ui.js` | wspólna warstwa interfejsu: słownik PL/EN, nawigacja, panel ustawień, panel i wykres ROI, kontrakt DOM |
+| `sub/seats.js` | logika strony `seats.html` |
+| `sub/agent.js` | logika strony `agent.html` |
+| `sub/roi.js` | logika strony `roi.html` |
+| `sub/sub.css` | wspólne style stron pomocniczych (tokeny w `:root`) |
+
 ## Małe wdrożenie: Dell GB10
 
 Trzecia ścieżka liczy się tym samym modelem co własny serwer (amortyzacja
@@ -225,25 +367,47 @@ opcjonalnych stawek oznaczają brak danej taryfy.
 
 ## Weryfikacja
 
-Regresja obliczeń i scenariuszy nie wymaga zależności:
+Regresja obliczeń, scenariuszy i stron pomocniczych nie wymaga zależności
+(te same polecenia uruchamia CI):
 
 ```bash
 node tests/core.test.cjs
 node tests/scenario.test.cjs
 node tests/layout.test.cjs
 python3 tests/browser-smoke.py
+node tests/sub-core.test.cjs
+node tests/sub-sync.test.cjs
+python3 tests/sub-smoke.py
 ```
 
-Ostatni test uruchamia lokalny serwer na losowym porcie i świeży profil
-Google Chrome/Chromium, a następnie sprawdza tryb `?verify=1` zarówno przez
-`http://`, jak i `file://` (35 sprawdzeń, w tym testy pojemności i kontrakt DOM dla czterech
-kart: `data-small-monthly`, `data-small-units`, `data-small-eligible`,
-`data-break-even-small-users`, `data-payback-small-vs-cloud`,
-`data-api-software`, `data-own-software`; każda karta publikuje
-`data-software` i `data-infra`). Jeśli
-przeglądarka nie jest zainstalowana, test
-kończy się czytelnym komunikatem z instrukcją instalacji. Skrypt niczego nie
-instaluje.
+Co sprawdzają (liczby z ostatniego uruchomienia):
+
+- `core.test.cjs` – obliczenia, CSV i regresje kosztów (270 asercji),
+- `scenario.test.cjs` – zapis i odczyt scenariusza oraz odrzucanie błędnych
+  danych,
+- `layout.test.cjs` – układ panelu ustawień, nagłówka (w tym nawigacji do
+  stron pomocniczych) i link `#roiLink` (87 asercji),
+- `browser-smoke.py` – lokalny serwer na losowym porcie i świeży profil
+  Google Chrome/Chromium; tryb `?verify=1` przez `http://` i `file://`
+  (35 sprawdzeń kontraktu DOM w każdym z 5 przebiegów, w tym testy pojemności
+  i dane czterech kart: `data-small-monthly`, `data-small-units`,
+  `data-small-eligible`, `data-break-even-small-users`,
+  `data-payback-small-vs-cloud`, `data-api-software`, `data-own-software`;
+  każda karta publikuje `data-software` i `data-infra`) oraz przepływ z
+  linkiem `#roiLink` (koszt, koszt jednorazowy i liczba użytkowników w
+  adresie),
+- `sub-core.test.cjs` – rdzeń stron pomocniczych: walidacja pól, wzory
+  subskrypcji, API, agenta i ROI (211 asercji),
+- `sub-sync.test.cjs` – zgodność cen modeli i współczynników tokenów z
+  `index.html` (911 asercji),
+- `sub-smoke.py` – przeglądarkowy test `seats.html`, `agent.html` i
+  `roi.html` przez `http://` (desktop i mobile) oraz `file://`: kontrakt DOM
+  (`roi.html` 7/7, `seats.html` 10/10, `agent.html` 9/9 sprawdzeń na
+  przebieg), przepływy użytkownika (47-58 asercji na przebieg), stan po
+  zmianie ustawień i nieprawidłowe parametry adresu `roi.html`.
+
+Jeśli przeglądarka nie jest zainstalowana, testy przeglądarkowe kończą się
+czytelnym komunikatem z instrukcją instalacji. Skrypty niczego nie instalują.
 
 ## English quick note
 
@@ -259,3 +423,15 @@ factors are illustrative and hardware throughput is not production-verified.
 On desktop, editable inputs live in a left settings sidebar; on small screens,
 use the Settings button and close it with the close control, backdrop, or
 `Escape`.
+
+Three companion pages share the same header navigation, PL/EN toggle and
+no-build setup: `seats.html` (seat subscriptions vs API vs local hardware;
+seat prices verified 2026-11-05: ChatGPT Business 25 USD, Microsoft 365 Copilot
+25.2 USD, Claude Team 25 USD per seat per month), `agent.html` (agent cost per
+run vs manual work) and `roi.html` (payback and ROI; the "Calculate ROI" link
+under the verdict in `index.html` prefills it with the recommended option's
+monthly cost, one-off licence and user count). All figures are estimates in net
+PLN; time saved is value, not cash; GB10 throughput is not checked on the seats
+page. They will be online at <https://workszop.github.io/aicalc/seats.html>,
+`agent.html` and `roi.html` after deployment. Run all seven checks listed under
+"Weryfikacja"; CI runs the same commands.

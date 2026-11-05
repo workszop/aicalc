@@ -221,4 +221,19 @@ for (const [id, path] of [['apiSettings', 'api'], ['cloudSettings', 'cloud'], ['
   assert.ok(summary && summary.children.some((n) => hasClass(n, 'sum-meta') && n.attrs['data-meta'] === id), `${id} summary has a meta slot`);
 }
 
+// Task 8: the header links to the three sub pages (same markup as SubUI.renderNav); the ROI link sits in the results.
+const headerNode = descendants(documentRoot, (node) => node.tag === 'header' && hasClass(node, 'edu-header'))[0];
+const headerNav = headerNode && descendants(headerNode, (node) => node.tag === 'nav' && hasClass(node, 'sub-nav'))[0];
+assert.ok(headerNav, 'header has a nav.sub-nav');
+const navLinks = descendants(headerNav, (node) => node.tag === 'a');
+assert.deepEqual(navLinks.map((a) => a.attrs.href), ['index.html', 'seats.html', 'agent.html', 'roi.html'], 'nav links to the four calculators');
+assert.deepEqual(navLinks.map((a) => a.attrs['data-nav']), ['rag', 'seats', 'agent', 'roi'], 'nav links carry data-nav ids');
+assert.ok(navLinks.every((a) => /^nav(Rag|Seats|Agent|Roi)$/.test(a.attrs['data-t'] || '')), 'nav labels are translated via data-t');
+assert.equal(navLinks[0].attrs['aria-current'], 'page', 'RAG link is aria-current=page');
+assert.ok(navLinks.slice(1).every((a) => !('aria-current' in a.attrs)), 'other nav links are not current');
+const roiLink = byId('roiLink');
+assert.ok(roiLink && roiLink.tag === 'a' && contains(resultsPanel, roiLink), '#roiLink lives in the results panel');
+assert.ok(/^roi\.html/.test(roiLink.attrs.href || ''), '#roiLink points to roi.html');
+assert.ok(roiLink.attrs['data-t'] === 'roiLink', '#roiLink text is translated');
+
 console.log('Sidebar layout and keyboard contracts passed');

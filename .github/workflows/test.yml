@@ -32,3 +32,12 @@ jobs:
 
       - name: Run Chrome/Chromium DOM smoke test
         run: python3 tests/browser-smoke.py
+
+      - name: Run sub-page core tests
+        run: node tests/sub-core.test.cjs
+
+      - name: Run sub-page sync tests
+        run: node tests/sub-sync.test.cjs
+
+      - name: Run sub-page Chrome/Chromium smoke test
+        run: python3 tests/sub-smoke.py
