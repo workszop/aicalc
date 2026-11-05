@@ -36,6 +36,14 @@ BROWSER_CANDIDATES = (
     "chrome",
 )
 CAPACITY_SMOKE_MARKER = "data-capacity-smoke"
+HEADER_SMOKE_MARKER = "data-header-smoke"
+# Narrow phones where the mobile header once clipped and overlapped the title.
+# Headless Chrome will not make a window narrower than 500 px, so the page is
+# loaded into an iframe of the exact size and the probe reports to the parent.
+HEADER_VIEWPORTS = ((360, 800), (320, 700))
+HEADER_FRAME_PAGE = """<!doctype html><html><head><meta charset="utf-8"></head><body style="margin:0">
+<div id="probe"></div><iframe src="index.html" width="{w}" height="{h}" style="border:0;display:block"></iframe>
+</body></html>"""
 
 
 # This script is appended to a temporary copy of index.html.  Keeping the
@@ -308,6 +316,50 @@ CAPACITY_SMOKE_SCRIPT = r"""
     finish({ ok: false, error: String(error && (error.stack || error)) });
   }
 })();
+</script>
+"""
+
+
+# Appended to a temporary copy of index.html: the mobile header must fit its
+# content, sit above the results, and never widen the page.
+HEADER_SMOKE_SCRIPT = r"""
+<script>
+window.addEventListener('load', () => {
+  const app = document.querySelector('#app');
+  const failures = [];
+  const header = document.querySelector('header.edu-header');
+  const hb = header.getBoundingClientRect();
+  const inside = (r) => r.left >= hb.left - 0.5 && r.right <= hb.right + 0.5 && r.top >= hb.top - 0.5 && r.bottom <= hb.bottom + 0.5;
+  const visible = (n) => n.getClientRects().length > 0 && getComputedStyle(n).visibility !== 'hidden';
+  const inner = header.querySelector('.edu-header-inner');
+  // Nav links may run past the edge only inside a horizontally scrollable nav strip; then they must still fit vertically.
+  const nav = header.querySelector('.sub-nav');
+  const navScrolls = ['auto', 'scroll'].includes(getComputedStyle(nav).overflowX);
+  const kids = [...inner.children, ...header.querySelectorAll('.sub-nav a, .edu-seg button')].filter(visible);
+  kids.forEach((n) => {
+    const r = n.getBoundingClientRect();
+    const scrollable = navScrolls && n.parentElement === nav;
+    const ok = scrollable ? r.top >= hb.top - 0.5 && r.bottom <= hb.bottom + 0.5 : inside(r);
+    if (!ok) failures.push(`header child ${n.tagName.toLowerCase()}.${n.className || n.id || ''} clipped: ${Math.round(r.left)},${Math.round(r.top)}-${Math.round(r.right)},${Math.round(r.bottom)} vs header ${Math.round(hb.left)},${Math.round(hb.top)}-${Math.round(hb.right)},${Math.round(hb.bottom)}`);
+  });
+  const results = document.querySelector('#resultsPanel');
+  const title = document.querySelector('#resultsPanel .app-title');
+  [['#resultsPanel', results], ['h1.app-title', title]].forEach(([name, n]) => {
+    const top = n.getBoundingClientRect().top;
+    if (hb.bottom > top + 0.5) failures.push(`header bottom ${Math.round(hb.bottom)} overlaps ${name} top ${Math.round(top)}`);
+  });
+  // The results panel scrolls inside the viewport; the page itself does not grow past it.
+  const rb = results.getBoundingClientRect().bottom;
+  if (rb > window.innerHeight + 0.5) failures.push(`#resultsPanel bottom ${Math.round(rb)} runs past the viewport ${window.innerHeight}`);
+  const settings = document.querySelector('#settingsPanel');
+  if (visible(settings) && getComputedStyle(settings).position !== 'fixed' && hb.bottom > settings.getBoundingClientRect().top + 0.5) failures.push('header overlaps the settings panel');
+  const scrollWidth = document.documentElement.scrollWidth;
+  if (scrollWidth > window.innerWidth) failures.push(`page scrolls horizontally: ${scrollWidth} > ${window.innerWidth}`);
+  const target = window.parent !== window ? window.parent.document.getElementById('probe') : app;
+  target.setAttribute('data-header-smoke', encodeURIComponent(JSON.stringify({
+    ok: failures.length === 0, failures, width: window.innerWidth, headerHeight: Math.round(hb.height), checked: kids.length,
+  })));
+});
 </script>
 """
 
@@ -769,6 +821,50 @@ def probe_http(url: str) -> None:
         raise SmokeFailure(f"Could not reach local test server at {url}: {error}") from error
 
 
+@contextmanager
+def header_fixture(index: Path):
+    """Yield a temporary app copy with the header layout probe appended."""
+
+    source = index.read_text(encoding="utf-8")
+    if "</body>" not in source:
+        raise SmokeFailure(f"Could not inject the header probe into {index}: no </body>")
+    with tempfile.TemporaryDirectory(prefix="aicalc-header-fixture-") as directory:
+        fixture_root = Path(directory)
+        (fixture_root / "index.html").write_text(source.replace("</body>", HEADER_SMOKE_SCRIPT + "\n</body>", 1), encoding="utf-8")
+        for w, h in HEADER_VIEWPORTS:
+            (fixture_root / f"frame-{w}.html").write_text(HEADER_FRAME_PAGE.format(w=w, h=h), encoding="utf-8")
+        assets = index.parent / "assets"
+        if assets.is_dir():
+            shutil.copytree(assets, fixture_root / "assets")
+        yield fixture_root
+
+
+def run_header_smoke(browser: str, index: Path) -> list[str]:
+    """Check the mobile header at narrow phone widths (no clipping, no overlap, no sideways scroll)."""
+
+    lines: list[str] = []
+    with header_fixture(index) as fixture_root:
+        with local_server(fixture_root) as server:
+            for width, height in HEADER_VIEWPORTS:
+                label = f"header {width}px"
+                url = f"http://127.0.0.1:{server.server_port}/frame-{width}.html"
+                probe_http(url)
+                parser = ContractParser()
+                parser.feed(run_browser(browser, url, label, window_size=(max(width, 500), height + 100)))
+                parser.close()
+                probe = parser.nodes.get("probe") or {}
+                encoded = probe.get(HEADER_SMOKE_MARKER, "")
+                if not encoded:
+                    raise SmokeFailure(f"{label}: the header probe emitted no {HEADER_SMOKE_MARKER}")
+                payload = json.loads(unquote(encoded))
+                if int(payload.get("width", 0)) != width:
+                    raise SmokeFailure(f"{label}: viewport is {payload.get('width')}px, expected {width}px")
+                if payload.get("ok") is not True:
+                    raise SmokeFailure(f"{label}: " + "; ".join(payload.get("failures") or ["unknown failure"]))
+                lines.append(f"{label}: header {payload['headerHeight']}px, {payload['checked']} children inside, no overlap or sideways scroll")
+    return lines
+
+
 def run_capacity_smoke(browser: str, index: Path) -> list[tuple[str, int, int]]:
     """Exercise capacity sizing in a temporary copy over HTTP and file://."""
 
@@ -826,8 +922,12 @@ def run_smoke(root: Path) -> list[tuple[str, int, int]]:
         results.append(("file://", file_passed, file_total))
 
     results.extend(run_capacity_smoke(browser, index))
+    HEADER_LINES.extend(run_header_smoke(browser, index))
 
     return results
+
+
+HEADER_LINES: list[str] = []
 
 
 def parse_args() -> argparse.Namespace:
@@ -863,6 +963,8 @@ def main() -> int:
     print(f"browser-smoke: PASS ({browser})")
     for protocol, passed, total in results:
         print(f"  {protocol} #app ready; calculator checks {passed}/{total}")
+    for line in HEADER_LINES:
+        print(f"  {line}")
     return 0
 
 

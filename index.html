@@ -533,11 +533,17 @@ summary:focus-visible, #resultsPanel:focus-visible { outline: 3px solid transpar
   .edu-header .ghost-btn, .edu-header .edu-seg { flex-shrink: 0; white-space: nowrap; }
 }
 @media (max-width: 768px) {
-  :root { --total-size: 32px; --header-height: 120px; }
-  main { display: block; padding: 0; }
-  .edu-header-inner { padding: 0 var(--sp-3); gap: var(--sp-2); flex-wrap: wrap; align-content: center; }
-  .sub-nav { order: 10; flex: 1 1 100%; margin: 0; gap: 2px; }
+  :root { --total-size: 32px; }
+  /* The header takes the height of its (wrapping) content; main fills the rest of the viewport. */
+  body { display: flex; flex-direction: column; }
+  .edu-header { flex: none; }
+  main { display: block; padding: 0; flex: 1; min-height: 0; height: auto; }
+  .edu-header-inner { height: auto; padding: var(--sp-2) var(--sp-3); gap: var(--sp-2); flex-wrap: wrap; align-content: center; }
+  /* Second row: the nav is one horizontally scrollable strip, the language switch sits at its end. */
+  /* The basis leaves room for the PL/EN switch only, so the strip never fits on the first row. */
+  .sub-nav { order: 10; flex: 1 1 calc(100% - 96px); min-width: 0; margin: 0; gap: 2px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; }
   .sub-nav a { font-size: var(--small-size); padding: 5px 9px; }
+  .edu-header .edu-seg { order: 11; flex: none; flex-wrap: nowrap; }
   .edu-header .edu-logo { width: 48px; height: 48px; }
   .edu-header .edu-wordmark { display: none; }
   .edu-header .ghost-btn, .edu-header .edu-seg button { font-size: var(--small-size); padding: 8px 10px; }
