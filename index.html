@@ -183,9 +183,7 @@ body { margin: 0; padding: 0; height: 100dvh; overflow: hidden; }
 .sub-nav a { font-family: var(--font-sans); font-weight: 600; font-size: var(--body-sm); color: var(--ink-2); text-decoration: none; padding: 7px 12px; border-radius: var(--r-pill); border: 1px solid var(--transparent); white-space: nowrap; transition: background-color .15s; }
 .sub-nav a:hover { background: var(--paper-2); }
 .sub-nav a[aria-current="page"] { color: var(--ink); background: var(--paper-2); border-color: var(--line-strong); }
-.sub-nav a:focus-visible, .roi-link:focus-visible { outline: 3px solid var(--transparent); box-shadow: var(--focus-ring); }
-.roi-link-row { margin: calc(-1 * var(--sp-2)) 0 var(--sp-4); }
-.roi-link { font-family: var(--font-sans); font-weight: 600; font-size: var(--body-sm); color: var(--ink); text-decoration: underline; text-underline-offset: 3px; border-radius: var(--r-xs); }
+.sub-nav a:focus-visible { outline: 3px solid var(--transparent); box-shadow: var(--focus-ring); }
 main { display: grid; grid-template-columns: var(--sidebar-width) minmax(0, 1fr); height: calc(100dvh - var(--header-height)); }
 .page-head { text-align: var(--align-start); margin-bottom: var(--sp-5); padding-bottom: var(--sp-6); border-bottom: 1px solid var(--line-2); }
 .app-title { font-family: var(--font-display); font-weight: 800; font-size: var(--title-size);
@@ -569,7 +567,6 @@ summary:focus-visible, #resultsPanel:focus-visible { outline: 3px solid transpar
     <a href="index.html" data-nav="rag" data-t="navRag" aria-current="page"></a>
     <a href="seats.html" data-nav="seats" data-t="navSeats"></a>
     <a href="agent.html" data-nav="agent" data-t="navAgent"></a>
-    <a href="roi.html" data-nav="roi" data-t="navRoi"></a>
   </nav>
   <span class="header-spacer"></span>
   <button type="button" class="ghost-btn" id="settingsToggle" aria-controls="settingsPanel" aria-expanded="false" data-t="settingsTitle"></button>
@@ -778,7 +775,6 @@ summary:focus-visible, #resultsPanel:focus-visible { outline: 3px solid transpar
     </details>
     <section>
     <p id="verdict" class="verdict"></p>
-    <p class="roi-link-row"><a id="roiLink" class="roi-link" href="roi.html" data-t="roiLink"></a></p>
     <div class="grid-4" id="options">
       <div class="card option zoned" id="optApi" data-path="api">
         <div class="card-head"><span class="dot" style="background:var(--blue)"></span><h3 data-t="apiPath"></h3><span class="chip-slot"></span></div>
@@ -1142,7 +1138,7 @@ Object.assign(T.pl, {
   estimateNotice: 'Szacunek kosztów inferencji, nie oferta ani gwarancja jakości i wydajności. Kwoty netto.',
   cloudOps: 'Stała obsługa chmury / mies. (PLN)', ownReplace: 'Wymiana sprzętu co (mies.)',
   scenarioReset: 'Reset scenariusza',
-  navLabel: 'Kalkulatory', navRag: 'Asystent RAG', navSeats: 'Subskrypcje vs API', navAgent: 'Agent / automatyzacja', navRoi: 'Zwrot z inwestycji', roiLink: 'Policz zwrot z inwestycji →',
+  navLabel: 'Kalkulatory', navRag: 'Asystent RAG', navSeats: 'Subskrypcje vs API', navAgent: 'Agent / automatyzacja',
   scenarioResetDone: 'Defaults restored.',
   invalidFieldsLead: 'Popraw pola:', resultsPaused: 'Wyniki wstrzymane.', invalidNumber: 'Podaj liczbę z zakresu {min}–{max}.', invalidInteger: 'Podaj liczbę całkowitą z zakresu {min}–{max}.',
   unavailable: 'Niedostępne', outputOver: 'Odpowiedź z rozumowaniem przekracza limit wyjścia modelu.',
@@ -1170,7 +1166,7 @@ Object.assign(T.en, {
   estimateNotice: 'Inference cost estimate, not a quote or a quality/capacity guarantee. Net amounts.',
   cloudOps: 'Fixed cloud support / month (PLN)', ownReplace: 'Replace hardware every (months)',
   scenarioReset: 'Reset scenario',
-  navLabel: 'Calculators', navRag: 'RAG assistant', navSeats: 'Seats vs API', navAgent: 'Agent / automation', navRoi: 'Return on investment', roiLink: 'Calculate ROI →',
+  navLabel: 'Calculators', navRag: 'RAG assistant', navSeats: 'Seats vs API', navAgent: 'Agent / automation',
   scenarioResetDone: 'Settings reset. Price list retained.',
   invalidFieldsLead: 'Correct these fields:', resultsPaused: 'Results paused.', invalidNumber: 'Enter a number between {min} and {max}.', invalidInteger: 'Enter an integer between {min} and {max}.',
   unavailable: 'Unavailable', outputOver: 'Answer plus reasoning exceeds the model output limit.',
@@ -2010,11 +2006,6 @@ function render() {
   const pbCloud = result.payback, pbSmall = result.paybackSmall;
   const v = verdict(result);
   const verdictVars = { users: fmtNum(s.users), usersWord: usersPhrase(s.users), winner: t(v.winner + 'Path'), monthly: money(v.monthly, 0), pct: pct(v.savingsPct || 0), runnerUp: t((v.runnerUp || '') + 'Path'), from: fmtNum(s.smallRecommendFrom), recommended: t((v.recommended || '') + 'Path'), recMonthly: money(v.recommendedMonthly || 0, 0) };
-  const roiKey = recommended || winner, roiPick = result[roiKey];
-  // GB10 / own server: monthly already holds the licence amortisation and roi.html adds oneOff on top,
-  // so the link passes the licence once, as oneOff, and drops its amortisation from the monthly cost.
-  const roiSoftware = roiPick.software || { licenseAmort: 0, oneOff: 0 };
-  $('roiLink').href = `roi.html?cost=${Math.round(roiPick.monthly - roiSoftware.licenseAmort)}&oneOff=${Math.round(roiSoftware.oneOff)}&users=${s.users}`;
   $('verdict').textContent = t(v.recommended ? 'verdictRecommended' : !v.runnerUp ? 'verdictSingle' : v.savingsPct < 0.005 ? 'verdictTie' : 'verdictText', verdictVars);
   document.querySelector('[data-t="modelsNote"]').textContent = t(s.softwareOn ? 'modelsNote' : 'modelsNoteNoSoft');
   document.querySelector('[data-t="chartTimeSub"]').textContent = t(s.softwareOn ? 'chartTimeSub' : 'chartTimeSubNoSoft');

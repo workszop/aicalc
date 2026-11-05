@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" type="image/png" sizes="256x256" href="assets/favicon.png">
-<title data-t="agentPageTitle">Agent / automatyzacja – koszt i zwrot</title>
+<title data-t="agentPageTitle">Agent / automatyzacja – koszt</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap">
@@ -53,17 +53,6 @@
         <div class="field"><label for="f-platform" data-t="platform"></label><input id="f-platform" type="number" data-field="platform"></div>
         <div class="field"><label for="f-fx" data-t="fx"></label><input id="f-fx" type="number" data-field="fx"></div>
       </section>
-
-      <section class="settings-group" data-accent="roi">
-        <h3 class="group-title" data-t="groupRoi"></h3>
-        <label class="check"><input type="checkbox" data-field="roiOn"><span data-t="roiOn"></span></label>
-        <div class="field"><label for="f-benefitMonthly" data-t="benefitMonthly"></label><input id="f-benefitMonthly" type="number" data-field="benefitMonthly" aria-describedby="benefitHelp"></div>
-        <p class="hint" id="benefitHelp" data-t="benefitHelp"></p>
-        <div class="field"><label for="f-setup" data-t="setup"></label><input id="f-setup" type="number" data-field="setup"></div>
-        <div class="field"><label for="f-training" data-t="training"></label><input id="f-training" type="number" data-field="training"></div>
-        <div class="field"><label for="f-ramp" data-t="ramp"></label><input id="f-ramp" type="number" data-field="ramp"></div>
-        <div class="field"><label for="f-horizon" data-t="horizon"></label><input id="f-horizon" type="number" data-field="horizon"></div>
-      </section>
     </div>
   </aside>
 
@@ -76,7 +65,17 @@
     <div data-results>
       <article id="agentCard" class="card agent-card" data-accent="agent" aria-live="polite"></article>
     </div>
-    <section id="roiPanel" class="card"></section>
+    <section class="card" id="agentSteps" data-accent="agent" aria-labelledby="agentStepsTitle">
+      <h2 class="sec-title" id="agentStepsTitle" data-t="agentStepsTitle"></h2>
+      <ol class="steps-list">
+        <li data-t="agentStep1"></li>
+        <li data-t="agentStep2"></li>
+        <li data-t="agentStep3"></li>
+        <li data-t="agentStep4"></li>
+        <li data-t="agentStep5"></li>
+      </ol>
+      <p class="hint" data-t="agentStepsNote"></p>
+    </section>
     <p class="hint" data-t="estimateNote"></p>
     <details class="panel" id="checksPanel" hidden></details>
     <footer class="shortcuts" data-t="shortcuts"></footer>

@@ -1,4 +1,4 @@
-// Shared DOM layer for the sub pages (seats, agent, roi). Classic script: load after sub/core.js.
+// Shared DOM layer for the sub pages (seats, agent). Classic script: load after sub/core.js.
 // Exposes globalThis.SubUI. Nothing here touches the DOM at load time, so the file also loads in node's vm.
 (function () {
 // ─── Constants ───
@@ -10,12 +10,11 @@ const NAV_PAGES = [
   { id: 'rag', href: 'index.html', key: 'navRag' },
   { id: 'seats', href: 'seats.html', key: 'navSeats' },
   { id: 'agent', href: 'agent.html', key: 'navAgent' },
-  { id: 'roi', href: 'roi.html', key: 'navRoi' },
 ];
 const T = {
   pl: {
     // nav and page furniture
-    navLabel: 'Kalkulatory', navRag: 'Asystent RAG', navSeats: 'Subskrypcje vs API', navAgent: 'Agent / automatyzacja', navRoi: 'Zwrot z inwestycji',
+    navLabel: 'Kalkulatory', navRag: 'Asystent RAG', navSeats: 'Subskrypcje vs API', navAgent: 'Agent / automatyzacja',
     langGroup: 'Język / Language', settingsTitle: 'Ustawienia', settingsDone: 'Gotowe', closeSettings: 'Zamknij ustawienia',
     reset: 'Resetuj', resetDone: 'Przywrócono wartości domyślne.',
     shortcuts: 'Skróty: Alt+R resetuje stronę · L zmienia język · Esc zamyka ustawienia',
@@ -24,23 +23,11 @@ const T = {
     errNumber: 'Wpisz liczbę.', errInteger: 'Wpisz liczbę całkowitą.', errRange: 'Dozwolony zakres: {min}–{max}.', errEnum: 'Wybierz jedną z opcji.',
     checksTitle: 'Testy kalkulatora', checksResult: 'Wynik: {passed}/{total}.',
     perMonth: '/ mies.',
-    // shared and ROI fields
-    users: 'Liczba osób', workDays: 'Dni robocze w roku', fx: 'Kurs USD/PLN', horizon: 'Horyzont (miesiące)',
-    roiOn: 'Pokaż zwrot z inwestycji', benefitMonthly: 'Korzyść miesięcznie',
-    benefitHelp: 'Szacowana miesięczna korzyść w PLN, np. oszczędności na innych kosztach lub dodatkowy przychód.',
-    ramp: 'Rozruch (miesiące do pełnego efektu)', setup: 'Wdrożenie (PLN, jednorazowo)', training: 'Szkolenia (PLN, jednorazowo)',
-    // ROI panel
-    roiTitle: 'Zwrot z inwestycji', tileBenefit: 'Korzyść miesięcznie', tileCost: 'Koszt miesięcznie', tileNet: 'Netto miesięcznie przy pełnym efekcie', tilePayback: 'Zwrot',
-    paybackIn: 'Inwestycja zwraca się w {month}. miesiącu.', paybackShort: '{month}. miesiąc', paybackNone: 'Brak zwrotu w horyzoncie {horizon} mies.', paybackNoneShort: 'brak',
-    roiSentence: 'W horyzoncie {horizon} mies. zwrot z inwestycji wynosi {pct}: korzyść {benefit} wobec kosztów {cost} (z nakładami jednorazowymi).',
-    roiUndefined: 'Zwrotu z inwestycji nie da się policzyć, bo koszty i nakłady wynoszą zero.',
-    roiOff: 'Panel zwrotu z inwestycji jest wyłączony.',
-    chartTitle: 'Skumulowany wynik netto', chartSub: 'Start od nakładów jednorazowych, potem co miesiąc korzyść minus koszt.',
-    axisMonth: 'Miesiąc', axisNet: 'PLN netto, narastająco', chartPayback: 'zwrot', chartPoint: 'Miesiąc {month}: {value}',
-    chartAria: 'Wykres skumulowanego wyniku netto przez {horizon} mies.; {payback}',
+    // shared fields
+    users: 'Liczba osób', workDays: 'Dni robocze w roku', fx: 'Kurs USD/PLN',
   },
   en: {
-    navLabel: 'Calculators', navRag: 'RAG assistant', navSeats: 'Seats vs API', navAgent: 'Agent / automation', navRoi: 'Return on investment',
+    navLabel: 'Calculators', navRag: 'RAG assistant', navSeats: 'Seats vs API', navAgent: 'Agent / automation',
     langGroup: 'Język / Language', settingsTitle: 'Settings', settingsDone: 'Done', closeSettings: 'Close settings',
     reset: 'Reset', resetDone: 'Defaults restored.',
     shortcuts: 'Shortcuts: Alt+R resets the page · L switches language · Esc closes settings',
@@ -49,18 +36,7 @@ const T = {
     errNumber: 'Enter a number.', errInteger: 'Enter a whole number.', errRange: 'Allowed range: {min}–{max}.', errEnum: 'Choose one of the options.',
     checksTitle: 'Calculator checks', checksResult: 'Result: {passed}/{total}.',
     perMonth: '/ month',
-    users: 'People', workDays: 'Working days per year', fx: 'USD/PLN rate', horizon: 'Horizon (months)',
-    roiOn: 'Show return on investment', benefitMonthly: 'Monthly benefit',
-    benefitHelp: 'Estimated monthly benefit in PLN, e.g. savings on other costs or extra revenue.',
-    ramp: 'Ramp-up (months to full effect)', setup: 'Setup (PLN, one-off)', training: 'Training (PLN, one-off)',
-    roiTitle: 'Return on investment', tileBenefit: 'Benefit per month', tileCost: 'Cost per month', tileNet: 'Net per month at full effect', tilePayback: 'Payback',
-    paybackIn: 'The investment pays back in month {month}.', paybackShort: 'month {month}', paybackNone: 'No payback within {horizon} months', paybackNoneShort: 'none',
-    roiSentence: 'Over {horizon} months the return on investment is {pct}: {benefit} of benefit against {cost} of cost (one-off outlays included).',
-    roiUndefined: 'The return on investment cannot be computed because costs and outlays are zero.',
-    roiOff: 'The return on investment panel is off.',
-    chartTitle: 'Cumulative net result', chartSub: 'Starts at the one-off outlays, then adds benefit minus cost every month.',
-    axisMonth: 'Month', axisNet: 'Net PLN, cumulative', chartPayback: 'payback', chartPoint: 'Month {month}: {value}',
-    chartAria: 'Chart of the cumulative net result over {horizon} months; {payback}',
+    users: 'People', workDays: 'Working days per year', fx: 'USD/PLN rate',
   },
 };
 
@@ -332,149 +308,7 @@ function onKeydown(e) {
   if (e.key === 'l' || e.key === 'L') setLang(lang === 'pl' ? 'en' : 'pl');
 }
 
-// ─── Render: ROI panel ───
-function buildRoiPanel(node) {
-  node.classList.add('roi-panel');
-  if (!node.hasAttribute('data-accent')) node.setAttribute('data-accent', 'roi');
-  const head = el('div', { class: 'card-head' });
-  head.append(el('h2', { class: 'sec-title', id: 'roiTitle', 'data-t': 'roiTitle' }));
-  node.setAttribute('aria-labelledby', 'roiTitle');
-  const body = el('div', { class: 'roi-body', 'data-results': '' });
-  const tiles = el('div', { class: 'grid-4 roi-tiles' });
-  const parts = { tiles: {} };
-  [['benefit', 'tileBenefit'], ['cost', 'tileCost'], ['net', 'tileNet'], ['payback', 'tilePayback']].forEach(([id, key]) => {
-    const tile = el('div', { class: 'stat roi-tile', 'data-tile': id });
-    const value = el('b');
-    tile.append(el('span', { 'data-t': key }), value);
-    tiles.append(tile);
-    parts.tiles[id] = value;
-  });
-  parts.payback = el('p', { class: 'verdict', 'data-roi': 'payback', 'aria-live': 'polite' });
-  parts.sentence = el('p', { class: 'roi-sentence', 'data-roi': 'sentence' });
-  const fig = el('figure', { class: 'chart-card' });
-  const cap = el('figcaption');
-  cap.append(el('p', { class: 'chart-title', 'data-t': 'chartTitle' }), el('p', { class: 'chart-sub', 'data-t': 'chartSub' }));
-  const wrap = el('div', { class: 'chart-wrap' });
-  parts.svg = svgEl('svg', { 'data-roi': 'chart', role: 'img' });
-  wrap.append(parts.svg);
-  fig.append(cap, wrap);
-  body.append(tiles, parts.payback, parts.sentence, fig);
-  const off = el('p', { class: 'hint roi-off', 'data-roi': 'off', 'data-t': 'roiOff' });
-  node.replaceChildren(head, body, off);
-  node.roiParts = parts;
-  return parts;
-}
-function renderRoiPanel(node, roi, state) {
-  const parts = node.roiParts || buildRoiPanel(node);
-  const on = state.roiOn !== false && Boolean(roi);
-  const horizon = roi ? roi.horizon : state.horizon;
-  Object.assign(node.dataset, {
-    on: String(on),
-    benefitMonthly: roi ? dataNum(roi.benefitMonthly) : '',
-    costMonthly: roi ? dataNum(roi.costMonthly) : '',
-    netMonthly: roi ? dataNum(roi.netMonthly) : '',
-    oneOff: roi ? dataNum(roi.oneOff) : '',
-    paybackMonth: roi && roi.paybackMonth !== null ? String(roi.paybackMonth) : '',
-    roiPct: roi ? dataNum(roi.roiPct, 1) : '',
-    seriesLength: roi ? String(roi.series.length) : '',
-    horizon: String(horizon),
-  });
-  applyI18n(node);
-  if (!on) return;
-  const pay = roi.paybackMonth;
-  parts.tiles.benefit.textContent = money(roi.benefitMonthly) + ' ' + t('perMonth');
-  parts.tiles.cost.textContent = money(roi.costMonthly) + ' ' + t('perMonth');
-  parts.tiles.net.textContent = money(roi.netMonthly) + ' ' + t('perMonth');
-  parts.tiles.payback.textContent = pay === null ? t('paybackNoneShort') : t('paybackShort', { month: pay });
-  const paybackText = pay === null ? t('paybackNone', { horizon }) : t('paybackIn', { month: pay });
-  if (parts.payback.textContent !== paybackText) parts.payback.textContent = paybackText;
-  parts.sentence.textContent = roi.roiPct === null ? t('roiUndefined')
-    : t('roiSentence', { horizon, pct: fmtNum(roi.roiPct, 1) + '%', benefit: money(roi.sumBenefit), cost: money(roi.sumCost + roi.oneOff) });
-  parts.svg.setAttribute('aria-label', t('chartAria', { horizon, payback: paybackText }));
-  renderLineChart(parts.svg, roi.series, { paybackMonth: pay });
-}
-
-// ─── Render: line chart ───
-function niceStep(range, target) {
-  const raw = range / Math.max(1, target);
-  const mag = 10 ** Math.floor(Math.log10(raw || 1));
-  const norm = raw / mag;
-  return (norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 2.5 ? 2.5 : norm <= 5 ? 5 : 10) * mag;
-}
-function renderLineChart(svg, series, opts = {}) {
-  svg.chartArgs = { series, opts };
-  const host = svg.parentElement;
-  const width = Math.max(240, Math.round((host && host.clientWidth) || 600));
-  const height = Math.round(Math.min(320, Math.max(200, width * 0.42)));
-  const m = { top: 30, right: 16, bottom: 44, left: 70 };
-  const w = width - m.left - m.right;
-  const h = height - m.top - m.bottom;
-  const finite = series.filter(Number.isFinite);
-  let lo = Math.min(0, ...finite);
-  let hi = Math.max(0, ...finite);
-  if (hi === lo) hi = lo + 1;
-  const step = niceStep(hi - lo, 5);
-  lo = Math.floor(lo / step) * step;
-  hi = Math.ceil(hi / step) * step;
-  const n = Math.max(1, series.length - 1);
-  const x = (i) => m.left + (i / n) * w;
-  const y = (v) => m.top + (1 - (v - lo) / (hi - lo)) * h;
-  const kids = [];
-  for (let v = lo; v <= hi + step / 2; v += step) {
-    kids.push(svgEl('line', { class: 'chart-grid', x1: m.left, x2: m.left + w, y1: y(v), y2: y(v) }));
-    kids.push(svgEl('text', { class: 'chart-tick', x: m.left - 8, y: y(v) + 4, 'text-anchor': 'end' }, moneyShort(v)));
-  }
-  const xStep = Math.max(1, Math.ceil(n / Math.max(2, Math.floor(w / 56))));
-  for (let i = 0; i <= n; i += xStep) {
-    kids.push(svgEl('text', { class: 'chart-tick', x: x(i), y: m.top + h + 16, 'text-anchor': 'middle' }, String(i)));
-  }
-  kids.push(svgEl('line', { class: 'chart-zero', 'data-mark': 'zero', x1: m.left, x2: m.left + w, y1: y(0), y2: y(0) }));
-  const d = series.map((v, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(Number.isFinite(v) ? v : 0).toFixed(1)).join(' ');
-  kids.push(svgEl('path', { class: 'chart-line', 'data-series': 'net', d }));
-  const pay = opts.paybackMonth;
-  if (pay !== null && pay !== undefined && series[pay] !== undefined) {
-    kids.push(svgEl('line', { class: 'chart-payback-rule', x1: x(pay), x2: x(pay), y1: m.top, y2: m.top + h }));
-    const dot = svgEl('circle', { class: 'chart-payback-dot', 'data-mark': 'payback', cx: x(pay), cy: y(series[pay]), r: 5 });
-    dot.append(svgEl('title', {}, t('paybackIn', { month: pay })));
-    kids.push(dot);
-    const right = x(pay) > m.left + w * 0.8;
-    kids.push(svgEl('text', { class: 'chart-payback-label', x: x(pay) + (right ? -10 : 10), y: Math.min(m.top + h - 6, y(series[pay]) + 20), 'text-anchor': right ? 'end' : 'start' }, t('chartPayback')));
-  }
-  series.forEach((v, i) => {
-    const hit = svgEl('circle', { class: 'chart-hit', cx: x(i), cy: y(Number.isFinite(v) ? v : 0), r: Math.max(4, Math.min(10, w / n / 2)) });
-    hit.append(svgEl('title', {}, t('chartPoint', { month: i, value: money(v) })));
-    kids.push(hit);
-  });
-  kids.push(svgEl('text', { class: 'chart-axis', 'data-axis': 'x', x: m.left + w / 2, y: height - 6, 'text-anchor': 'middle' }, t('axisMonth')));
-  kids.push(svgEl('text', { class: 'chart-axis', 'data-axis': 'y', x: 0, y: 12, 'text-anchor': 'start' }, t('axisNet')));
-  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-  svg.setAttribute('width', String(width));
-  svg.setAttribute('height', String(height));
-  svg.replaceChildren(...kids);
-  if (host && !svg.resizeObserver && typeof ResizeObserver !== 'undefined') {
-    let lastWidth = host.clientWidth;
-    svg.resizeObserver = new ResizeObserver(() => {
-      if (Math.abs(host.clientWidth - lastWidth) < 2) return;
-      lastWidth = host.clientWidth;
-      renderLineChart(svg, svg.chartArgs.series, svg.chartArgs.opts);
-    });
-    svg.resizeObserver.observe(host);
-  }
-}
-
 // ─── Verify ───
-function roiPanelChecks(node, horizon) {
-  const ds = node.dataset;
-  const isNum = (v) => v !== '' && v !== undefined && Number.isFinite(Number(v));
-  const pay = ds.paybackMonth;
-  return [
-    { name: 'ROI: numeric money attributes', pass: ['benefitMonthly', 'costMonthly', 'netMonthly'].every((k) => isNum(ds[k])), detail: `${ds.benefitMonthly} / ${ds.costMonthly} / ${ds.netMonthly}` },
-    { name: 'ROI: roi-pct numeric or empty', pass: ds.roiPct === '' || isNum(ds.roiPct), detail: ds.roiPct },
-    { name: 'ROI: payback empty or integer in [0, horizon]', pass: pay === '' || (/^\d+$/.test(pay) && Number(pay) <= horizon), detail: pay },
-    { name: 'ROI: series length = horizon + 1', pass: ds.seriesLength === String(horizon + 1), detail: ds.seriesLength },
-    { name: 'ROI: chart path finite', pass: [...node.querySelectorAll('svg path')].every((p) => !/NaN|Infinity/.test(p.getAttribute('d'))) },
-  ];
-}
 function runChecks(checks) {
   const panel = $('checksPanel');
   if (!panel) return null;
@@ -496,6 +330,6 @@ globalThis.SubUI = {
   T, LS_LANG, NAV_PAGES, t, addStrings, getLang, setLang, onLangChange, onReset, applyI18n,
   money, moneyShort, fmtNum, plural, dataNum, el, svgEl, announce, isVerify,
   bindFields, fillSelect, persist, restore,
-  renderNav, setDrawer, renderRoiPanel, renderLineChart, roiPanelChecks, runChecks,
+  renderNav, setDrawer, runChecks,
 };
 })();

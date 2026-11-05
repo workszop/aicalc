@@ -146,7 +146,7 @@
 }
 
 /* ============================================================
-   Shared layout for the sub pages (seats, agent, roi).
+   Shared layout for the sub pages (seats, agent).
    Rules copied from index.html keep their class names; colours
    come only from the :root block above (tests/sub-sync.test.cjs).
    ============================================================ */
@@ -202,10 +202,6 @@ input[aria-invalid="true"], select[aria-invalid="true"] { border-color: var(--re
 /* ─── Cards and tiles ─── */
 .card { background: var(--surface); border: 1px solid var(--line-2); border-radius: var(--r-lg); box-shadow: var(--shadow-sm); padding: 22px 24px; }
 .card-head { display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-3); margin-bottom: var(--sp-4); }
-.grid-4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
-.stat { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.stat span { font-family: var(--font-sans); font-weight: 600; font-size: var(--label-size); color: var(--ink-2); }
-.stat b { font-family: var(--font-display); font-weight: 600; font-size: var(--stat-size); color: var(--ink); overflow-wrap: anywhere; }
 .verdict { font-family: var(--font-display); font-size: var(--h4); font-weight: 600; color: var(--ink); margin: 0 0 var(--sp-3); line-height: 1.35; }
 .edu-chip { font-family: var(--font-sans); font-weight: 700; font-size: var(--label-size); padding: 4px 10px; border-radius: var(--r-pill); white-space: nowrap; }
 .chip-win { background: var(--success-chip); color: var(--success-chip-ink); }
@@ -217,33 +213,8 @@ footer.shortcuts { color: var(--ink-3); font-size: var(--small-size); text-align
 [data-accent] { border: 1.5px solid var(--accent, var(--line-2)); }
 [data-accent="seats"] { --accent: var(--blue); }
 [data-accent="agent"] { --accent: var(--green); }
-[data-accent="roi"] { --accent: var(--yellow); }
 
-/* ─── ROI panel ─── */
-.roi-panel { margin-bottom: var(--sp-5); }
-.roi-tiles { margin-bottom: var(--sp-4); }
-.roi-tile { background: var(--paper-2); border-radius: var(--r-md); padding: var(--sp-3) var(--sp-4); }
-.roi-sentence { color: var(--ink-2); font-size: var(--body-sm); margin: 0 0 var(--sp-4); }
-.roi-panel[data-on="false"] .roi-body { display: none; }
-.roi-off { margin: 0; }
-.roi-panel[data-on="true"] .roi-off { display: none; }
-
-/* ─── Charts ─── */
-.chart-card { margin: 0 0 var(--sp-3); }
 .chart-title { font-family: var(--font-display); font-weight: 600; font-size: var(--body); margin: 0 0 2px; color: var(--ink); }
-.chart-sub { font-size: var(--caption); color: var(--ink-3); margin: 0 0 var(--sp-2); }
-.chart-wrap { position: relative; width: 100%; min-width: 0; }
-.chart-wrap svg { display: block; width: 100%; height: auto; overflow: visible; }
-.chart-grid { stroke: var(--line); stroke-width: 1; }
-.chart-zero { stroke: var(--line-strong); stroke-width: 1.5; }
-.chart-line { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
-.chart-payback-rule { stroke: var(--green-600); stroke-width: 1.5; stroke-dasharray: 4 4; }
-.chart-payback-dot { fill: var(--yellow); stroke: var(--ink); stroke-width: 2; }
-.chart-payback-label { fill: var(--ink); font-family: var(--font-sans); font-size: var(--chart-label-size); font-weight: 700; }
-.chart-tick { fill: var(--ink-3); font-family: var(--font-mono); font-size: var(--chart-tick-size); }
-.chart-axis { fill: var(--ink-2); font-family: var(--font-sans); font-size: var(--chart-label-size); font-weight: 600; }
-.chart-hit { fill: var(--transparent); stroke: none; cursor: crosshair; }
-.chart-hit:hover { fill: var(--ink); fill-opacity: .25; }
 
 /* ─── Invalid input pauses derived results ─── */
 .invalid-note { display: none; color: var(--red-ink); background: var(--red-soft); border-radius: var(--r-md); padding: var(--sp-3) var(--sp-4); margin: 0 0 var(--sp-4); font-size: var(--body-sm); }
@@ -279,7 +250,6 @@ details.panel[open] { padding-bottom: 16px; }
 
 @media (min-width: 769px) and (max-width: 1200px) {
   :root { --sidebar-width: 290px; }
-  .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .edu-wordmark { display: none; }
   .sub-nav { margin-left: 0; }
 }
@@ -298,7 +268,6 @@ details.panel[open] { padding-bottom: 16px; }
   #app[data-settings="open"] #settingsPanel { display: block; animation: fadeIn .18s ease-out; }
   #app[data-settings="open"] #settingsBackdrop:not([hidden]) { display: block; position: fixed; inset: 0; z-index: 70; width: 100%; height: 100%; padding: 0; border: 0; background: var(--dialog-backdrop); }
   #resultsPanel { height: 100%; padding: var(--sp-5) var(--sp-4) var(--sp-8); }
-  .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2); }
   .card { padding: var(--sp-4); }
   .app-title { font-size: var(--h3); }
   .edu-lead { font-size: var(--body); }
@@ -333,3 +302,9 @@ details.panel[open] { padding-bottom: 16px; }
 .agent-big { font-family: var(--font-display); font-weight: 600; font-size: var(--stat-size); color: var(--ink); overflow-wrap: anywhere; }
 .agent-cap { color: var(--ink-2); font-size: var(--body-sm); font-weight: 600; }
 .agent-warn { color: var(--red-600); font-weight: 600; font-size: var(--body-sm); }
+
+/* ─── Agent steps ─── */
+.steps-list { margin: var(--sp-3) 0; padding-left: var(--sp-5); display: grid; gap: var(--sp-2); color: var(--ink-2); font-size: var(--body-sm); line-height: var(--line-height-body); }
+.steps-list li::marker { color: var(--ink); font-weight: 700; }
+#agentSteps { margin-bottom: var(--sp-5); min-width: 0; }
+#agentSteps .hint { margin: 0; }

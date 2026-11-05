@@ -6,7 +6,7 @@ const path = require('node:path');
 const context = vm.createContext({ console, URLSearchParams });
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../sub/core.js'), 'utf8'), context);
 const C = vm.runInContext('globalThis.SubCore', context);
-const { MODELS, SHARED_FIELDS, SEAT_FIELDS, AGENT_FIELDS, ROI_FIELDS } = C;
+const { MODELS, SHARED_FIELDS, SEAT_FIELDS, AGENT_FIELDS } = C;
 const near = (a, b, tol) => Math.abs(a - b) <= tol;
 const noNaN = (o, p = '') => Object.entries(o).forEach(([k, v]) => {
   if (v && typeof v === 'object' && !Array.isArray(v) && !(typeof v.name === 'string' && v.pin !== undefined)) noNaN(v, p + k + '.');
@@ -45,7 +45,7 @@ assert.equal(C.modelRates(terra, 1000).pin, 2);
 assert.equal(C.modelRates(find('Opus'), 900000).tiered, false);
 
 // ─── Seats model ───
-const seatBase = () => ({ ...C.defaultsOf(SHARED_FIELDS, SEAT_FIELDS, ROI_FIELDS) });
+const seatBase = () => ({ ...C.defaultsOf(SHARED_FIELDS, SEAT_FIELDS) });
 {
   const r = C.computeSeatResults(seatBase(), MODELS);
   assert.ok(near(r.sub.monthly, 1865, 0.01));
@@ -115,7 +115,7 @@ const seatBase = () => ({ ...C.defaultsOf(SHARED_FIELDS, SEAT_FIELDS, ROI_FIELDS
 }
 
 // ─── Agent model ───
-const agentBase = () => ({ ...C.defaultsOf(SHARED_FIELDS, AGENT_FIELDS, ROI_FIELDS) });
+const agentBase = () => ({ ...C.defaultsOf(SHARED_FIELDS, AGENT_FIELDS) });
 {
   const r = C.computeAgentResults(agentBase(), MODELS);
   assert.equal(r.model, find('Luna'));
@@ -143,84 +143,28 @@ const agentBase = () => ({ ...C.defaultsOf(SHARED_FIELDS, AGENT_FIELDS, ROI_FIEL
   assert.equal(C.computeAgentResults({ ...agentBase(), model: 'missing' }, MODELS).model, MODELS[0]);
 }
 
-// ─── ROI model ───
+// ─── ROI is gone from the core ───
 {
-  const ser = C.roiSeries(1000, 5000, 25000, 3, 12);
-  assert.equal(ser.length, 13);
-  assert.equal(ser[0], -25000);
-  assert.ok(near(ser[1], -24333.33, 0.01));
-  assert.ok(near(ser[2], -22000, 0.01));
-  assert.ok(near(ser[7], -2000, 0.01));
-  assert.ok(near(ser[8], 2000, 0.01));
-  const r = C.computeRoi({ costMonthly: 1000, benefitMonthly: 5000, oneOff: 25000, ramp: 3, horizon: 12 });
-  assert.ok(near(r.sumBenefit, 55000, 1e-6), 'sumBenefit');
-  assert.ok(near(r.sumCost, 12000, 1e-9), 'sumCost excludes oneOff');
-  assert.equal(r.horizon, 12);
-  assert.equal(r.paybackMonth, 8);
-  assert.ok(near(r.roiPct, 48.65, 0.01));
-  assert.ok(near(r.netMonthly, 4000, 1e-9));
-  assert.equal(r.series.length, 13);
-  assert.ok(near(C.roiSeries(1000, 5000, 25000, 0, 12)[1], -25000 + 4000, 1e-9));
-  const nb = C.computeRoi({ costMonthly: 1000, benefitMonthly: 0, oneOff: 25000, ramp: 3, horizon: 12 });
-  assert.equal(nb.paybackMonth, null);
-  assert.ok(near(nb.roiPct, -100, 1e-9));
-  const zero = C.computeRoi({ costMonthly: 0, benefitMonthly: 0, oneOff: 0, ramp: 0, horizon: 12 });
-  assert.equal(zero.roiPct, null);
-  assert.equal(zero.sumBenefit, 0);
-  assert.equal(zero.sumCost, 0);
-  assert.equal(zero.paybackMonth, null);
-  assert.ok(zero.series.every((v) => Number.isFinite(v)));
-  noNaN(zero);
-  assert.equal(C.timeBenefit, undefined, 'timeBenefit is removed');
-  const ag = C.computeRoi({ costMonthly: 463.02, benefitMonthly: ROI_FIELDS.benefitMonthly.def, oneOff: 25000, ramp: 3, horizon: 36 });
-  assert.equal(ag.paybackMonth, 7);
-  assert.deepEqual({ ...C.parseRoiQuery('?cost=abc&users=0') }, {});
-  assert.deepEqual({ ...C.parseRoiQuery('?cost=1200&oneOff=30000&users=50') }, { costMonthly: 1200, setup: 30000, training: 0, users: 50 });
-  assert.deepEqual({ ...C.parseRoiQuery('?cost=-5') }, {});
-  assert.deepEqual({ ...C.parseRoiQuery('?cost=&users=1.5') }, {});
-  assert.deepEqual({ ...C.parseRoiQuery('') }, {});
-}
-
-// ─── ROI fields: the benefit is an entered monthly amount ───
-{
-  const P = C.ROI_PAGE_FIELDS;
-  assert.deepEqual(Object.keys(P), ['costMonthly']);
-  assert.deepEqual(Object.keys(ROI_FIELDS), ['roiOn', 'benefitMonthly', 'ramp', 'setup', 'training']);
-  const B = ROI_FIELDS.benefitMonthly;
-  assert.equal(B.def, 5000);
-  assert.equal(B.min, 0);
-  assert.equal(B.max, 1e8);
-  assert.ok(!B.integer, 'benefitMonthly accepts fractions');
-  assert.equal(C.validateValue(B, 1234.5).error, null);
-  assert.equal(C.validateValue(B, -1).error, 'range');
-  assert.equal(C.validateValue(B, 1e8 + 1).error, 'range');
-  const roiSchemas = [SHARED_FIELDS, ROI_FIELDS, P];
-  const restored = C.loadState(roiSchemas, { benefitMode: 'cash', benefitMonthly: 'x', costMonthly: 900 }, MODELS);
-  assert.equal(restored.benefitMonthly, 5000);
-  assert.equal(restored.costMonthly, 900);
-  // every page with ROI carries benefitMonthly
-  [[SHARED_FIELDS, SEAT_FIELDS, ROI_FIELDS], [SHARED_FIELDS, AGENT_FIELDS, ROI_FIELDS], roiSchemas]
-    .forEach((schemas) => assert.equal(C.defaultsOf(...schemas).benefitMonthly, 5000));
+  ['ROI_FIELDS', 'ROI_PAGE_FIELDS', 'roiSeries', 'computeRoi', 'parseRoiQuery'].forEach((k) => assert.equal(C[k], undefined, k + ' is removed'));
+  assert.ok(!Object.prototype.hasOwnProperty.call(SHARED_FIELDS, 'horizon'), 'horizon is removed from the shared fields');
 }
 
 // ─── Removed labour-cost fields ───
 {
-  const gone = ['hourlyRate', 'reviewPct', 'reviewMin', 'manualMin', 'minPerDay', 'adoption', 'benefitMode'];
-  const all = [SHARED_FIELDS, SEAT_FIELDS, AGENT_FIELDS, ROI_FIELDS, C.ROI_PAGE_FIELDS];
+  const gone = ['hourlyRate', 'reviewPct', 'reviewMin', 'manualMin', 'minPerDay', 'adoption', 'benefitMode', 'roiOn', 'benefitMonthly', 'ramp', 'setup', 'training', 'horizon', 'costMonthly'];
+  const all = [SHARED_FIELDS, SEAT_FIELDS, AGENT_FIELDS];
   gone.forEach((id) => all.forEach((schema) => assert.ok(!Object.prototype.hasOwnProperty.call(schema, id), id + ' is removed from every schema')));
   // An old save with the removed keys still loads: known keys are kept, removed ones are dropped.
   const old = { hourlyRate: 120, reviewPct: 50, reviewMin: 5, manualMin: 30, minPerDay: 40, adoption: 80, benefitMode: 'time', runs: 500, benefitMonthly: 7000, horizon: 24 };
-  const agentSchemas = [SHARED_FIELDS, AGENT_FIELDS, ROI_FIELDS];
+  const agentSchemas = [SHARED_FIELDS, AGENT_FIELDS];
   const st2 = C.loadState(agentSchemas, old, MODELS);
   assert.equal(st2.runs, 500);
-  assert.equal(st2.benefitMonthly, 7000);
-  assert.equal(st2.horizon, 24);
   gone.forEach((id) => assert.ok(!Object.prototype.hasOwnProperty.call(st2, id), 'old key ' + id + ' is not restored'));
   assert.deepEqual(Object.keys(st2), Object.keys(C.defaultsOf(...agentSchemas)));
   const ar = C.computeAgentResults(st2, MODELS);
   assert.ok(near(ar.monthly, 500 * 0.08151104 + 300, 1e-6));
   noNaN(ar);
-  const seatState = C.loadState([SHARED_FIELDS, SEAT_FIELDS, ROI_FIELDS], old, MODELS);
+  const seatState = C.loadState([SHARED_FIELDS, SEAT_FIELDS], old, MODELS);
   gone.forEach((id) => assert.ok(!Object.prototype.hasOwnProperty.call(seatState, id), 'seats: old key ' + id + ' is not restored'));
 }
 console.log('sub-core tests passed');

@@ -74,7 +74,7 @@ function pageStrings(file) {
   assert.equal(captured.length, 1, file + ' registers its strings with SubUI.addStrings before touching the DOM');
   return captured[0];
 }
-['roi.js', 'seats.js', 'agent.js'].forEach((file) => {
+['seats.js', 'agent.js'].forEach((file) => {
   const strings = pageStrings(file);
   assert.deepEqual(Object.keys(strings.en), Object.keys(strings.pl), file + ': pl and en string keys match');
   Object.entries(strings).forEach(([lang, table]) => Object.entries(table).forEach(([key, value]) => {
@@ -85,10 +85,10 @@ function pageStrings(file) {
   assert.ok(ui.T.pl[Object.keys(strings.pl)[0]], 'after addStrings the page keys are reachable through t()');
 });
 // ─── No human-labour-cost calculations (2026-11-05) ───
-// Same scope as: rg -n "<pattern>" index.html seats.html agent.html roi.html sub/
+// Same scope as: rg -n "<pattern>" index.html seats.html agent.html sub/
 const LABOUR = /hourlyRate|manualMin|reviewPct|reviewMin|savedHours|manualMonthly|timeBenefit|minPerDay|adoption|benefitMode|MINUTE_OF_WORK|aMinute/;
 const root = path.join(__dirname, '..');
-const labourFiles = ['index.html', 'seats.html', 'agent.html', 'roi.html']
+const labourFiles = ['index.html', 'seats.html', 'agent.html']
   .concat(fs.readdirSync(path.join(root, 'sub')).map((f) => 'sub/' + f));
 labourFiles.forEach((file) => {
   fs.readFileSync(path.join(root, file), 'utf8').split('\n').forEach((line, i) => {
@@ -97,8 +97,5 @@ labourFiles.forEach((file) => {
   });
 });
 ['roiCaveat', 'groupHuman', 'manualLine', 'savedHours', 'barManual', 'modeTime', 'timeBenefitValue'].forEach((key) => assert.ok(!(key in ui.T.pl) && !(key in ui.T.en), `T has no ${key}`));
-assert.equal(ui.T.pl.benefitMonthly, 'Korzyść miesięcznie');
-assert.equal(ui.T.en.benefitMonthly, 'Monthly benefit');
-assert.equal(ui.T.pl.benefitHelp, 'Szacowana miesięczna korzyść w PLN, np. oszczędności na innych kosztach lub dodatkowy przychód.');
-assert.equal(ui.T.en.benefitHelp, 'Estimated monthly benefit in PLN, e.g. savings on other costs or extra revenue.');
+['roiTitle', 'roiOn', 'benefitMonthly', 'benefitHelp', 'ramp', 'setup', 'training', 'horizon', 'tilePayback', 'chartTitle', 'navRoi', 'groupRoi'].forEach((key) => assert.ok(!(key in ui.T.pl) && !(key in ui.T.en), `T has no ${key}`));
 console.log('sub-sync tests passed');

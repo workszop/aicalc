@@ -1,4 +1,4 @@
-// Pure, DOM-free shared core for the sub pages (seats, agent, roi).
+// Pure, DOM-free shared core for the sub pages (seats, agent).
 // Prices and token factors mirror index.html; tests/sub-sync.test.cjs keeps them in step.
 (function () {
 // ─── Constants ───
@@ -37,7 +37,6 @@ const SHARED_FIELDS = {
   users:      num(20, 1, 20000, true),
   workDays:   num(250, 1, 365, true),
   fx:         num(3.73, 0.1, 100, false),
-  horizon:    num(36, 6, 120, true),
   docLang:    { def: 'pl', enum: ['pl', 'en'] },
 };
 const SEAT_FIELDS = {
@@ -64,17 +63,6 @@ const AGENT_FIELDS = {
   retryPct:  num(10, 0, 500, false),
   toolPln:   num(0.05, 0, 10000, false),
   platform:  num(300, 0, 1e8, false),
-};
-// The ROI benefit is a monthly amount the user enters; nothing here prices a person's working time.
-const ROI_FIELDS = {
-  roiOn:          { def: true, type: 'boolean' },
-  benefitMonthly: num(5000, 0, 1e8, false),
-  ramp:           num(3, 0, 24, true),
-  setup:          num(20000, 0, 1e8, false),
-  training:       num(5000, 0, 1e8, false),
-};
-const ROI_PAGE_FIELDS = {
-  costMonthly: num(1000, 0, 1e8, false),
 };
 
 // ─── Helpers ───
@@ -196,54 +184,12 @@ function computeAgentResults(s, models) {
   };
 }
 
-function roiSeries(costMonthly, benefitMonthly, oneOff, ramp, horizon) {
-  const series = [-oneOff];
-  for (let m = 1; m <= horizon; m++) {
-    const factor = ramp > 0 ? Math.min(1, m / ramp) : 1;
-    series.push(series[m - 1] + benefitMonthly * factor - costMonthly);
-  }
-  return series;
-}
-
-function computeRoi({ costMonthly, benefitMonthly, oneOff, ramp, horizon }) {
-  const series = roiSeries(costMonthly, benefitMonthly, oneOff, ramp, horizon);
-  let paybackMonth = null;
-  let sumBenefit = 0;
-  for (let m = 1; m <= horizon; m++) {
-    if (paybackMonth === null && benefitMonthly > 0 && series[m] >= 0) paybackMonth = m;
-    sumBenefit += benefitMonthly * (ramp > 0 ? Math.min(1, m / ramp) : 1);
-  }
-  const sumCost = costMonthly * horizon;
-  const denom = sumCost + oneOff;
-  const roiPct = denom === 0 ? null : (sumBenefit - sumCost - oneOff) / denom * 100;
-  return { benefitMonthly, costMonthly, oneOff, horizon, sumBenefit, sumCost, netMonthly: benefitMonthly - costMonthly, paybackMonth, roiPct, series };
-}
-
-function parseRoiQuery(search) {
-  const params = new URLSearchParams(search);
-  const read = (key, rule) => {
-    const raw = params.get(key);
-    if (raw === null || raw.trim() === '') return undefined;
-    const value = Number(raw);
-    return validateValue(rule, value).valid ? value : undefined;
-  };
-  const out = {};
-  const cost = read('cost', ROI_PAGE_FIELDS.costMonthly);
-  const oneOff = read('oneOff', ROI_FIELDS.setup);
-  const users = read('users', SHARED_FIELDS.users);
-  if (cost !== undefined) out.costMonthly = cost;
-  if (oneOff !== undefined) { out.setup = oneOff; out.training = 0; }
-  if (users !== undefined) out.users = users;
-  return out;
-}
-
 // ─── Exports ───
 globalThis.SubCore = {
   MODELS, TOK_PER_WORD, BASE_FAMILY, EN_WORD_FACTOR, THINK_MULT, SEAT_PLANS,
-  SHARED_FIELDS, SEAT_FIELDS, AGENT_FIELDS, ROI_FIELDS, ROI_PAGE_FIELDS,
+  SHARED_FIELDS, SEAT_FIELDS, AGENT_FIELDS,
   defaultsOf, validateValue, loadState, familyFactor, modelRates, chatCost,
   seatPlanOf, computeSeatResults, computeAgentResults,
-  roiSeries, computeRoi, parseRoiQuery,
 };
 if (typeof module !== 'undefined') module.exports = globalThis.SubCore;
 })();

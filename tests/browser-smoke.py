@@ -296,39 +296,15 @@ CAPACITY_SMOKE_SCRIPT = r"""
     expect(document.querySelector('[data-meta="apiSettings"]').textContent === state.model, 'API summary shows the model');
     expect(/100/.test(document.querySelector('[data-meta="workloadDetails"]').textContent) === false && /20/.test(document.querySelector('[data-meta="workloadDetails"]').textContent), 'workload summary shows the user count');
 
-    // Task 8: #roiLink carries the recommended (else winning) card's monthly cost, its one-off and the user count.
-    const roiParams = () => new URL(document.querySelector('#roiLink').getAttribute('href'), location.href).searchParams;
-    const expectRoiLink = (label) => {
-      const key = App.results.recommended || App.results.winner;
-      const monthly = Number(document.querySelector(cardId(key)).dataset.monthly);
-      // GB10 / own server: the licence goes to oneOff, so the monthly cost drops its amortisation (no double count).
-      const licensed = (key === 'own' || key === 'small') && state.softwareOn;
-      const oneOff = licensed ? state.softLicense : 0;
-      const cost = Math.round(licensed ? monthly - state.softLicense / state.softAmort : monthly);
-      const link = document.querySelector('#roiLink');
-      expect(link && /^roi\.html\?/.test(link.getAttribute('href')), `${label}: #roiLink href must target roi.html`);
-      const params = roiParams();
-      expect(params.get('cost') === String(cost), `${label}: cost=${params.get('cost')}, expected ${cost} (${key})`);
-      expect(params.get('oneOff') === String(oneOff), `${label}: oneOff=${params.get('oneOff')}, expected ${oneOff} (${key})`);
-      expect(params.get('users') === String(state.users), `${label}: users=${params.get('users')}, expected ${state.users}`);
-      return key;
-    };
+    // The header nav links the three calculators.
+    expect(document.querySelectorAll('.sub-nav a').length === 3, 'nav has three links');
     click('[data-preset="S1"]');
-    setInput('users', 49);
-    expect(['own', 'small'].includes(expectRoiLink('49 users')), 'roi link: a hardware card wins at 49 users');
-    expect(Number(roiParams().get('cost')) < Number(document.querySelector(cardId(App.results.recommended || App.results.winner)).dataset.monthly) - 1, 'roi link: hardware cost must exclude the licence amortisation');
-    document.querySelector('#softwareOn').checked = false; document.querySelector('#softwareOn').dispatchEvent(new Event('input', { bubbles: true }));
-    expectRoiLink('software off');
-    expect(roiParams().get('oneOff') === '0', 'roi link: oneOff is 0 with the software layer off');
-    document.querySelector('#softwareOn').checked = true; document.querySelector('#softwareOn').dispatchEvent(new Event('input', { bubbles: true }));
     setInput('users', 100);
-    expect(expectRoiLink('100 users (recommended)') === 'api' && roiParams().get('oneOff') === '0', 'roi link: recommended API has no one-off');
     click('[data-lang="en"]');
-    expect(document.querySelector('#roiLink').textContent === 'Calculate ROI →' && document.querySelector('.sub-nav [data-nav="seats"]').textContent === 'Seats vs API', 'roi link and nav translate to English');
+    expect(document.querySelector('.sub-nav [data-nav="seats"]').textContent === 'Seats vs API', 'nav translates to English');
     expect(document.querySelector('.sub-nav').getAttribute('aria-label') === 'Calculators', 'nav aria-label translates to English');
     click('[data-lang="pl"]');
     expect(document.querySelector('.sub-nav').getAttribute('aria-label') === 'Kalkulatory', 'nav aria-label is Polish');
-    expect(document.querySelector('#roiLink').textContent === 'Policz zwrot z inwestycji →', 'roi link Polish text');
     setInput('users', 20);
 
     expect(document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1, 'horizontal overflow');

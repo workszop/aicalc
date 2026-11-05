@@ -1,9 +1,9 @@
 // seats.html: chat-assistant subscription vs API behind your own chat UI vs a local GB10 box. Needs sub/core.js and sub/ui.js.
 (function () {
 // ─── Constants ───
-const { SHARED_FIELDS, SEAT_FIELDS, ROI_FIELDS, SEAT_PLANS, MODELS } = SubCore;
+const { SHARED_FIELDS, SEAT_FIELDS, SEAT_PLANS, MODELS } = SubCore;
 const LS_KEY = 'edulab-aicalc-seats-v1';
-const SCHEMAS = [SHARED_FIELDS, SEAT_FIELDS, ROI_FIELDS];
+const SCHEMAS = [SHARED_FIELDS, SEAT_FIELDS];
 const OPTIONS = ['sub', 'api', 'local'];
 SubUI.addStrings({
   pl: {
@@ -18,7 +18,6 @@ SubUI.addStrings({
     groupApi: 'API', model: 'Model', uiOps: 'Własny czat: utrzymanie (PLN / mies.)', uiOpsHint: 'Hosting, logowanie, przechowywanie rozmów i obsługa techniczna. Dotyczy też wariantu lokalnego.',
     groupLocal: 'Lokalnie (GB10)', localCapex: 'Cena serwera (PLN)', localAmort: 'Amortyzacja (miesiące)', localPower: 'Pobór mocy (W)',
     kwh: 'Cena prądu (PLN / kWh)', localOps: 'Obsługa lokalna (PLN / mies.)', localMaxUsers: 'Osób na jeden serwer',
-    groupRoi: 'Zwrot',
     optSub: 'Subskrypcja', optApi: 'API + własny czat', optLocal: 'Lokalnie (GB10)',
     winSub: 'subskrypcja', winApi: 'API z własnym czatem', winLocal: 'lokalny serwer GB10',
     cheapest: 'Najtańsze', perUserMonth: '{value} na osobę miesięcznie', perMonthTotal: '{value} mies.',
@@ -37,7 +36,7 @@ SubUI.addStrings({
     localBeatsSub: ' Lokalnie jest taniej niż subskrypcja przy tym zespole.',
     barsTitle: 'Koszt miesięczny: porównanie', barsAria: 'Wykres słupkowy kosztu miesięcznego trzech wariantów',
     checkCards: 'Seats: karty mają liczbowe koszty', checkWin: 'Seats: dokładnie jedna karta wygrywa', checkBreak: 'Seats: próg opłacalności jest liczbą tylko wtedy, gdy istnieje',
-    checkCore: 'Seats: karty zgadzają się z rdzeniem', checkRoi: 'Seats: panel zwrotu liczy koszt zwycięzcy i wpisaną korzyść',
+    checkCore: 'Seats: karty zgadzają się z rdzeniem',
   },
   en: {
     seatsPageTitle: 'Seats vs API vs local',
@@ -51,7 +50,6 @@ SubUI.addStrings({
     groupApi: 'API', model: 'Model', uiOps: 'Own chat: upkeep (PLN / month)', uiOpsHint: 'Hosting, sign-in, chat storage and technical support. It also applies to the local option.',
     groupLocal: 'Local (GB10)', localCapex: 'Server price (PLN)', localAmort: 'Amortisation (months)', localPower: 'Power draw (W)',
     kwh: 'Electricity price (PLN / kWh)', localOps: 'Local upkeep (PLN / month)', localMaxUsers: 'People per server',
-    groupRoi: 'Return',
     optSub: 'Seats', optApi: 'API + own chat', optLocal: 'Local (GB10)',
     winSub: 'seats', winApi: 'the API with your own chat', winLocal: 'a local GB10 box',
     cheapest: 'Cheapest', perUserMonth: '{value} / person / month', perMonthTotal: '{value} / month',
@@ -69,7 +67,7 @@ SubUI.addStrings({
     localBeatsSub: ' Local hosting is cheaper than the subscription for this team.',
     barsTitle: 'Monthly cost: comparison', barsAria: 'Bar chart of the monthly cost of the three options',
     checkCards: 'Seats: cards carry numeric costs', checkWin: 'Seats: exactly one card wins', checkBreak: 'Seats: break-even is a number only when one exists',
-    checkCore: 'Seats: cards match the core', checkRoi: 'Seats: ROI panel uses the winner cost and the entered benefit',
+    checkCore: 'Seats: cards match the core',
   },
 });
 
@@ -89,16 +87,12 @@ const presets = document.getElementById('presets');
 const verdict = document.getElementById('verdict');
 const seatCards = document.getElementById('seatCards');
 const seatBars = document.getElementById('seatBars');
-const roiPanel = document.getElementById('roiPanel');
 
 // ─── Helpers ───
 const t = SubUI.t;
 // customUsd only matters, and only blocks, while the custom plan is chosen.
 function isActive(id, s) { return id !== 'customUsd' || s.plan === 'custom'; }
 function compute(s) { return SubCore.computeSeatResults(s, MODELS); }
-function roiOf(s, r) {
-  return SubCore.computeRoi({ costMonthly: r[r.winner].monthly, benefitMonthly: s.benefitMonthly, oneOff: s.setup + s.training, ramp: s.ramp, horizon: s.horizon });
-}
 // Polish case forms of "rozmowa": loc after "Przy {n}", gen after "od {n}".
 function chatsWord(n, kase) { return SubUI.plural(n, t('chats' + kase + 'One'), t('chats' + kase + 'Few'), t('chats' + kase + 'Many')); }
 function usdText(usd) { return SubUI.fmtNum(usd, Number.isInteger(usd) ? 0 : String(usd).split('.')[1].length) + ' USD'; }
@@ -125,8 +119,6 @@ function pageChecks() {
     { name: t('checkWin'), pass: cards.filter((c) => c.dataset.win === 'true').length === 1 },
     { name: t('checkBreak'), pass: kind === r.breakEven.kind && (kind === 'from' ? numeric(be) : be === '') },
     { name: t('checkCore'), pass: cards.every((c) => c.dataset.monthly === SubUI.dataNum(r[c.dataset.option].monthly)) && seatCards.querySelector('[data-win="true"]').dataset.option === r.winner },
-    { name: t('checkRoi'), pass: roiPanel.dataset.costMonthly === SubUI.dataNum(r[r.winner].monthly) && roiPanel.dataset.benefitMonthly === SubUI.dataNum(state.benefitMonthly) },
-    ...SubUI.roiPanelChecks(roiPanel, state.horizon),
   ];
 }
 
@@ -205,7 +197,6 @@ function render() {
   renderVerdict(results);
   renderCards(results);
   renderBars(results);
-  SubUI.renderRoiPanel(roiPanel, roiOf(state, results), state);
 }
 
 // ─── Listeners ───
