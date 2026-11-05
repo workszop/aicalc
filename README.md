@@ -52,17 +52,16 @@ Wersja online: <https://workszop.github.io/aicalc/>. Strony z sekcji
 
 ## Kalkulatory dodatkowe
 
-Obok kalkulatora RAG (`index.html`) są trzy strony pomocnicze. Wszystkie
+Obok kalkulatora RAG (`index.html`) są dwie strony pomocnicze. Wszystkie
 działają tak samo jak główna: bez buildu, z `file://`, z przełącznikiem PL/EN
 i z paskiem nawigacji w nagłówku. Wersje online (po wdrożeniu gałęzi, na razie
 jeszcze niedostępne):
 
 - <https://workszop.github.io/aicalc/seats.html>
 - <https://workszop.github.io/aicalc/agent.html>
-- <https://workszop.github.io/aicalc/roi.html>
 
 Wspólne założenia: kwoty są szacunkami, w PLN netto (bez VAT); kurs `fx` =
-3,73 PLN/USD, `workDays` = 250 dni w roku, `horizon` = 36 mies.,
+3,73 PLN/USD, `workDays` = 250 dni w roku,
 `users` = 20. Żadna strona nie wycenia czasu pracy ludzi: nie ma stawki
 godzinowej ani porównania z pracą ręczną. Ceny modeli i współczynniki tokenów
 pochodzą z tej samej migawki co `index.html` (pilnuje tego
@@ -130,8 +129,9 @@ Wzory:
 - narzędzia na zadanie: `toolPln`,
 - koszt zadania = model + narzędzia; miesięcznie: `runs × koszt_zadania + platform`
   (domyślnie 0,0815 PLN na zadanie i 463,02 PLN / mies.),
-- panel ROI: koszt = koszt agenta miesięcznie, korzyść = wpisana kwota
-  `benefitMonthly`.
+- pod wynikiem strona opisuje w pięciu krokach, co agent robi w jednym
+  uruchomieniu (zadanie, decyzja modelu, narzędzie, wynik, pętla); to
+  ogólny opis pętli, nie konkretnego zadania.
 
 Gotowe scenariusze ustawiają tylko `runs` i `steps`: obsługa maili 3 000 / 4,
 raport sprzedaży 20 / 12, faktury 800 / 5.
@@ -149,51 +149,14 @@ raport sprzedaży 20 / 12, faktury 800 / 5.
 Zastrzeżenia: liczba kroków i tokenów mocno zależy od konkretnego agenta –
 wartości domyślne są ilustracyjne.
 
-### Zwrot z inwestycji
-
-Strona `roi.html` oraz panel ROI na stronach `seats.html` i `agent.html`
-(przełącznik `roiOn`). Strona samodzielna przyjmuje parametry w adresie, np.
-`roi.html?cost=2500&oneOff=150000&users=20`; link „Policz zwrot z
-inwestycji →” pod werdyktem w `index.html` podstawia tam koszt miesięczny
-rekomendowanej (a bez rekomendacji najtańszej) opcji, jej koszt jednorazowy
-(licencja oprogramowania przy własnym serwerze lub GB10, gdy warstwa
-oprogramowania jest włączona, inaczej 0) oraz liczbę użytkowników. Przy GB10
-i własnym serwerze licencja trafia do kosztu jednorazowego, a koszt miesięczny
-w linku jest pomniejszony o jej amortyzację. Nieprawidłowe parametry w adresie
-są ignorowane i zostają wartości domyślne.
-
-Wzory:
-
-- korzyść: wpisana kwota miesięczna `benefitMonthly` (np. oszczędności na
-  innych kosztach lub dodatkowy przychód); kalkulator jej nie wylicza,
-- skumulowany wynik w miesiącu `m`: `−jednorazowe + Σ (korzyść × min(1, m / ramp) − koszt)`;
-  korzyść narasta liniowo przez `ramp` miesięcy,
-- jednorazowe = `setup + training`,
-- zwrot następuje w pierwszym miesiącu, w którym skumulowany wynik jest nie
-  mniejszy niż 0 (brak zwrotu w horyzoncie jest zgłaszany wprost),
-- ROI % = `(suma korzyści − suma kosztów − jednorazowe) / (suma kosztów + jednorazowe) × 100`
-  w horyzoncie `horizon`.
-
-| Parametr | Domyślnie |
-| --- | --- |
-| `costMonthly` (strona samodzielna) | 1 000 PLN / mies. |
-| `benefitMonthly` | 5 000 PLN / mies. (wspólne dla wszystkich stron z ROI) |
-| `ramp` | 3 mies. narastania |
-| `setup` / `training` | 20 000 / 5 000 PLN jednorazowo |
-| `horizon` | 36 mies. |
-
-Zastrzeżenia: to szacunek, nie obietnica; wynik jest tak dobry jak wpisana
-korzyść; model nie dyskontuje przyszłych przepływów (brak NPV).
-
 ### Pliki w `sub/`
 
 | Plik | Zawartość |
 | --- | --- |
-| `sub/core.js` | czysty rdzeń bez DOM: ceny modeli, plany miejsc (`SEAT_PLANS`), schematy pól, `computeSeatResults`, `computeAgentResults`, `computeRoi`, `parseRoiQuery` |
-| `sub/ui.js` | wspólna warstwa interfejsu: słownik PL/EN, nawigacja, panel ustawień, panel i wykres ROI, kontrakt DOM |
+| `sub/core.js` | czysty rdzeń bez DOM: ceny modeli, plany miejsc (`SEAT_PLANS`), schematy pól, `computeSeatResults`, `computeAgentResults` |
+| `sub/ui.js` | wspólna warstwa interfejsu: słownik PL/EN, nawigacja, panel ustawień, kontrakt DOM |
 | `sub/seats.js` | logika strony `seats.html` |
 | `sub/agent.js` | logika strony `agent.html` |
-| `sub/roi.js` | logika strony `roi.html` |
 | `sub/sub.css` | wspólne style stron pomocniczych (tokeny w `:root`) |
 
 ## Małe wdrożenie: Dell GB10
@@ -391,25 +354,21 @@ Co sprawdzają:
 - `scenario.test.cjs` – zapis i odczyt scenariusza oraz odrzucanie błędnych
   danych,
 - `layout.test.cjs` – układ panelu ustawień, nagłówka (w tym nawigacji do
-  stron pomocniczych) i link `#roiLink`,
+  stron pomocniczych),
 - `browser-smoke.py` – lokalny serwer na losowym porcie i świeży profil
   Google Chrome/Chromium; tryb `?verify=1` przez `http://` i `file://`
   (kontrakt DOM w każdym przebiegu, w tym testy pojemności
   i dane czterech kart: `data-small-monthly`, `data-small-units`,
   `data-small-eligible`, `data-break-even-small-users`,
   `data-payback-small-vs-cloud`, `data-api-software`, `data-own-software`;
-  każda karta publikuje `data-software` i `data-infra`) oraz przepływ z
-  linkiem `#roiLink` (koszt, koszt jednorazowy i liczba użytkowników w
-  adresie), a także nagłówek przy 360 i 320 px (nic nie jest ucięte, nagłówek
+  każda karta publikuje `data-software` i `data-infra`) oraz nagłówek przy 360 i 320 px (nic nie jest ucięte, nagłówek
   nie zachodzi na wyniki, strona nie przewija się w bok),
 - `sub-core.test.cjs` – rdzeń stron pomocniczych: walidacja pól, wzory
-  subskrypcji, API, agenta i ROI,
+  subskrypcji, API i agenta,
 - `sub-sync.test.cjs` – zgodność cen modeli i współczynników tokenów z
   `index.html`,
-- `sub-smoke.py` – przeglądarkowy test `seats.html`, `agent.html` i
-  `roi.html` przez `http://` (desktop i mobile) oraz `file://`: kontrakt DOM,
-  przepływy użytkownika, stan po zmianie ustawień i nieprawidłowe parametry
-  adresu `roi.html`.
+- `sub-smoke.py` – przeglądarkowy test `seats.html` i `agent.html` przez `http://` (desktop i mobile) oraz `file://`: kontrakt DOM,
+  przepływy użytkownika i stan po zmianie ustawień.
 
 Jeśli przeglądarka nie jest zainstalowana, testy przeglądarkowe kończą się
 czytelnym komunikatem z instrukcją instalacji. Skrypty niczego nie instalują.
@@ -429,18 +388,15 @@ On desktop, editable inputs live in a left settings sidebar; on small screens,
 use the Settings button and close it with the close control, backdrop, or
 `Escape`.
 
-Three companion pages share the same header navigation, PL/EN toggle and
+Two companion pages share the same header navigation, PL/EN toggle and
 no-build setup: `seats.html` (seat subscriptions vs API vs local hardware;
 seat prices verified 2026-11-05: ChatGPT Business 25 USD, Microsoft 365 Copilot
-25.2 USD, Claude Team 25 USD per seat per month), `agent.html` (agent cost per
-run and per month: LLM, tools and platform) and `roi.html` (payback and ROI; the "Calculate ROI" link
-under the verdict in `index.html` prefills it with the recommended option's
-monthly cost, one-off licence and user count; with GB10 and the own server
-the licence goes into the one-off cost, and the monthly cost in the link is
-reduced by its amortisation). On the seats page the break-even against the API
+25.2 USD, Claude Team 25 USD per seat per month), and `agent.html` (agent cost per
+run and per month: LLM, tools and platform, with a short step-by-step
+explanation of what the agent does in one run). On the seats page the break-even against the API
 is one of three kinds: `from` a number of chats, `always` or `never`. All figures are estimates in net
-PLN; no page prices people's working time, and the ROI benefit is a monthly
-amount you enter (default 5,000 PLN); GB10 throughput is not checked on the seats
+PLN; no page prices people's working time and none calculates a return on
+investment; GB10 throughput is not checked on the seats
 page. They will be online at <https://workszop.github.io/aicalc/seats.html>,
-`agent.html` and `roi.html` after deployment. Run all seven checks listed under
+and `agent.html` after deployment. Run all seven checks listed under
 "Weryfikacja"; CI runs the same commands.
