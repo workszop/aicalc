@@ -62,8 +62,9 @@ jeszcze niedostępne):
 - <https://workszop.github.io/aicalc/roi.html>
 
 Wspólne założenia: kwoty są szacunkami, w PLN netto (bez VAT); kurs `fx` =
-3,73 PLN/USD, `workDays` = 250 dni w roku, `hourlyRate` = 89,29 PLN/h,
-`horizon` = 36 mies., `users` = 20. Ceny modeli i współczynniki tokenów
+3,73 PLN/USD, `workDays` = 250 dni w roku, `horizon` = 36 mies.,
+`users` = 20. Żadna strona nie wycenia czasu pracy ludzi: nie ma stawki
+godzinowej ani porównania z pracą ręczną. Ceny modeli i współczynniki tokenów
 pochodzą z tej samej migawki co `index.html` (pilnuje tego
 `tests/sub-sync.test.cjs`).
 
@@ -121,17 +122,19 @@ miejsc – to założenie, które trzeba zmierzyć na własnym modelu.
 ### Agent / automatyzacja
 
 Strona `agent.html`: koszt agenta, który wykonuje zadania w kilku krokach
-(wywołaniach modelu), i porównanie z pracą ręczną.
+(wywołaniach modelu) i korzysta z narzędzi.
 
 Wzory:
 
 - koszt modelu na zadanie: `kroki × koszt_jednego_kroku × (1 + retryPct / 100)`,
 - narzędzia na zadanie: `toolPln`,
-- nadzór człowieka na zadanie: `reviewPct / 100 × reviewMin × hourlyRate / 60`,
-- koszt zadania = suma trzech powyższych; miesięcznie: `runs × koszt_zadania + platform`,
-- praca ręczna miesięcznie: `runs × manualMin × hourlyRate / 60`,
-- zaoszczędzone godziny: `runs × (manualMin − reviewPct / 100 × reviewMin) / 60`
-  (nie mniej niż 0).
+- koszt zadania = model + narzędzia; miesięcznie: `runs × koszt_zadania + platform`
+  (domyślnie 0,0815 PLN na zadanie i 463,02 PLN / mies.),
+- panel ROI: koszt = koszt agenta miesięcznie, korzyść = wpisana kwota
+  `benefitMonthly`.
+
+Gotowe scenariusze ustawiają tylko `runs` i `steps`: obsługa maili 3 000 / 4,
+raport sprzedaży 20 / 12, faktury 800 / 5.
 
 | Parametr | Domyślnie |
 | --- | --- |
@@ -142,12 +145,9 @@ Wzory:
 | `retryPct` | 10% (powtórzenia) |
 | `toolPln` | 0,05 PLN na zadanie |
 | `platform` | 300 PLN / mies. |
-| `reviewPct` / `reviewMin` | 20% zadań / 2 min przeglądu |
-| `manualMin` | 12 min ręcznie |
 
 Zastrzeżenia: liczba kroków i tokenów mocno zależy od konkretnego agenta –
-wartości domyślne są ilustracyjne; porównanie z pracą ręczną traktuje czas jako
-wartość (stawka `hourlyRate`), a nie gotówkę.
+wartości domyślne są ilustracyjne.
 
 ### Zwrot z inwestycji
 
@@ -164,8 +164,8 @@ są ignorowane i zostają wartości domyślne.
 
 Wzory:
 
-- korzyść z czasu: `users × adoption / 100 × minPerDay × workDays / 12 × hourlyRate / 60`
-  (albo wpisana ręcznie kwota miesięczna),
+- korzyść: wpisana kwota miesięczna `benefitMonthly` (np. oszczędności na
+  innych kosztach lub dodatkowy przychód); kalkulator jej nie wylicza,
 - skumulowany wynik w miesiącu `m`: `−jednorazowe + Σ (korzyść × min(1, m / ramp) − koszt)`;
   korzyść narasta liniowo przez `ramp` miesięcy,
 - jednorazowe = `setup + training`,
@@ -177,16 +177,13 @@ Wzory:
 | Parametr | Domyślnie |
 | --- | --- |
 | `costMonthly` (strona samodzielna) | 1 000 PLN / mies. |
-| `benefitMode` | czas (`time`) lub kwota (`amount`, domyślnie 5 000 PLN / mies.) |
-| `minPerDay` | 20 min dziennie na osobę |
-| `adoption` | 60% użytkowników |
+| `benefitMonthly` | 5 000 PLN / mies. (wspólne dla wszystkich stron z ROI) |
 | `ramp` | 3 mies. narastania |
 | `setup` / `training` | 20 000 / 5 000 PLN jednorazowo |
 | `horizon` | 36 mies. |
 
-Zastrzeżenia: to szacunek, nie obietnica; oszczędzony czas to **wartość, nie
-gotówka** – zamienia się w pieniądze dopiero, gdy ludzie wykorzystają go na
-inną pracę; model nie dyskontuje przyszłych przepływów (brak NPV).
+Zastrzeżenia: to szacunek, nie obietnica; wynik jest tak dobry jak wpisana
+korzyść; model nie dyskontuje przyszłych przepływów (brak NPV).
 
 ### Pliki w `sub/`
 
@@ -436,13 +433,14 @@ Three companion pages share the same header navigation, PL/EN toggle and
 no-build setup: `seats.html` (seat subscriptions vs API vs local hardware;
 seat prices verified 2026-11-05: ChatGPT Business 25 USD, Microsoft 365 Copilot
 25.2 USD, Claude Team 25 USD per seat per month), `agent.html` (agent cost per
-run vs manual work) and `roi.html` (payback and ROI; the "Calculate ROI" link
+run and per month: LLM, tools and platform) and `roi.html` (payback and ROI; the "Calculate ROI" link
 under the verdict in `index.html` prefills it with the recommended option's
 monthly cost, one-off licence and user count; with GB10 and the own server
 the licence goes into the one-off cost, and the monthly cost in the link is
 reduced by its amortisation). On the seats page the break-even against the API
 is one of three kinds: `from` a number of chats, `always` or `never`. All figures are estimates in net
-PLN; time saved is value, not cash; GB10 throughput is not checked on the seats
+PLN; no page prices people's working time, and the ROI benefit is a monthly
+amount you enter (default 5,000 PLN); GB10 throughput is not checked on the seats
 page. They will be online at <https://workszop.github.io/aicalc/seats.html>,
 `agent.html` and `roi.html` after deployment. Run all seven checks listed under
 "Weryfikacja"; CI runs the same commands.
