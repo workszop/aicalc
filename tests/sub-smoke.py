@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Chrome smoke test for the sub pages (roi.html; seats/agent join later).
+"""Chrome smoke test for the sub pages (roi.html, seats.html; agent joins later).
 
 Reuses the server and headless-Chrome helpers from tests/browser-smoke.py
 (loaded with importlib because of the hyphen in its file name).  Interactive
@@ -39,7 +39,7 @@ const setField = (id, value) => {
   const node = document.querySelector(`[data-field="${id}"]`);
   expect(node, `field ${id} missing`);
   node.value = String(value);
-  node.dispatchEvent(new Event('input', { bubbles: true }));
+  node.dispatchEvent(new Event(node.tagName === 'SELECT' ? 'change' : 'input', { bubbles: true }));
 };
 const click = (sel) => { const n = $(sel); expect(n, `control ${sel} missing`); n.click(); };
 const finish = (payload) => document.body.setAttribute('data-sub-smoke', encodeURIComponent(JSON.stringify(payload)));
@@ -129,6 +129,113 @@ ROI_FLOW = r"""
 </script>
 """
 
+SEATS_FLOW = r"""
+<script>
+(() => {
+""" + PRELUDE + r"""
+  try {
+    const core = SubCore;
+    const schemas = [core.SHARED_FIELDS, core.SEAT_FIELDS, core.ROI_FIELDS];
+    const cards = $('#seatCards');
+    const card = (id) => cards.querySelector(`[data-option="${id}"]`);
+    const num = (v) => Number(v);
+    const near = (a, b) => Math.abs(num(a) - b) < 0.011;
+    expect(document.body.dataset.page === 'seats', 'body[data-page] is not seats');
+    expect(document.body.dataset.state === 'ready', 'body[data-state] is not ready on load');
+    // defaults
+    const wins = cards.querySelectorAll('[data-win="true"]');
+    expect(wins.length === 1 && wins[0].dataset.option === 'api', 'default winner is not api');
+    expect(near(card('api').dataset.monthly, 835.70), `api monthly ${card('api').dataset.monthly}`);
+    expect(near(card('sub').dataset.monthly, 1865.00), `sub monthly ${card('sub').dataset.monthly}`);
+    expect(cards.dataset.breakEvenChats === '61.0', `break-even ${cards.dataset.breakEvenChats}`);
+    expect($('#verdict').getAttribute('aria-live') === 'polite' && /61/.test($('#verdict').textContent), 'verdict sentence missing');
+    // roi panel follows the winner
+    const roi = $('#roiPanel');
+    const defaults = core.defaultsOf(...schemas);
+    expect(roi.dataset.on === 'true', 'roi panel not on');
+    expect(near(roi.dataset.costMonthly, num(card('api').dataset.monthly)), 'roi cost is not the winner monthly');
+    expect(near(roi.dataset.benefitMonthly, core.timeBenefit(defaults)), 'roi benefit is not timeBenefit');
+    // plan source line and note
+    const checked = $('#planChecked');
+    expect(checked.querySelector('a[target="_blank"][rel~="noopener"]'), 'plan source link missing');
+    expect(/2026-11-05/.test(checked.textContent), 'plan checked date missing');
+    expect($('#planNote').hidden, 'M365 note visible for the wrong plan');
+    setField('plan', 'm365-copilot');
+    expect(!$('#planNote').hidden && /Microsoft 365/.test($('#planNote').textContent), 'M365 note missing');
+    expect($('#customUsdField').hidden, 'customUsd visible for a known plan');
+    setField('plan', 'custom');
+    expect(!$('#customUsdField').hidden, 'customUsd hidden for custom plan');
+    expect(checked.textContent.trim() === '', 'custom plan must show no price line');
+    setField('plan', 'chatgpt-business');
+    // a bad customUsd must not block while the plan is not custom
+    setField('plan', 'custom');
+    setField('customUsd', -1);
+    expect(document.body.dataset.state === 'invalid', 'bad customUsd on custom plan must be invalid');
+    setField('plan', 'chatgpt-business');
+    expect(document.body.dataset.state === 'ready', 'inactive customUsd still blocks');
+    setField('plan', 'custom'); setField('customUsd', 30);
+    setField('plan', 'chatgpt-business');
+    // chatsPerDay 40 -> winner equals the core recomputation
+    const heavy = Object.assign({}, defaults, { chatsPerDay: 40 });
+    click('[data-preset="40"]');
+    expect($('[data-field="chatsPerDay"]').value === '40', 'intensive preset did not set chatsPerDay');
+    const want = core.computeSeatResults(heavy, core.MODELS);
+    const winners = cards.querySelectorAll('[data-win="true"]');
+    expect(winners.length === 1 && winners[0].dataset.option === want.winner, `winner ${winners[0] && winners[0].dataset.option}, expected ${want.winner}`);
+    expect(near(card('api').dataset.monthly, want.api.monthly) && near(card('sub').dataset.monthly, want.sub.monthly), 'card amounts differ from core');
+    setField('chatsPerDay', 0);
+    expect(!/NaN|Infinity/.test($('#resultsPanel').textContent), 'zero chats produced NaN or Infinity');
+    setField('inTok', 0); setField('outTok', 0);
+    expect(cards.dataset.breakEvenChats === '' && !/NaN|Infinity/.test($('#resultsPanel').textContent), 'zero tokens must give an empty break-even and no NaN');
+    expect(/nie wychodzi taniej/.test($('#verdict').textContent), 'no-break-even verdict missing');
+    // roi toggle
+    setField('inTok', 3000); setField('outTok', 700);
+    click('[data-field="roiOn"]');
+    expect(roi.dataset.on === 'false', 'roi toggle did not hide the panel');
+    click('[data-field="roiOn"]');
+    // language switch keeps numbers
+    const monthly = card('sub').dataset.monthly;
+    const verdictPl = $('#verdict').textContent;
+    click('[data-lang="en"]');
+    expect($('#verdict').textContent !== verdictPl && card('sub').dataset.monthly === monthly, 'EN switch changed numbers or did not translate');
+    expect($('nav a[aria-current="page"]').getAttribute('href') === 'seats.html', 'nav current link wrong');
+    click('[data-lang="pl"]');
+    if (window.matchMedia('(max-width: 768px)').matches) {
+      click('#settingsToggle');
+      expect($('#app').dataset.settings === 'open', 'drawer did not open');
+      click('#settingsBackdrop');
+      expect($('#app').dataset.settings === 'closed', 'backdrop did not close the drawer');
+    }
+    const vp = viewport();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'r', code: 'KeyR', altKey: true, bubbles: true }));
+    expect($('[data-field="chatsPerDay"]').value === '15' && card('api').dataset.win === 'true', 'Alt+R did not reset');
+    finish({ ok: true, assertions: assertions.n, viewport: vp });
+  } catch (error) {
+    finish({ ok: false, error: String(error && error.message || error), assertions: assertions.n });
+  }
+})();
+</script>
+"""
+
+# Runs before the page scripts: plants a stale state, as an old save from an earlier version would leave it.
+SEATS_PLANT_HEAD = """<script>try { localStorage.setItem('edulab-aicalc-seats-v1', '{"model":"gone","users":"x"}'); } catch (e) {}</script>"""
+SEATS_PLANT_FLOW = r"""
+<script>
+(() => {
+""" + PRELUDE + r"""
+  try {
+    expect(document.body.dataset.page === 'seats' && document.body.dataset.state === 'ready', 'planted state did not render ready');
+    expect($('[data-field="users"]').value === '20', 'stale users did not fall back to the default');
+    expect($('[data-field="model"]').value === SubCore.defaultsOf(SubCore.SEAT_FIELDS).model, 'stale model did not fall back');
+    expect($('#seatCards [data-win="true"]').dataset.option === 'api', 'planted state broke the winner');
+    finish({ ok: true, assertions: assertions.n, viewport: viewport() });
+  } catch (error) {
+    finish({ ok: false, error: String(error && error.message || error), assertions: assertions.n });
+  }
+})();
+</script>
+"""
+
 
 # ─── DOM parsing ───
 class AttrParser(HTMLParser):
@@ -192,7 +299,7 @@ def check_flow(dom: str, label: str) -> int:
 
 
 @contextmanager
-def page_fixture(page: str, flow: str):
+def page_fixture(page: str, flow: str, head: str = ""):
     """Yield a temporary copy of the repo's sub pages with ``flow`` injected into ``page``."""
 
     source = (ROOT / page).read_text(encoding="utf-8")
@@ -200,7 +307,10 @@ def page_fixture(page: str, flow: str):
         raise SmokeFailure(f"{page}: no </body> to inject the flow before")
     with tempfile.TemporaryDirectory(prefix="aicalc-sub-fixture-") as directory:
         root = Path(directory)
-        (root / page).write_text(source.replace("</body>", flow + "\n</body>", 1), encoding="utf-8")
+        text = source.replace("</body>", flow + "\n</body>", 1)
+        if head:
+            text = text.replace("</head>", head + "\n</head>", 1)
+        (root / page).write_text(text, encoding="utf-8")
         shutil.copytree(ROOT / "sub", root / "sub")
         if (ROOT / "assets").is_dir():
             shutil.copytree(ROOT / "assets", root / "assets")
@@ -208,46 +318,52 @@ def page_fixture(page: str, flow: str):
 
 
 # ─── Runner ───
-def run() -> list[str]:
-    browser = bs.find_browser()
-    lines: list[str] = []
-    page = "roi.html"
+def run_page(browser, page: str, key: str, flow: str, query: str, lines: list[str], head_flows=()) -> None:
+    """Verify (http desktop/mobile, file://), then the injected flow(s) over the same transports."""
+
     if not (ROOT / page).is_file():
         raise SmokeFailure(f"Repository has no {page}")
-
     with bs.local_server(ROOT) as server:
         base = f"http://127.0.0.1:{server.server_port}"
         for name, size in VIEWPORTS.items():
             url = f"{base}/{page}?verify=1"
             bs.probe_http(url)
             label = f"{page} verify http {name}"
-            passed, total = check_verify(bs.run_browser(browser, url, label, window_size=size), label, "roi")
+            passed, total = check_verify(bs.run_browser(browser, url, label, window_size=size), label, key)
             lines.append(f"{label}: checks {passed}/{total}")
-        # Bad prefill parameters never reach the state.
-        label = f"{page} bad query http"
-        nodes = parse(bs.run_browser(browser, f"{base}/{page}?cost=-5&oneOff=abc&users=0&verify=1", label), label)
-        roi = nodes.get("#roiPanel", {})
-        if roi.get("data-cost-monthly") != "1000":
-            raise SmokeFailure(f"{label}: data-cost-monthly={roi.get('data-cost-monthly')!r}, expected '1000'")
-        lines.append(f"{label}: defaults kept")
+        if key == "roi":
+            # Bad prefill parameters never reach the state.
+            label = f"{page} bad query http"
+            nodes = parse(bs.run_browser(browser, f"{base}/{page}?cost=-5&oneOff=abc&users=0&verify=1", label), label)
+            roi = nodes.get("#roiPanel", {})
+            if roi.get("data-cost-monthly") != "1000":
+                raise SmokeFailure(f"{label}: data-cost-monthly={roi.get('data-cost-monthly')!r}, expected '1000'")
+            lines.append(f"{label}: defaults kept")
 
     file_url = f"{(ROOT / page).resolve().as_uri()}?verify=1"
     label = f"{page} verify file://"
-    passed, total = check_verify(bs.run_browser(browser, file_url, label), label, "roi")
+    passed, total = check_verify(bs.run_browser(browser, file_url, label), label, key)
     lines.append(f"{label}: checks {passed}/{total}")
 
-    with page_fixture(page, ROI_FLOW) as root:
-        query = "?cost=1000&oneOff=25000"
-        with bs.local_server(root) as server:
-            for name, size in VIEWPORTS.items():
-                label = f"{page} flow http {name}"
-                url = f"http://127.0.0.1:{server.server_port}/{page}{query}"
-                bs.probe_http(url)
-                n = check_flow(bs.run_browser(browser, url, label, window_size=size), label)
-                lines.append(f"{label}: {n} assertions")
-        label = f"{page} flow file://"
-        n = check_flow(bs.run_browser(browser, (root / page).resolve().as_uri() + query, label), label)
-        lines.append(f"{label}: {n} assertions")
+    for tag, flow_text, head in [("flow", flow, "")] + list(head_flows):
+        with page_fixture(page, flow_text, head) as root:
+            with bs.local_server(root) as server:
+                for name, size in VIEWPORTS.items():
+                    label = f"{page} {tag} http {name}"
+                    url = f"http://127.0.0.1:{server.server_port}/{page}{query if tag == 'flow' else ''}"
+                    bs.probe_http(url)
+                    n = check_flow(bs.run_browser(browser, url, label, window_size=size), label)
+                    lines.append(f"{label}: {n} assertions")
+            label = f"{page} {tag} file://"
+            n = check_flow(bs.run_browser(browser, (root / page).resolve().as_uri() + (query if tag == 'flow' else ''), label), label)
+            lines.append(f"{label}: {n} assertions")
+
+
+def run() -> list[str]:
+    browser = bs.find_browser()
+    lines: list[str] = []
+    run_page(browser, "roi.html", "roi", ROI_FLOW, "?cost=1000&oneOff=25000", lines)
+    run_page(browser, "seats.html", "seats", SEATS_FLOW, "", lines, head_flows=[("stale-state", SEATS_PLANT_FLOW, SEATS_PLANT_HEAD)])
     return lines
 
 

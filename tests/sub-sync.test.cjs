@@ -74,7 +74,7 @@ function pageStrings(file) {
   assert.equal(captured.length, 1, file + ' registers its strings with SubUI.addStrings before touching the DOM');
   return captured[0];
 }
-['roi.js'].forEach((file) => {
+['roi.js', 'seats.js'].forEach((file) => {
   const strings = pageStrings(file);
   assert.deepEqual(Object.keys(strings.en), Object.keys(strings.pl), file + ': pl and en string keys match');
   Object.entries(strings).forEach(([lang, table]) => Object.entries(table).forEach(([key, value]) => {
@@ -82,6 +82,6 @@ function pageStrings(file) {
     assert.ok(!value.includes('\u2014'), `${file} ${lang}.${key} has no em-dash`);
     assert.ok(!Object.prototype.hasOwnProperty.call(ui.T.pl, key) || ui.T.pl[key] === strings.pl[key], `${file} ${key} does not shadow a shared key`);
   }));
-  assert.ok(ui.T.pl.roiPageTitle, 'after addStrings the page keys are reachable through t()');
+  assert.ok(ui.T.pl[Object.keys(strings.pl)[0]], 'after addStrings the page keys are reachable through t()');
 });
 console.log('sub-sync tests passed');

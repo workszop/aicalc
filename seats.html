@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/png" sizes="256x256" href="assets/favicon.png">
+<title data-t="seatsPageTitle">Subskrypcje vs API vs lokalnie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="sub/sub.css">
+</head>
+<body class="edu" data-page="seats" data-state="loading">
+<header class="edu-header"></header>
+
+<main id="app" data-settings="closed">
+  <button type="button" id="settingsBackdrop" tabindex="-1" data-t-aria="closeSettings" hidden></button>
+  <aside id="settingsPanel" aria-labelledby="settingsTitle">
+    <div class="settings-head">
+      <h2 id="settingsTitle" data-t="settingsTitle"></h2>
+      <button type="button" class="ghost-btn" id="settingsClose" data-t="settingsDone"></button>
+    </div>
+    <div class="settings-body">
+      <section class="settings-group">
+        <h3 class="group-title" data-t="groupTeam"></h3>
+        <div class="field"><label for="f-users" data-t="users"></label><input id="f-users" type="number" data-field="users"></div>
+        <div class="field"><label for="f-workDays" data-t="workDays"></label><input id="f-workDays" type="number" data-field="workDays"></div>
+      </section>
+
+      <section class="settings-group" data-accent="seats">
+        <h3 class="group-title" data-t="groupPlan"></h3>
+        <div class="field"><label for="f-plan" data-t="plan"></label><select id="f-plan" data-field="plan"></select></div>
+        <p class="hint" id="planNote" hidden></p>
+        <div id="customUsdField" hidden>
+        <div class="field"><label for="f-customUsd" data-t="customUsd"></label><input id="f-customUsd" type="number" data-field="customUsd"></div>
+        </div>
+        <p class="hint" id="planChecked"></p>
+      </section>
+
+      <section class="settings-group">
+        <h3 class="group-title" data-t="groupUsage"></h3>
+        <div class="edu-seg" role="group" data-t-aria="presetsLabel" id="presets">
+          <button type="button" data-preset="5" data-t="presetLight"></button>
+          <button type="button" data-preset="15" data-t="presetMid"></button>
+          <button type="button" data-preset="40" data-t="presetHeavy"></button>
+        </div>
+        <div class="field"><label for="f-chatsPerDay" data-t="chatsPerDay"></label><input id="f-chatsPerDay" type="number" data-field="chatsPerDay"></div>
+        <div class="field"><label for="f-inTok" data-t="inTok"></label><input id="f-inTok" type="number" data-field="inTok"></div>
+        <div class="field"><label for="f-outTok" data-t="outTok"></label><input id="f-outTok" type="number" data-field="outTok"></div>
+        <div class="field"><span class="field-label" id="docLangLabel" data-t="docLang"></span>
+          <div class="edu-seg" role="group" aria-labelledby="docLangLabel" data-field="docLang">
+            <button type="button" data-value="pl" data-t="docPl"></button>
+            <button type="button" data-value="en" data-t="docEn"></button>
+          </div>
+        </div>
+      </section>
+
+      <section class="settings-group">
+        <h3 class="group-title" data-t="groupApi"></h3>
+        <div class="field"><label for="f-model" data-t="model"></label><select id="f-model" data-field="model"></select></div>
+        <div class="field"><label for="f-uiOps" data-t="uiOps"></label><input id="f-uiOps" type="number" data-field="uiOps"></div>
+        <p class="hint" data-t="uiOpsHint"></p>
+        <div class="field"><label for="f-fx" data-t="fx"></label><input id="f-fx" type="number" data-field="fx"></div>
+      </section>
+
+      <section class="settings-group">
+        <h3 class="group-title" data-t="groupLocal"></h3>
+        <div class="field"><label for="f-localCapex" data-t="localCapex"></label><input id="f-localCapex" type="number" data-field="localCapex"></div>
+        <div class="field"><label for="f-localAmort" data-t="localAmort"></label><input id="f-localAmort" type="number" data-field="localAmort"></div>
+        <div class="field"><label for="f-localPower" data-t="localPower"></label><input id="f-localPower" type="number" data-field="localPower"></div>
+        <div class="field"><label for="f-kwh" data-t="kwh"></label><input id="f-kwh" type="number" data-field="kwh"></div>
+        <div class="field"><label for="f-localOps" data-t="localOps"></label><input id="f-localOps" type="number" data-field="localOps"></div>
+        <div class="field"><label for="f-localMaxUsers" data-t="localMaxUsers"></label><input id="f-localMaxUsers" type="number" data-field="localMaxUsers"></div>
+      </section>
+
+      <section class="settings-group" data-accent="roi">
+        <h3 class="group-title" data-t="groupRoi"></h3>
+        <label class="check"><input type="checkbox" data-field="roiOn"><span data-t="roiOn"></span></label>
+        <div class="field"><label for="f-minPerDay" data-t="minPerDay"></label><input id="f-minPerDay" type="number" data-field="minPerDay"></div>
+        <div class="field"><label for="f-adoption" data-t="adoption"></label><input id="f-adoption" type="number" data-field="adoption"></div>
+        <div class="field"><label for="f-hourlyRate" data-t="hourlyRate"></label><input id="f-hourlyRate" type="number" data-field="hourlyRate"></div>
+        <div class="field"><label for="f-setup" data-t="setup"></label><input id="f-setup" type="number" data-field="setup"></div>
+        <div class="field"><label for="f-training" data-t="training"></label><input id="f-training" type="number" data-field="training"></div>
+        <div class="field"><label for="f-ramp" data-t="ramp"></label><input id="f-ramp" type="number" data-field="ramp"></div>
+        <div class="field"><label for="f-horizon" data-t="horizon"></label><input id="f-horizon" type="number" data-field="horizon"></div>
+      </section>
+    </div>
+  </aside>
+
+  <div id="resultsPanel" tabindex="-1">
+    <div class="page-head">
+      <h1 class="app-title" data-t="seatsPageTitle"></h1>
+      <p class="edu-lead" data-t="seatsLead"></p>
+    </div>
+    <p class="invalid-note" data-t="invalidNote"></p>
+    <div data-results>
+      <p class="verdict" id="verdict" aria-live="polite"></p>
+      <div id="seatCards" class="seat-cards"></div>
+      <section class="card seat-bars" data-accent="seats" aria-labelledby="barsTitle">
+        <h2 class="chart-title" id="barsTitle" data-t="barsTitle"></h2>
+        <div id="seatBars" role="img" data-t-aria="barsAria"></div>
+      </section>
+    </div>
+    <section id="roiPanel" class="card"></section>
+    <p class="hint" data-t="estimateNote"></p>
+    <details class="panel" id="checksPanel" hidden></details>
+    <footer class="shortcuts" data-t="shortcuts"></footer>
+    <div class="sr-only" aria-live="polite" id="live"></div>
+  </div>
+</main>
+
+<script src="sub/core.js"></script>
+<script src="sub/ui.js"></script>
+<script src="sub/seats.js"></script>
+</body>
+</html>
