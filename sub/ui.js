@@ -25,15 +25,15 @@ const T = {
     checksTitle: 'Testy kalkulatora', checksResult: 'Wynik: {passed}/{total}.',
     perMonth: '/ mies.',
     // shared and ROI fields
-    users: 'Liczba osób', workDays: 'Dni robocze w roku', fx: 'Kurs USD/PLN', hourlyRate: 'Koszt godziny pracy (PLN)', horizon: 'Horyzont (miesiące)',
-    roiOn: 'Pokaż zwrot z inwestycji', minPerDay: 'Oszczędzone minuty dziennie na osobę', adoption: 'Odsetek osób, które korzystają (%)',
+    users: 'Liczba osób', workDays: 'Dni robocze w roku', fx: 'Kurs USD/PLN', horizon: 'Horyzont (miesiące)',
+    roiOn: 'Pokaż zwrot z inwestycji', benefitMonthly: 'Korzyść miesięcznie',
+    benefitHelp: 'Szacowana miesięczna korzyść w PLN, np. oszczędności na innych kosztach lub dodatkowy przychód.',
     ramp: 'Rozruch (miesiące do pełnego efektu)', setup: 'Wdrożenie (PLN, jednorazowo)', training: 'Szkolenia (PLN, jednorazowo)',
     // ROI panel
     roiTitle: 'Zwrot z inwestycji', tileBenefit: 'Korzyść miesięcznie', tileCost: 'Koszt miesięcznie', tileNet: 'Netto miesięcznie przy pełnym efekcie', tilePayback: 'Zwrot',
     paybackIn: 'Inwestycja zwraca się w {month}. miesiącu.', paybackShort: '{month}. miesiąc', paybackNone: 'Brak zwrotu w horyzoncie {horizon} mies.', paybackNoneShort: 'brak',
     roiSentence: 'W horyzoncie {horizon} mies. zwrot z inwestycji wynosi {pct}: korzyść {benefit} wobec kosztów {cost} (z nakładami jednorazowymi).',
     roiUndefined: 'Zwrotu z inwestycji nie da się policzyć, bo koszty i nakłady wynoszą zero.',
-    roiCaveat: 'Zaoszczędzony czas to wartość, nie gotówka – zamienia się w pieniądze dopiero, gdy zostanie wykorzystany na inną pracę.',
     roiOff: 'Panel zwrotu z inwestycji jest wyłączony.',
     chartTitle: 'Skumulowany wynik netto', chartSub: 'Start od nakładów jednorazowych, potem co miesiąc korzyść minus koszt.',
     axisMonth: 'Miesiąc', axisNet: 'PLN netto, narastająco', chartPayback: 'zwrot', chartPoint: 'Miesiąc {month}: {value}',
@@ -49,14 +49,14 @@ const T = {
     errNumber: 'Enter a number.', errInteger: 'Enter a whole number.', errRange: 'Allowed range: {min}–{max}.', errEnum: 'Choose one of the options.',
     checksTitle: 'Calculator checks', checksResult: 'Result: {passed}/{total}.',
     perMonth: '/ month',
-    users: 'People', workDays: 'Working days per year', fx: 'USD/PLN rate', hourlyRate: 'Cost of an hour of work (PLN)', horizon: 'Horizon (months)',
-    roiOn: 'Show return on investment', minPerDay: 'Minutes saved per person per day', adoption: 'Share of people who use it (%)',
+    users: 'People', workDays: 'Working days per year', fx: 'USD/PLN rate', horizon: 'Horizon (months)',
+    roiOn: 'Show return on investment', benefitMonthly: 'Monthly benefit',
+    benefitHelp: 'Estimated monthly benefit in PLN, e.g. savings on other costs or extra revenue.',
     ramp: 'Ramp-up (months to full effect)', setup: 'Setup (PLN, one-off)', training: 'Training (PLN, one-off)',
     roiTitle: 'Return on investment', tileBenefit: 'Benefit per month', tileCost: 'Cost per month', tileNet: 'Net per month at full effect', tilePayback: 'Payback',
     paybackIn: 'The investment pays back in month {month}.', paybackShort: 'month {month}', paybackNone: 'No payback within {horizon} months', paybackNoneShort: 'none',
     roiSentence: 'Over {horizon} months the return on investment is {pct}: {benefit} of benefit against {cost} of cost (one-off outlays included).',
     roiUndefined: 'The return on investment cannot be computed because costs and outlays are zero.',
-    roiCaveat: 'Time saved is value, not cash – it becomes money only when it is used for other work.',
     roiOff: 'The return on investment panel is off.',
     chartTitle: 'Cumulative net result', chartSub: 'Starts at the one-off outlays, then adds benefit minus cost every month.',
     axisMonth: 'Month', axisNet: 'Net PLN, cumulative', chartPayback: 'payback', chartPoint: 'Month {month}: {value}',
@@ -358,15 +358,13 @@ function buildRoiPanel(node) {
   parts.svg = svgEl('svg', { 'data-roi': 'chart', role: 'img' });
   wrap.append(parts.svg);
   fig.append(cap, wrap);
-  parts.caveat = el('p', { class: 'hint', 'data-roi': 'caveat' });
-  body.append(tiles, parts.payback, parts.sentence, fig, parts.caveat);
+  body.append(tiles, parts.payback, parts.sentence, fig);
   const off = el('p', { class: 'hint roi-off', 'data-roi': 'off', 'data-t': 'roiOff' });
   node.replaceChildren(head, body, off);
   node.roiParts = parts;
   return parts;
 }
-// opts.caveat (default true): show the "time saved is value, not cash" note; pages whose benefit is not time turn it off.
-function renderRoiPanel(node, roi, state, opts = {}) {
+function renderRoiPanel(node, roi, state) {
   const parts = node.roiParts || buildRoiPanel(node);
   const on = state.roiOn !== false && Boolean(roi);
   const horizon = roi ? roi.horizon : state.horizon;
@@ -392,8 +390,6 @@ function renderRoiPanel(node, roi, state, opts = {}) {
   if (parts.payback.textContent !== paybackText) parts.payback.textContent = paybackText;
   parts.sentence.textContent = roi.roiPct === null ? t('roiUndefined')
     : t('roiSentence', { horizon, pct: fmtNum(roi.roiPct, 1) + '%', benefit: money(roi.sumBenefit), cost: money(roi.sumCost + roi.oneOff) });
-  parts.caveat.hidden = opts.caveat === false;
-  parts.caveat.textContent = t('roiCaveat');
   parts.svg.setAttribute('aria-label', t('chartAria', { horizon, payback: paybackText }));
   renderLineChart(parts.svg, roi.series, { paybackMonth: pay });
 }

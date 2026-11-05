@@ -333,11 +333,3 @@ details.panel[open] { padding-bottom: 16px; }
 .agent-big { font-family: var(--font-display); font-weight: 600; font-size: var(--stat-size); color: var(--ink); overflow-wrap: anywhere; }
 .agent-cap { color: var(--ink-2); font-size: var(--body-sm); font-weight: 600; }
 .agent-warn { color: var(--red-600); font-weight: 600; font-size: var(--body-sm); }
-.agent-bars { margin-bottom: var(--sp-5); }
-.agent-bar-row { display: grid; grid-template-columns: minmax(110px, 190px) minmax(0, 1fr) minmax(90px, auto); align-items: center; gap: var(--sp-3); margin-bottom: var(--sp-2); font-size: var(--body-sm); }
-.agent-bar-label { color: var(--ink-2); font-weight: 600; }
-.agent-bar-track { display: block; height: 18px; background: var(--paper-2); border-radius: var(--r-sm); overflow: hidden; }
-.agent-bar-fill { display: block; height: 100%; background: var(--paper-3); }
-.agent-bar-row[data-bar="agent"] .agent-bar-fill { background: var(--green); }
-.agent-bar-value { font-family: var(--font-mono); font-weight: 500; text-align: right; color: var(--ink); }
-@media (max-width: 768px) { .agent-bar-row { grid-template-columns: minmax(0, 1fr) minmax(90px, auto); } .agent-bar-track { grid-column: 1 / -1; grid-row: 2; } .agent-bar-label { grid-column: 1; } .agent-bar-value { grid-column: 2; grid-row: 1; } }

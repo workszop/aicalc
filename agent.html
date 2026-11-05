@@ -30,7 +30,6 @@
         </div>
         <p class="hint" data-t="presetsHint"></p>
         <div class="field"><label for="f-runs" data-t="runs"></label><input id="f-runs" type="number" data-field="runs"></div>
-        <div class="field"><label for="f-manualMin" data-t="manualMin"></label><input id="f-manualMin" type="number" data-field="manualMin"></div>
       </section>
 
       <section class="settings-group">
@@ -55,16 +54,11 @@
         <div class="field"><label for="f-fx" data-t="fx"></label><input id="f-fx" type="number" data-field="fx"></div>
       </section>
 
-      <section class="settings-group">
-        <h3 class="group-title" data-t="groupHuman"></h3>
-        <div class="field"><label for="f-reviewPct" data-t="reviewPct"></label><input id="f-reviewPct" type="number" data-field="reviewPct"></div>
-        <div class="field"><label for="f-reviewMin" data-t="reviewMin"></label><input id="f-reviewMin" type="number" data-field="reviewMin"></div>
-        <div class="field"><label for="f-hourlyRate" data-t="hourlyRate"></label><input id="f-hourlyRate" type="number" data-field="hourlyRate"></div>
-      </section>
-
       <section class="settings-group" data-accent="roi">
         <h3 class="group-title" data-t="groupRoi"></h3>
         <label class="check"><input type="checkbox" data-field="roiOn"><span data-t="roiOn"></span></label>
+        <div class="field"><label for="f-benefitMonthly" data-t="benefitMonthly"></label><input id="f-benefitMonthly" type="number" data-field="benefitMonthly" aria-describedby="benefitHelp"></div>
+        <p class="hint" id="benefitHelp" data-t="benefitHelp"></p>
         <div class="field"><label for="f-setup" data-t="setup"></label><input id="f-setup" type="number" data-field="setup"></div>
         <div class="field"><label for="f-training" data-t="training"></label><input id="f-training" type="number" data-field="training"></div>
         <div class="field"><label for="f-ramp" data-t="ramp"></label><input id="f-ramp" type="number" data-field="ramp"></div>
@@ -81,10 +75,6 @@
     <p class="invalid-note" data-t="invalidNote"></p>
     <div data-results>
       <article id="agentCard" class="card agent-card" data-accent="agent" aria-live="polite"></article>
-      <section class="card agent-bars" data-accent="agent" aria-labelledby="barsTitle">
-        <h2 class="chart-title" id="barsTitle" data-t="agentBarsTitle"></h2>
-        <div id="agentBars" role="img" data-t-aria="agentBarsAria"></div>
-      </section>
     </div>
     <section id="roiPanel" class="card"></section>
     <p class="hint" data-t="estimateNote"></p>

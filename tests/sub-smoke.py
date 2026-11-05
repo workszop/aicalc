@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Chrome smoke test for the sub pages (roi.html, seats.html; agent joins later).
+"""Chrome smoke test for the sub pages (roi.html, seats.html, agent.html).
 
 Reuses the server and headless-Chrome helpers from tests/browser-smoke.py
 (loaded with importlib because of the hyphen in its file name).  Interactive
@@ -66,9 +66,14 @@ ROI_FLOW = r"""
     expect($('[data-field="costMonthly"]').value === '1000', 'cost prefill missing');
     expect($('[data-field="setup"]').value === '25000', 'oneOff prefill missing');
     expect($('[data-field="training"]').value === '0', 'training not zeroed by oneOff');
-    // amount mode, 5000, ramp 3, horizon 12 -> payback in month 8
-    click('[data-field="benefitMode"] [data-value="amount"]');
-    expect($('[data-field="benefitMode"] [data-value="amount"]').getAttribute('aria-pressed') === 'true', 'amount mode not pressed');
+    // the benefit is an entered monthly amount only: no time mode, no time fields, no caveat
+    expect(!$('[data-field="benefitMode"]') && !$('#timeFields') && !$('#amountFields'), 'time / amount mode controls still present');
+    ['users', 'workDays'].forEach((id) => expect(!$(`[data-field="${id}"]`), `time-mode field ${id} still present`));
+    expect($('[data-field="benefitMonthly"]').value === '5000', `benefitMonthly default ${$('[data-field="benefitMonthly"]').value}, expected 5000`);
+    expect($('label[for="f-benefitMonthly"]').textContent === 'Korzyść miesięcznie', `benefit label ${$('label[for="f-benefitMonthly"]').textContent}`);
+    expect(/oszczędności na innych kosztach lub dodatkowy przychód/.test($('#settingsPanel').textContent), 'benefit help missing');
+    expect(!panel.querySelector('[data-roi="caveat"]') && !/wartość, nie gotówka/.test(panel.textContent), 'time caveat still in the ROI panel');
+    // 5000, ramp 3, horizon 12 -> payback in month 8
     setField('benefitMonthly', 5000);
     setField('ramp', 3);
     setField('horizon', 12);
@@ -86,34 +91,21 @@ ROI_FLOW = r"""
     expect(panel.dataset.seriesLength === '13', 'invalid input reached the results');
     setField('horizon', 12);
     expect(document.body.dataset.state === 'ready', 'state not ready after fixing the field');
-    // the "time is value, not cash" caveat belongs to time mode only
-    const caveatNode = panel.querySelector('[data-roi="caveat"]');
-    expect(caveatNode.hidden, 'time caveat visible in amount mode');
     // language switch: text changes, numbers do not
     const before = { roi: panel.dataset.roiPct, pay: panel.dataset.paybackMonth };
     const axisBefore = panel.querySelector('svg [data-axis="x"]').textContent;
     click('[data-lang="en"]');
     expect(document.documentElement.lang === 'en', 'html lang not en');
-    expect(caveatNode.hidden, 'time caveat visible in amount mode after the language switch');
+    expect($('label[for="f-benefitMonthly"]').textContent === 'Monthly benefit', 'EN benefit label');
+    expect(/savings on other costs or extra revenue/.test($('#settingsPanel').textContent), 'EN benefit help missing');
     expect(panel.querySelector('svg [data-axis="x"]').textContent !== axisBefore, 'chart axis label did not switch');
     expect(panel.dataset.roiPct === before.roi && panel.dataset.paybackMonth === before.pay, 'numbers changed on language switch');
     expect($('nav a[aria-current="page"]').getAttribute('href') === 'roi.html', 'nav current link wrong');
-    // an invalid field in the inactive benefit mode must not block the other mode
-    click('[data-field="benefitMode"] [data-value="time"]');
-    expect(!caveatNode.hidden && /Time saved/.test(caveatNode.textContent), 'time caveat missing or not EN in time mode');
-    setField('adoption', 500);
-    expect(document.body.dataset.state === 'invalid', 'adoption 500 did not set invalid');
-    click('[data-field="benefitMode"] [data-value="amount"]');
-    expect(document.body.dataset.state === 'ready', 'invalid hidden time field still blocks amount mode');
-    expect(!$('#amountFields').hidden && $('#timeFields').hidden, 'amount mode was not rendered');
-    expect(panel.dataset.benefitMonthly === '5000', `amount mode benefit ${panel.dataset.benefitMonthly}, expected 5000`);
-    click('[data-field="benefitMode"] [data-value="time"]');
-    expect(document.body.dataset.state === 'invalid', 'back in time mode the invalid field must block again');
-    expect(!$('#timeFields').hidden, 'time mode was not rendered');
-    setField('adoption', 60);
-    expect(document.body.dataset.state === 'ready', 'fixing adoption did not restore ready');
-    click('[data-field="benefitMode"] [data-value="amount"]');
-    expect(panel.dataset.paybackMonth === before.pay, 'payback changed after the mode round trip');
+    // an invalid benefit blocks the results until it is fixed
+    setField('benefitMonthly', -1);
+    expect(document.body.dataset.state === 'invalid' && panel.dataset.benefitMonthly === '5000', 'negative benefit must be invalid and not reach the panel');
+    setField('benefitMonthly', 5000);
+    expect(document.body.dataset.state === 'ready' && panel.dataset.paybackMonth === before.pay, 'fixing the benefit did not restore the result');
     // data-roi-pct goes through dataNum: an ROI that rounds to zero prints "0", never "-0.0"
     setField('benefitMonthly', 1999.9);
     setField('costMonthly', 0); setField('setup', 72000); setField('training', 0); setField('ramp', 0); setField('horizon', 36);
@@ -133,8 +125,9 @@ ROI_FLOW = r"""
     }
     const vp = viewport();
     // Alt+R reset
+    setField('benefitMonthly', 1234);
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'r', code: 'KeyR', altKey: true, bubbles: true }));
-    expect($('[data-field="benefitMode"] [data-value="time"]').getAttribute('aria-pressed') === 'true', 'Alt+R did not reset benefit mode');
+    expect($('[data-field="benefitMonthly"]').value === '5000' && panel.dataset.benefitMonthly === '5000', 'Alt+R did not reset the benefit');
     expect($('[data-field="horizon"]').value === '36', 'Alt+R did not reset horizon');
     finish({ ok: true, assertions: assertions.n, viewport: vp });
   } catch (error) {
@@ -187,7 +180,13 @@ SEATS_FLOW = r"""
     const defaults = core.defaultsOf(...schemas);
     expect(roi.dataset.on === 'true', 'roi panel not on');
     expect(near(roi.dataset.costMonthly, num(card('api').dataset.monthly)), 'roi cost is not the winner monthly');
-    expect(near(roi.dataset.benefitMonthly, core.timeBenefit(defaults)), 'roi benefit is not timeBenefit');
+    expect(roi.dataset.benefitMonthly === String(defaults.benefitMonthly), `roi benefit ${roi.dataset.benefitMonthly}, expected the entered ${defaults.benefitMonthly}`);
+    ['minPerDay', 'adoption', 'hourlyRate'].forEach((id) => expect(!$(`[data-field="${id}"]`), `seats still has the ${id} field`));
+    expect($('[data-accent="roi"] [data-field="benefitMonthly"]'), 'seats ROI settings lack benefitMonthly');
+    setField('benefitMonthly', 12000);
+    const seatRoiWant = core.computeRoi({ costMonthly: Number(card('api').dataset.monthly), benefitMonthly: 12000, oneOff: defaults.setup + defaults.training, ramp: defaults.ramp, horizon: defaults.horizon });
+    expect(roi.dataset.benefitMonthly === '12000' && roi.dataset.paybackMonth === String(seatRoiWant.paybackMonth ?? ''), `seats roi after benefit 12000: ${roi.dataset.benefitMonthly} / ${roi.dataset.paybackMonth}`);
+    setField('benefitMonthly', defaults.benefitMonthly);
     // plan source line and note
     const checked = $('#planChecked');
     expect(checked.querySelector('a[target="_blank"][rel~="noopener"]'), 'plan source link missing');
@@ -274,27 +273,40 @@ AGENT_FLOW = r"""
     expect(document.body.dataset.page === 'agent', 'body[data-page] is not agent');
     const leadNode = $('.page-head .edu-lead');
     expect(leadNode && !/\bN\b/.test(leadNode.textContent) && /powtarza się/.test(leadNode.textContent), `agent lead still has a literal N: ${leadNode && leadNode.textContent}`);
+    expect(!/ręczn|człowiek|ludzi|godzin/i.test(leadNode.textContent), `agent lead mentions manual work or people's time: ${leadNode.textContent}`);
     expect(document.body.dataset.state === 'ready', 'body[data-state] is not ready on load');
-    expect(card && near(card.dataset.monthly, 1653.56), `monthly ${card && card.dataset.monthly}`);
-    expect(card.dataset.perRun === '0.6768', `per run ${card.dataset.perRun}`);
+    expect(card && near(card.dataset.monthly, 463.02), `monthly ${card && card.dataset.monthly}`);
+    expect(card.dataset.perRun === '0.0815', `per run ${card.dataset.perRun}`);
     expect(card.dataset.eligible === 'true', 'default model not eligible');
-    expect(roi.dataset.paybackMonth === '2', `payback month ${roi.dataset.paybackMonth}`);
     expect(roi.dataset.on === 'true', 'roi panel not on');
     const defaults = core.defaultsOf(core.SHARED_FIELDS, core.AGENT_FIELDS, core.ROI_FIELDS);
     const want = core.computeAgentResults(defaults, core.MODELS);
-    expect(near(card.dataset.manualMonthly, want.manualMonthly) && near(roi.dataset.benefitMonthly, want.manualMonthly), 'manual / benefit differ from core');
+    const roiWant = core.computeRoi({ costMonthly: want.monthly, benefitMonthly: defaults.benefitMonthly, oneOff: defaults.setup + defaults.training, ramp: defaults.ramp, horizon: defaults.horizon });
+    expect(roi.dataset.paybackMonth === String(roiWant.paybackMonth), `payback month ${roi.dataset.paybackMonth}, expected ${roiWant.paybackMonth}`);
     expect(near(roi.dataset.costMonthly, want.monthly), 'roi cost is not the agent monthly');
-    expect(near(card.dataset.savedHours, want.savedHours), 'saved hours differ from core');
-    expect($('#agentBars [data-bar="agent"]') && $('#agentBars [data-bar="manual"]'), 'bars missing');
+    expect(roi.dataset.benefitMonthly === String(defaults.benefitMonthly), `roi benefit ${roi.dataset.benefitMonthly}, expected the entered ${defaults.benefitMonthly}`);
+    // no manual-work comparison, no human review, no hourly rate
+    ['manualMonthly', 'savedHours'].forEach((k) => expect(!(k in card.dataset), `card still publishes ${k}`));
+    ['manualMin', 'reviewPct', 'reviewMin', 'hourlyRate'].forEach((id) => expect(!$(`[data-field="${id}"]`), `agent still has the ${id} field`));
+    expect(!$('#agentBars') && !/Ręcznie|Kontrola człowieka|godzin/i.test($('#app').textContent), 'manual / review copy or bars still on the page');
+    expect(/LLM .* · narzędzia .* · platforma/.test(card.textContent), `breakdown is not LLM · narzędzia · platforma: ${card.textContent}`);
+    expect($('[data-accent="roi"] [data-field="benefitMonthly"]'), 'agent ROI settings lack benefitMonthly');
+    setField('benefitMonthly', 800);
+    expect(roi.dataset.benefitMonthly === '800', 'benefit edit did not reach the ROI panel');
+    setField('benefitMonthly', defaults.benefitMonthly);
     expect(/Obsługa maili|Raport|Faktury/.test($('#presets').textContent) && /przykład/.test($("#settingsPanel").textContent), 'presets or example label missing');
     // preset
     click('[data-preset="report"]');
-    expect($('[data-field="runs"]').value === '20' && $('[data-field="steps"]').value === '12' && $('[data-field="manualMin"]').value === '90', 'report preset values wrong');
+    expect($('[data-field="runs"]').value === '20' && $('[data-field="steps"]').value === '12', 'report preset values wrong');
     expect($('[data-preset="report"]').getAttribute('aria-pressed') === 'true' && $('[data-preset="mail"]').getAttribute('aria-pressed') === 'false', 'preset aria-pressed wrong');
     setField('runs', 21);
     expect($('[data-preset="report"]').getAttribute('aria-pressed') === 'false', 'preset stays pressed after edit');
     click('[data-preset="mail"]');
-    const mailWant = core.computeAgentResults(Object.assign({}, defaults, { runs: 3000, steps: 4, manualMin: 6 }), core.MODELS);
+    const mailWant = core.computeAgentResults(Object.assign({}, defaults, { runs: 3000, steps: 4 }), core.MODELS);
+    click('[data-preset="invoice"]');
+    expect($('[data-field="runs"]').value === '800' && $('[data-field="steps"]').value === '5' && $('[data-preset="invoice"]').getAttribute('aria-pressed') === 'true', 'invoice preset values wrong');
+    click('[data-preset="mail"]');
+    expect($('[data-field="runs"]').value === '3000' && $('[data-field="steps"]').value === '4', 'mail preset values wrong');
     expect(card.dataset.perRun === SubUI.dataNum(mailWant.perRun, 4) && near(card.dataset.monthly, mailWant.monthly), `mail preset per run ${card.dataset.perRun}, expected ${SubUI.dataNum(mailWant.perRun, 4)}`);
     // ineligible model
     setField('inTok', 2000000);
@@ -325,7 +337,7 @@ AGENT_FLOW = r"""
     const monthly = card.dataset.monthly;
     const before = card.textContent;
     click('[data-lang="en"]');
-    expect(card.textContent !== before && /Manual/.test(card.textContent) && card.dataset.monthly === monthly, 'EN switch changed numbers or did not translate');
+    expect(card.textContent !== before && /LLM .* · tools .* · platform/.test(card.textContent) && card.dataset.monthly === monthly, 'EN switch changed numbers or did not translate');
     expect($('nav a[aria-current="page"]').getAttribute('href') === 'agent.html', 'nav current link wrong');
     click('[data-lang="pl"]');
     if (window.matchMedia('(max-width: 768px)').matches) {
@@ -337,7 +349,7 @@ AGENT_FLOW = r"""
     const vp = viewport();
     setField('steps', 7);
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'r', code: 'KeyR', altKey: true, bubbles: true }));
-    expect($('[data-field="steps"]').value === '6' && card.dataset.perRun === '0.6768', 'Alt+R did not reset');
+    expect($('[data-field="steps"]').value === '6' && card.dataset.perRun === '0.0815', 'Alt+R did not reset');
     finish({ ok: true, assertions: assertions.n, viewport: vp });
   } catch (error) {
     finish({ ok: false, error: String(error && error.message || error), assertions: assertions.n });
@@ -357,6 +369,48 @@ SEATS_PLANT_FLOW = r"""
     expect($('[data-field="users"]').value === '20', 'stale users did not fall back to the default');
     expect($('[data-field="model"]').value === SubCore.defaultsOf(SubCore.SEAT_FIELDS).model, 'stale model did not fall back');
     expect($('#seatCards [data-win="true"]').dataset.option === 'api', 'planted state broke the winner');
+    finish({ ok: true, assertions: assertions.n, viewport: viewport() });
+  } catch (error) {
+    finish({ ok: false, error: String(error && error.message || error), assertions: assertions.n });
+  }
+})();
+</script>
+"""
+
+# An agent save from before the labour-cost removal: the removed keys are ignored, the rest is kept.
+AGENT_PLANT_HEAD = """<script>try { localStorage.setItem('edulab-aicalc-agent-v1', '{"hourlyRate":120,"reviewPct":50,"reviewMin":5,"manualMin":30,"runs":500,"roiOn":true}'); } catch (e) {}</script>"""
+AGENT_PLANT_FLOW = r"""
+<script>
+(() => {
+""" + PRELUDE + r"""
+  try {
+    expect(document.body.dataset.page === 'agent' && document.body.dataset.state === 'ready', 'old agent save did not render ready');
+    expect($('[data-field="runs"]').value === '500', 'old agent save lost runs');
+    const s = SubCore.loadState([SubCore.SHARED_FIELDS, SubCore.AGENT_FIELDS, SubCore.ROI_FIELDS], { runs: 500 }, SubCore.MODELS);
+    const want = SubCore.computeAgentResults(s, SubCore.MODELS);
+    expect($('#agentCard').dataset.monthly === SubUI.dataNum(want.monthly), `old agent save monthly ${$('#agentCard').dataset.monthly}, expected ${SubUI.dataNum(want.monthly)}`);
+    expect($('#roiPanel').dataset.benefitMonthly === '5000', 'old agent save: benefit is not the default amount');
+    setField('runs', 501);
+    const saved = JSON.parse(localStorage.getItem('edulab-aicalc-agent-v1'));
+    expect(saved.runs === 501 && !('hourlyRate' in saved) && !('manualMin' in saved) && !('reviewPct' in saved), 'the next save still carries removed keys');
+    finish({ ok: true, assertions: assertions.n, viewport: viewport() });
+  } catch (error) {
+    finish({ ok: false, error: String(error && error.message || error), assertions: assertions.n });
+  }
+})();
+</script>
+"""
+
+# A roi.html save from the time / amount mode era.
+ROI_PLANT_HEAD = """<script>try { localStorage.setItem('edulab-aicalc-roi-v1', '{"benefitMode":"time","minPerDay":30,"adoption":80,"hourlyRate":120,"benefitMonthly":9000,"costMonthly":700}'); } catch (e) {}</script>"""
+ROI_PLANT_FLOW = r"""
+<script>
+(() => {
+""" + PRELUDE + r"""
+  try {
+    expect(document.body.dataset.page === 'roi' && document.body.dataset.state === 'ready', 'old roi save did not render ready');
+    const panel = $('#roiPanel');
+    expect(panel.dataset.benefitMonthly === '9000' && panel.dataset.costMonthly === '700', `old roi save: ${panel.dataset.benefitMonthly} / ${panel.dataset.costMonthly}`);
     finish({ ok: true, assertions: assertions.n, viewport: viewport() });
   } catch (error) {
     finish({ ok: false, error: String(error && error.message || error), assertions: assertions.n });
@@ -491,9 +545,9 @@ def run_page(browser, page: str, key: str, flow: str, query: str, lines: list[st
 def run() -> list[str]:
     browser = bs.find_browser()
     lines: list[str] = []
-    run_page(browser, "roi.html", "roi", ROI_FLOW, "?cost=1000&oneOff=25000", lines)
+    run_page(browser, "roi.html", "roi", ROI_FLOW, "?cost=1000&oneOff=25000", lines, head_flows=[("old-save", ROI_PLANT_FLOW, ROI_PLANT_HEAD)])
     run_page(browser, "seats.html", "seats", SEATS_FLOW, "", lines, head_flows=[("stale-state", SEATS_PLANT_FLOW, SEATS_PLANT_HEAD)])
-    run_page(browser, "agent.html", "agent", AGENT_FLOW, "", lines)
+    run_page(browser, "agent.html", "agent", AGENT_FLOW, "", lines, head_flows=[("old-save", AGENT_PLANT_FLOW, AGENT_PLANT_HEAD)])
     return lines
 
 

@@ -37,7 +37,6 @@ const SHARED_FIELDS = {
   users:      num(20, 1, 20000, true),
   workDays:   num(250, 1, 365, true),
   fx:         num(3.73, 0.1, 100, false),
-  hourlyRate: num(89.29, 0, 10000, false),
   horizon:    num(36, 6, 120, true),
   docLang:    { def: 'pl', enum: ['pl', 'en'] },
 };
@@ -65,22 +64,17 @@ const AGENT_FIELDS = {
   retryPct:  num(10, 0, 500, false),
   toolPln:   num(0.05, 0, 10000, false),
   platform:  num(300, 0, 1e8, false),
-  reviewPct: num(20, 0, 100, false),
-  reviewMin: num(2, 0, 600, false),
-  manualMin: num(12, 0, 6000, false),
 };
+// The ROI benefit is a monthly amount the user enters; nothing here prices a person's working time.
 const ROI_FIELDS = {
-  roiOn:     { def: true, type: 'boolean' },
-  minPerDay: num(20, 0, 480, true),
-  adoption:  num(60, 0, 100, false),
-  ramp:      num(3, 0, 24, true),
-  setup:     num(20000, 0, 1e8, false),
-  training:  num(5000, 0, 1e8, false),
+  roiOn:          { def: true, type: 'boolean' },
+  benefitMonthly: num(5000, 0, 1e8, false),
+  ramp:           num(3, 0, 24, true),
+  setup:          num(20000, 0, 1e8, false),
+  training:       num(5000, 0, 1e8, false),
 };
 const ROI_PAGE_FIELDS = {
-  costMonthly:    num(1000, 0, 1e8, false),
-  benefitMode:    { def: 'time', enum: ['time', 'amount'] },
-  benefitMonthly: num(5000, 0, 1e8, false),
+  costMonthly: num(1000, 0, 1e8, false),
 };
 
 // ─── Helpers ───
@@ -194,19 +188,12 @@ function computeAgentResults(s, models) {
   const perStep = step.perCall;
   const llmPerRun = perStep * s.steps * (1 + s.retryPct / 100);
   const toolsPerRun = s.toolPln;
-  const reviewPerRun = s.reviewPct / 100 * s.reviewMin * s.hourlyRate / 60;
-  const perRun = llmPerRun + toolsPerRun + reviewPerRun;
+  const perRun = llmPerRun + toolsPerRun;
   return {
-    model, perStep, llmPerRun, toolsPerRun, reviewPerRun, perRun,
+    model, perStep, llmPerRun, toolsPerRun, perRun,
     monthly: s.runs * perRun + s.platform,
-    manualMonthly: s.runs * s.manualMin * s.hourlyRate / 60,
-    savedHours: Math.max(0, s.runs * (s.manualMin - s.reviewPct / 100 * s.reviewMin) / 60),
     eligible: step.eligible, reason: step.reason,
   };
-}
-
-function timeBenefit(s) {
-  return s.users * s.adoption / 100 * s.minPerDay * s.workDays / 12 * s.hourlyRate / 60;
 }
 
 function roiSeries(costMonthly, benefitMonthly, oneOff, ramp, horizon) {
@@ -256,7 +243,7 @@ globalThis.SubCore = {
   SHARED_FIELDS, SEAT_FIELDS, AGENT_FIELDS, ROI_FIELDS, ROI_PAGE_FIELDS,
   defaultsOf, validateValue, loadState, familyFactor, modelRates, chatCost,
   seatPlanOf, computeSeatResults, computeAgentResults,
-  timeBenefit, roiSeries, computeRoi, parseRoiQuery,
+  roiSeries, computeRoi, parseRoiQuery,
 };
 if (typeof module !== 'undefined') module.exports = globalThis.SubCore;
 })();

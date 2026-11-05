@@ -122,24 +122,24 @@ const agentBase = () => ({ ...C.defaultsOf(SHARED_FIELDS, AGENT_FIELDS, ROI_FIEL
   assert.ok(near(r.perStep, 0.0047744, 1e-7));
   assert.ok(near(r.llmPerRun, 0.03151104, 1e-7));
   assert.equal(r.toolsPerRun, 0.05);
-  assert.ok(near(r.reviewPerRun, 0.595267, 1e-6));
-  assert.ok(near(r.perRun, 0.676778, 1e-6));
-  assert.ok(near(r.monthly, 1653.56, 0.01));
-  assert.ok(near(r.manualMonthly, 35716, 0.01));
-  assert.ok(near(r.savedHours, 386.67, 0.01));
+  assert.ok(near(r.perRun, 0.08151104, 1e-7), 'perRun = LLM + tools');
+  assert.equal(r.perRun, r.llmPerRun + r.toolsPerRun);
+  assert.ok(near(r.monthly, 463.02, 0.01), 'monthly = runs x perRun + platform');
+  assert.equal(r.monthly, 2000 * r.perRun + 300);
+  assert.deepEqual(Object.keys(r), ['model', 'perStep', 'llmPerRun', 'toolsPerRun', 'perRun', 'monthly', 'eligible', 'reason'], 'no labour-cost results');
   assert.equal(r.eligible, true);
   assert.equal(r.reason, null);
   noNaN(r);
   const z = C.computeAgentResults({ ...agentBase(), runs: 0 }, MODELS);
   assert.equal(z.monthly, 300);
-  assert.equal(z.manualMonthly, 0);
   noNaN(z);
   const big = C.computeAgentResults({ ...agentBase(), inTok: 2000000 }, MODELS);
   assert.equal(big.eligible, false);
   assert.equal(big.reason, 'ctxOver');
-  const nm = C.computeAgentResults({ ...agentBase(), manualMin: 0 }, MODELS);
-  assert.equal(nm.savedHours, 0);
-  noNaN(nm);
+  // the removed hourly rate, review and manual-time inputs no longer change anything
+  const legacy = C.computeAgentResults({ ...agentBase(), hourlyRate: 500, reviewPct: 100, reviewMin: 60, manualMin: 600 }, MODELS);
+  assert.equal(legacy.monthly, r.monthly);
+  assert.equal(legacy.perRun, r.perRun);
   assert.equal(C.computeAgentResults({ ...agentBase(), model: 'missing' }, MODELS).model, MODELS[0]);
 }
 
@@ -171,9 +171,9 @@ const agentBase = () => ({ ...C.defaultsOf(SHARED_FIELDS, AGENT_FIELDS, ROI_FIEL
   assert.equal(zero.paybackMonth, null);
   assert.ok(zero.series.every((v) => Number.isFinite(v)));
   noNaN(zero);
-  assert.ok(near(C.timeBenefit(seatBase()), 7440.83, 0.01));
-  const ag = C.computeRoi({ costMonthly: 1653.56, benefitMonthly: 35716, oneOff: 25000, ramp: 3, horizon: 36 });
-  assert.equal(ag.paybackMonth, 2);
+  assert.equal(C.timeBenefit, undefined, 'timeBenefit is removed');
+  const ag = C.computeRoi({ costMonthly: 463.02, benefitMonthly: ROI_FIELDS.benefitMonthly.def, oneOff: 25000, ramp: 3, horizon: 36 });
+  assert.equal(ag.paybackMonth, 7);
   assert.deepEqual({ ...C.parseRoiQuery('?cost=abc&users=0') }, {});
   assert.deepEqual({ ...C.parseRoiQuery('?cost=1200&oneOff=30000&users=50') }, { costMonthly: 1200, setup: 30000, training: 0, users: 50 });
   assert.deepEqual({ ...C.parseRoiQuery('?cost=-5') }, {});
@@ -181,21 +181,46 @@ const agentBase = () => ({ ...C.defaultsOf(SHARED_FIELDS, AGENT_FIELDS, ROI_FIEL
   assert.deepEqual({ ...C.parseRoiQuery('') }, {});
 }
 
-// ─── roi.html page fields ───
+// ─── ROI fields: the benefit is an entered monthly amount ───
 {
   const P = C.ROI_PAGE_FIELDS;
-  assert.deepEqual(Object.keys(P), ['costMonthly', 'benefitMode', 'benefitMonthly']);
-  assert.equal(P.benefitMode.def, 'time');
-  assert.deepEqual([...P.benefitMode.enum], ['time', 'amount']);
-  assert.equal(C.validateValue(P.benefitMode, 'cash').error, 'enum');
-  assert.equal(P.benefitMonthly.def, 5000);
-  assert.equal(C.validateValue(P.benefitMonthly, 1234.5).error, null);
-  assert.equal(C.validateValue(P.benefitMonthly, -1).error, 'range');
-  assert.equal(C.validateValue(P.benefitMonthly, 1e8 + 1).error, 'range');
+  assert.deepEqual(Object.keys(P), ['costMonthly']);
+  assert.deepEqual(Object.keys(ROI_FIELDS), ['roiOn', 'benefitMonthly', 'ramp', 'setup', 'training']);
+  const B = ROI_FIELDS.benefitMonthly;
+  assert.equal(B.def, 5000);
+  assert.equal(B.min, 0);
+  assert.equal(B.max, 1e8);
+  assert.ok(!B.integer, 'benefitMonthly accepts fractions');
+  assert.equal(C.validateValue(B, 1234.5).error, null);
+  assert.equal(C.validateValue(B, -1).error, 'range');
+  assert.equal(C.validateValue(B, 1e8 + 1).error, 'range');
   const roiSchemas = [SHARED_FIELDS, ROI_FIELDS, P];
   const restored = C.loadState(roiSchemas, { benefitMode: 'cash', benefitMonthly: 'x', costMonthly: 900 }, MODELS);
-  assert.equal(restored.benefitMode, 'time');
   assert.equal(restored.benefitMonthly, 5000);
   assert.equal(restored.costMonthly, 900);
+  // every page with ROI carries benefitMonthly
+  [[SHARED_FIELDS, SEAT_FIELDS, ROI_FIELDS], [SHARED_FIELDS, AGENT_FIELDS, ROI_FIELDS], roiSchemas]
+    .forEach((schemas) => assert.equal(C.defaultsOf(...schemas).benefitMonthly, 5000));
+}
+
+// ─── Removed labour-cost fields ───
+{
+  const gone = ['hourlyRate', 'reviewPct', 'reviewMin', 'manualMin', 'minPerDay', 'adoption', 'benefitMode'];
+  const all = [SHARED_FIELDS, SEAT_FIELDS, AGENT_FIELDS, ROI_FIELDS, C.ROI_PAGE_FIELDS];
+  gone.forEach((id) => all.forEach((schema) => assert.ok(!Object.prototype.hasOwnProperty.call(schema, id), id + ' is removed from every schema')));
+  // An old save with the removed keys still loads: known keys are kept, removed ones are dropped.
+  const old = { hourlyRate: 120, reviewPct: 50, reviewMin: 5, manualMin: 30, minPerDay: 40, adoption: 80, benefitMode: 'time', runs: 500, benefitMonthly: 7000, horizon: 24 };
+  const agentSchemas = [SHARED_FIELDS, AGENT_FIELDS, ROI_FIELDS];
+  const st2 = C.loadState(agentSchemas, old, MODELS);
+  assert.equal(st2.runs, 500);
+  assert.equal(st2.benefitMonthly, 7000);
+  assert.equal(st2.horizon, 24);
+  gone.forEach((id) => assert.ok(!Object.prototype.hasOwnProperty.call(st2, id), 'old key ' + id + ' is not restored'));
+  assert.deepEqual(Object.keys(st2), Object.keys(C.defaultsOf(...agentSchemas)));
+  const ar = C.computeAgentResults(st2, MODELS);
+  assert.ok(near(ar.monthly, 500 * 0.08151104 + 300, 1e-6));
+  noNaN(ar);
+  const seatState = C.loadState([SHARED_FIELDS, SEAT_FIELDS, ROI_FIELDS], old, MODELS);
+  gone.forEach((id) => assert.ok(!Object.prototype.hasOwnProperty.call(seatState, id), 'seats: old key ' + id + ' is not restored'));
 }
 console.log('sub-core tests passed');

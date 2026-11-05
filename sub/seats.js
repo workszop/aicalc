@@ -37,7 +37,7 @@ SubUI.addStrings({
     localBeatsSub: ' Lokalnie jest taniej niż subskrypcja przy tym zespole.',
     barsTitle: 'Koszt miesięczny: porównanie', barsAria: 'Wykres słupkowy kosztu miesięcznego trzech wariantów',
     checkCards: 'Seats: karty mają liczbowe koszty', checkWin: 'Seats: dokładnie jedna karta wygrywa', checkBreak: 'Seats: próg opłacalności jest liczbą tylko wtedy, gdy istnieje',
-    checkCore: 'Seats: karty zgadzają się z rdzeniem', checkRoi: 'Seats: panel zwrotu liczy koszt zwycięzcy',
+    checkCore: 'Seats: karty zgadzają się z rdzeniem', checkRoi: 'Seats: panel zwrotu liczy koszt zwycięzcy i wpisaną korzyść',
   },
   en: {
     seatsPageTitle: 'Seats vs API vs local',
@@ -69,7 +69,7 @@ SubUI.addStrings({
     localBeatsSub: ' Local hosting is cheaper than the subscription for this team.',
     barsTitle: 'Monthly cost: comparison', barsAria: 'Bar chart of the monthly cost of the three options',
     checkCards: 'Seats: cards carry numeric costs', checkWin: 'Seats: exactly one card wins', checkBreak: 'Seats: break-even is a number only when one exists',
-    checkCore: 'Seats: cards match the core', checkRoi: 'Seats: ROI panel uses the winner cost',
+    checkCore: 'Seats: cards match the core', checkRoi: 'Seats: ROI panel uses the winner cost and the entered benefit',
   },
 });
 
@@ -97,7 +97,7 @@ const t = SubUI.t;
 function isActive(id, s) { return id !== 'customUsd' || s.plan === 'custom'; }
 function compute(s) { return SubCore.computeSeatResults(s, MODELS); }
 function roiOf(s, r) {
-  return SubCore.computeRoi({ costMonthly: r[r.winner].monthly, benefitMonthly: SubCore.timeBenefit(s), oneOff: s.setup + s.training, ramp: s.ramp, horizon: s.horizon });
+  return SubCore.computeRoi({ costMonthly: r[r.winner].monthly, benefitMonthly: s.benefitMonthly, oneOff: s.setup + s.training, ramp: s.ramp, horizon: s.horizon });
 }
 // Polish case forms of "rozmowa": loc after "Przy {n}", gen after "od {n}".
 function chatsWord(n, kase) { return SubUI.plural(n, t('chats' + kase + 'One'), t('chats' + kase + 'Few'), t('chats' + kase + 'Many')); }
@@ -125,7 +125,7 @@ function pageChecks() {
     { name: t('checkWin'), pass: cards.filter((c) => c.dataset.win === 'true').length === 1 },
     { name: t('checkBreak'), pass: kind === r.breakEven.kind && (kind === 'from' ? numeric(be) : be === '') },
     { name: t('checkCore'), pass: cards.every((c) => c.dataset.monthly === SubUI.dataNum(r[c.dataset.option].monthly)) && seatCards.querySelector('[data-win="true"]').dataset.option === r.winner },
-    { name: t('checkRoi'), pass: roiPanel.dataset.costMonthly === SubUI.dataNum(r[r.winner].monthly) },
+    { name: t('checkRoi'), pass: roiPanel.dataset.costMonthly === SubUI.dataNum(r[r.winner].monthly) && roiPanel.dataset.benefitMonthly === SubUI.dataNum(state.benefitMonthly) },
     ...SubUI.roiPanelChecks(roiPanel, state.horizon),
   ];
 }

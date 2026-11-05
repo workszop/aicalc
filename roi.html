@@ -28,24 +28,9 @@
       </section>
 
       <section class="settings-group" data-accent="roi">
-        <h3 class="group-title" id="benefitModeLabel" data-t="groupBenefit"></h3>
-        <div class="edu-seg" role="group" aria-labelledby="benefitModeLabel" data-field="benefitMode">
-          <button type="button" data-value="time" data-t="modeTime"></button>
-          <button type="button" data-value="amount" data-t="modeAmount"></button>
-        </div>
-        <div id="timeFields">
-          <div>
-            <div class="field"><label for="f-users" data-t="users"></label><input id="f-users" type="number" data-field="users"></div>
-            <div class="field"><label for="f-adoption" data-t="adoption"></label><input id="f-adoption" type="number" data-field="adoption"></div>
-            <div class="field"><label for="f-minPerDay" data-t="minPerDay"></label><input id="f-minPerDay" type="number" data-field="minPerDay"></div>
-            <div class="field"><label for="f-workDays" data-t="workDays"></label><input id="f-workDays" type="number" data-field="workDays"></div>
-            <div class="field"><label for="f-hourlyRate" data-t="hourlyRate"></label><input id="f-hourlyRate" type="number" data-field="hourlyRate"></div>
-          </div>
-          <p class="hint" id="timeValue"></p>
-        </div>
-        <div id="amountFields" hidden>
-          <div class="field"><label for="f-benefitMonthly" data-t="benefitMonthly"></label><input id="f-benefitMonthly" type="number" data-field="benefitMonthly"></div>
-        </div>
+        <h3 class="group-title" data-t="groupBenefit"></h3>
+        <div class="field"><label for="f-benefitMonthly" data-t="benefitMonthly"></label><input id="f-benefitMonthly" type="number" data-field="benefitMonthly" aria-describedby="benefitHelp"></div>
+        <p class="hint" id="benefitHelp" data-t="benefitHelp"></p>
       </section>
 
       <section class="settings-group">
