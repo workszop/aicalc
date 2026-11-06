@@ -1027,6 +1027,23 @@ window.addEventListener('load', async () => {
 """
 
 
+# ─── Price flows run on the frozen built-in list the OpenRouter fixtures were captured against ───
+BASELINE = Path(__file__).resolve().parent / "fixtures" / "baseline"
+
+
+def baseline_core(core_js: str) -> str:
+    models = (BASELINE / "core-models.js").read_text(encoding="utf-8").split("\n", 1)[1].rstrip()
+    i = core_js.index("const MODELS = [")
+    j = core_js.index("];", i) + 2
+    return core_js[:i] + models + core_js[j:]
+
+
+def baseline_index(html: str) -> str:
+    import re
+    csv = (BASELINE / "models.csv").read_text(encoding="utf-8")
+    return re.sub(r'(<script id="csvData"[^>]*>)[\s\S]*?(</script>)', lambda m: m.group(1) + csv + m.group(2), html, count=1)
+
+
 @contextmanager
 def prices_fixture(index: Path, script: str, head: str = ""):
     source = index.read_text(encoding="utf-8")
@@ -1035,10 +1052,12 @@ def prices_fixture(index: Path, script: str, head: str = ""):
         text = source.replace("</body>", script + "\n</body>", 1)
         if head:
             text = text.replace("</head>", head + "\n</head>", 1)
-        (fixture_root / "index.html").write_text(text, encoding="utf-8")
+        (fixture_root / "index.html").write_text(baseline_index(text), encoding="utf-8")
         if (index.parent / "assets").is_dir():
             shutil.copytree(index.parent / "assets", fixture_root / "assets")
         copy_shared(index.parent, fixture_root)
+        core = fixture_root / "sub" / "core.js"
+        core.write_text(baseline_core(core.read_text(encoding="utf-8")), encoding="utf-8")
         yield fixture_root
 
 

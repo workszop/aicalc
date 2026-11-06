@@ -11,6 +11,10 @@ const assert = require('node:assert/strict');
 const ROOT = path.join(__dirname, '..');
 const PriceSync = require(path.join(ROOT, 'sub/prices.js'));
 const SubCore = require(path.join(ROOT, 'sub/core.js'));
+// The fixtures were captured against the built-in prices of 2026-11-06 (tests/fixtures/baseline/), so the tests
+// run on that frozen list, not on today's built-ins: a later accepted price update must not break them.
+const BASELINE = path.join(__dirname, 'fixtures/baseline');
+SubCore.MODELS.splice(0, SubCore.MODELS.length, ...vm.runInNewContext(fs.readFileSync(path.join(BASELINE, 'core-models.js'), 'utf8') + '\nMODELS'));
 const feed = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures/openrouter-models.json'), 'utf8'));
 const ENDPOINTS_DIR = path.join(__dirname, 'fixtures/endpoints');
 const endpointsOf = (orId) => JSON.parse(fs.readFileSync(path.join(ENDPOINTS_DIR, PriceSync.endpointsFile(orId)), 'utf8'));
@@ -23,7 +27,7 @@ const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 const js = html.match(/<script>\s*([\s\S]*?)<\/script>/)[1];
 const idx = vm.createContext({ console });
 vm.runInContext(js.slice(0, js.indexOf('// ─── State')) + js.slice(js.indexOf('// CSV parser'), js.indexOf('// ─── Render')), idx);
-const csv = html.match(/<script id="csvData"[^>]*>([\s\S]*?)<\/script>/)[1];
+const csv = fs.readFileSync(path.join(BASELINE, 'models.csv'), 'utf8');
 const modelsFromCsv = (text) => vm.runInContext(`modelsFromCsv(${JSON.stringify(text)})`, idx);
 const indexModels = modelsFromCsv(csv);
 
