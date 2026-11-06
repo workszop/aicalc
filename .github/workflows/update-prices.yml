@@ -28,21 +28,44 @@ jobs:
         with:
           node-version: 22
 
+      # The update logic is tested against the built-in prices, so it runs before they change.
+      - name: Test the update logic
+        run: |
+          node tests/prices.test.cjs
+          node tests/update-prices.test.cjs
+
       - name: Update prices (all changes except those flagged big)
         run: node scripts/update-prices.mjs --write > "$RUNNER_TEMP/price-update.md"
 
-      - name: Show the report
-        run: cat "$RUNNER_TEMP/price-update.md" >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Run node tests
+      # Must pass after the write: index.html's CSV and sub/core.js agree.
+      - name: Run consistency tests
         run: |
-          node tests/core.test.cjs
-          node tests/scenario.test.cjs
-          node tests/layout.test.cjs
-          node tests/sub-core.test.cjs
           node tests/sub-sync.test.cjs
-          node tests/prices.test.cjs
-          node tests/update-prices.test.cjs
+          node tests/layout.test.cjs
+
+      # Regression tests pin the built-in prices and the numbers they give (e.g. DeepSeek max output,
+      # agent 487.64), so a real price change makes them fail. The result goes into the PR body;
+      # the expectations are updated by hand when the PR is accepted.
+      - name: Run regression tests (reported, not blocking)
+        run: |
+          {
+            echo
+            echo "## Testy regresji"
+            echo
+            echo "Te testy pilnują wbudowanych cen i wyników kalkulatorów, więc po zmianie cen część z nich może nie przechodzić."
+            echo "Po zaakceptowaniu zmian zaktualizuj oczekiwane wartości w testach."
+            echo "PR otwarty przez GitHub Actions nie uruchamia workflow \`tests\`: uruchom go ręcznie albo lokalnie."
+            echo
+            for t in core scenario sub-core; do
+              if out=$(node "tests/$t.test.cjs" 2>&1); then
+                echo "- \`tests/$t.test.cjs\`: przechodzi"
+              else
+                msg=$(printf '%s\n' "$out" | grep -m1 -E '^[A-Za-z]*Error( \[[A-Z_]+\])?:' | sed 's/^[[:space:]]*//' | cut -c1-200)
+                echo "- \`tests/$t.test.cjs\`: nie przechodzi: $msg"
+              fi
+            done
+          } >> "$RUNNER_TEMP/price-update.md"
+          cat "$RUNNER_TEMP/price-update.md" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Open a pull request
         env:
