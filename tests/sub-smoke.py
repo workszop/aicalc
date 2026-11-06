@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Chrome smoke test for the sub pages (seats.html, agent.html).
+"""Chrome smoke test for the sub pages (seats.html, agent.html, jak-placimy.html).
 
 Reuses the server and headless-Chrome helpers from tests/browser-smoke.py
 (loaded with importlib because of the hyphen in its file name).  Interactive
@@ -503,6 +503,49 @@ def page_fixture(page: str, flow: str, head: str = ""):
         yield root
 
 
+PAY_FLOW = r"""
+<script>
+(() => {
+""" + PRELUDE + r"""
+  try {
+    const core = SubCore;
+    expect(document.body.dataset.page === 'pay', 'body[data-page] is not pay');
+    expect(document.body.dataset.state === 'ready', 'body[data-state] is not ready on load');
+    expect($('nav a[aria-current="page"]').getAttribute('href') === 'jak-placimy.html', 'nav current link wrong');
+    expect(document.querySelectorAll('.sub-nav a').length === 4, 'nav has four links');
+    expect(!$('#settingsToggle') && !$('#resetBtn'), 'explainer page shows settings or reset buttons');
+    // three options in the diagram, each linked to its card
+    const nodes = [...document.querySelectorAll('#payDiagram .pay-node[data-accent]')];
+    expect(nodes.length === 3, 'diagram does not have three options');
+    nodes.forEach((n) => { const a = n.querySelector('a[href^="#"]'); expect(a && $(a.getAttribute('href')), 'diagram link has no target card'); });
+    // prices come from the shared core
+    const cheapestPlan = core.SEAT_PLANS.slice().sort((a, b) => a.usd - b.usd)[0];
+    expect($('[data-price="app"]').dataset.minUsd === SubUI.dataNum(cheapestPlan.usd), 'app price does not match SEAT_PLANS');
+    expect($('[data-price="app"]').textContent.includes(cheapestPlan.name), 'app price does not name the plan');
+    const m = core.MODELS.find((x) => x.name === core.SEAT_FIELDS.model.def);
+    const chat = core.chatCost(m, { docLang: 'pl', fx: core.SHARED_FIELDS.fx.def }, 3000, 700).perCall;
+    expect($('[data-price="api"]').dataset.chatPln === SubUI.dataNum(chat, 4), 'API example chat does not match the core');
+    expect(Number($('[data-price="infra"]').dataset.gbMonthly) > 0, 'GB10 monthly cost missing');
+    // language switch re-renders the prices and the copy
+    const plText = $('[data-price="api"]').textContent;
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'l', bubbles: true }));
+    expect(document.documentElement.lang === 'en', 'L did not switch to English');
+    expect($('.app-title').textContent === 'How we pay for AI', 'title did not translate');
+    expect($('[data-price="api"]').textContent !== plText && $('[data-price="api"]').textContent.includes('per million'), 'prices did not translate');
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'l', bubbles: true }));
+    expect(document.documentElement.lang === 'pl', 'L did not switch back to Polish');
+    // the comparison table scrolls inside its wrapper; the page itself does not
+    const vp = viewport();
+    expect(vp.scrollWidth <= vp.width + 1, 'page scrolls sideways');
+    finish({ ok: true, assertions: assertions.n, viewport: vp });
+  } catch (error) {
+    finish({ ok: false, error: String(error && error.message || error), assertions: assertions.n });
+  }
+})();
+</script>
+"""
+
+
 # ─── Runner ───
 def run_page(browser, page: str, key: str, flow: str, query: str, lines: list[str], head_flows=()) -> None:
     """Verify (http desktop/mobile, file://), then the injected flow(s) over the same transports."""
@@ -543,6 +586,7 @@ def run() -> list[str]:
     run_page(browser, "seats.html", "seats", SEATS_FLOW, "", lines, head_flows=[("stale-state", SEATS_PLANT_FLOW, SEATS_PLANT_HEAD)])
     run_page(browser, "agent.html", "agent", AGENT_FLOW, "", lines, head_flows=[("old-save", AGENT_PLANT_FLOW, AGENT_PLANT_HEAD)])
     run_narrow(browser, "agent.html", lines)
+    run_page(browser, "jak-placimy.html", "pay", PAY_FLOW, "", lines)
     return lines
 
 

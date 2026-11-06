@@ -52,13 +52,14 @@ Wersja online: <https://workszop.github.io/aicalc/>. Strony z sekcji
 
 ## Kalkulatory dodatkowe
 
-Obok kalkulatora RAG (`index.html`) są dwie strony pomocnicze. Wszystkie
+Obok kalkulatora RAG (`index.html`) są trzy strony pomocnicze. Wszystkie
 działają tak samo jak główna: bez buildu, z `file://`, z przełącznikiem PL/EN
 i z paskiem nawigacji w nagłówku. Wersje online (po wdrożeniu gałęzi, na razie
 jeszcze niedostępne):
 
 - <https://workszop.github.io/aicalc/seats.html>
 - <https://workszop.github.io/aicalc/agent.html>
+- <https://workszop.github.io/aicalc/jak-placimy.html>
 
 Wspólne założenia: kwoty są szacunkami, w PLN netto (bez VAT); kurs `fx` =
 3,73 PLN/USD, `workDays` = 250 dni w roku,
@@ -117,6 +118,18 @@ Zastrzeżenia: to szacunki, nie oferta; ceny listowe zmieniają się, a plany
 mają limity użycia i funkcje, których kalkulator nie porównuje; kwoty netto w
 PLN; przepustowość GB10 (`localMaxUsers`) nie została sprawdzona na stronie
 miejsc – to założenie, które trzeba zmierzyć na własnym modelu.
+
+### Jak płacimy za AI?
+
+Strona `jak-placimy.html` nie liczy, tylko wyjaśnia. Schemat (na podstawie
+ilustracji „Za co płacimy, korzystając z AI”) pokazuje trzy sposoby płacenia:
+używanie aplikacji (abonament za osobę), korzystanie z modelu przez API (tokeny)
+i własną infrastrukturę (sprzęt lub wynajem GPU, opcjonalnie licencja na model).
+Każdy sposób ma kartę: za co płacisz, przykładowe ceny, kiedy koszt rośnie, o czym
+łatwo zapomnieć i kiedy to dobry wybór, z linkami do kalkulatorów. Przykładowe ceny
+są brane z `sub/core.js` (`SEAT_PLANS`, `MODELS`, domyślne wartości GB10), więc
+zgadzają się z kalkulatorami. Pod kartami jest tabela porównawcza. Strona nie ma
+panelu ustawień (`renderNav(..., { tools: false })`).
 
 ### Agent / automatyzacja
 
@@ -201,6 +214,7 @@ wartości domyślne są ilustracyjne.
 | `sub/ui.js` | wspólna warstwa interfejsu: słownik PL/EN, nawigacja, panel ustawień, kontrakt DOM |
 | `sub/seats.js` | logika strony `seats.html` |
 | `sub/agent.js` | logika strony `agent.html` |
+| `sub/pay.js` | treść i przykładowe ceny strony `jak-placimy.html` |
 | `sub/sub.css` | wspólne style stron pomocniczych (tokeny w `:root`) |
 
 ## Małe wdrożenie: Dell GB10
@@ -411,7 +425,7 @@ Co sprawdzają:
   subskrypcji, API i agenta,
 - `sub-sync.test.cjs` – zgodność cen modeli i współczynników tokenów z
   `index.html`,
-- `sub-smoke.py` – przeglądarkowy test `seats.html` i `agent.html` przez `http://` (desktop i mobile) oraz `file://`: kontrakt DOM,
+- `sub-smoke.py` – przeglądarkowy test `seats.html`, `agent.html` i `jak-placimy.html` przez `http://` (desktop i mobile) oraz `file://`: kontrakt DOM,
   przepływy użytkownika i stan po zmianie ustawień; na stronie agenta także
   przycisk „Wybierz”, przełącznik kontekstu i brak przewijania w bok przy
   szerokości 360 i 320 px.

@@ -297,7 +297,7 @@ CAPACITY_SMOKE_SCRIPT = r"""
     expect(/100/.test(document.querySelector('[data-meta="workloadDetails"]').textContent) === false && /20/.test(document.querySelector('[data-meta="workloadDetails"]').textContent), 'workload summary shows the user count');
 
     // The header nav links the three calculators.
-    expect(document.querySelectorAll('.sub-nav a').length === 3, 'nav has three links');
+    expect(document.querySelectorAll('.sub-nav a').length === 4, 'nav has four links');
     click('[data-preset="S1"]');
     setInput('users', 100);
     click('[data-lang="en"]');

@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/png" sizes="256x256" href="assets/favicon.png">
+<title data-t="payPageTitle">Jak płacimy za AI?</title>
+<meta name="description" content="Trzy sposoby płacenia za AI w firmie: aplikacja, model przez API, własna infrastruktura.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="sub/sub.css">
+</head>
+<body class="edu" data-page="pay" data-state="loading">
+<header class="edu-header"></header>
+
+<main id="app">
+  <div id="resultsPanel" tabindex="-1">
+    <div class="page-head">
+      <h1 class="app-title" data-t="payPageTitle"></h1>
+      <p class="edu-lead" data-t="payLead"></p>
+    </div>
+
+    <!-- ─── Diagram: one question, three ways to pay ─── -->
+    <figure class="card pay-fig" id="payDiagram" aria-labelledby="payFigTitle">
+      <h2 class="sec-title" id="payFigTitle" data-t="payFigTitle"></h2>
+      <div class="pay-flow">
+        <div class="pay-node pay-start">
+          <h3 data-t="payStartTitle"></h3>
+          <p class="pay-quote" data-t="payStartQuote"></p>
+        </div>
+        <div class="pay-branch" aria-hidden="true"><span class="pay-decision"><b>?</b></span></div>
+        <ol class="pay-targets">
+          <li class="pay-node" data-accent="app">
+            <h3><a href="#opt-app" data-t="optAppTitle"></a></h3>
+            <p class="pay-cond" data-t="optAppCond"></p>
+            <ul class="pay-checks"><li data-t="optAppEx1"></li><li data-t="optAppEx2"></li></ul>
+          </li>
+          <li class="pay-or" aria-hidden="true" data-t="or"></li>
+          <li class="pay-node" data-accent="api">
+            <h3><a href="#opt-api" data-t="optApiTitle"></a></h3>
+            <p class="pay-cond" data-t="optApiCond"></p>
+            <ul class="pay-checks"><li data-t="optApiEx1"></li></ul>
+          </li>
+          <li class="pay-or" aria-hidden="true" data-t="or"></li>
+          <li class="pay-node" data-accent="infra">
+            <h3><a href="#opt-infra" data-t="optInfraTitle"></a></h3>
+            <p class="pay-cond" data-t="optInfraCond"></p>
+            <ul class="pay-checks"><li data-t="optInfraEx1"></li><li data-t="optInfraEx2"></li></ul>
+          </li>
+        </ol>
+      </div>
+      <figcaption class="hint" data-t="payFigCaption"></figcaption>
+    </figure>
+
+    <!-- ─── One card per way to pay; prices are filled from sub/core.js ─── -->
+    <div class="pay-cards">
+      <article class="card pay-card" id="opt-app" data-accent="app" data-option="app">
+        <p class="pay-kicker" data-t="kicker1"></p>
+        <h2 class="sec-title" data-t="optAppTitle"></h2>
+        <p class="pay-unit" data-t="optAppUnit"></p>
+        <dl class="option-facts">
+          <dt data-t="factPay"></dt><dd data-t="optAppPay"></dd>
+          <dt data-t="factPrice"></dt><dd class="pay-price" data-price="app"></dd>
+          <dt data-t="factGrows"></dt><dd data-t="optAppGrows"></dd>
+          <dt data-t="factHidden"></dt><dd data-t="optAppHidden"></dd>
+          <dt data-t="factWhen"></dt><dd data-t="optAppWhen"></dd>
+        </dl>
+        <p class="pay-links"><a class="ghost-btn" href="seats.html" data-t="linkSeats"></a></p>
+      </article>
+      <article class="card pay-card" id="opt-api" data-accent="api" data-option="api">
+        <p class="pay-kicker" data-t="kicker2"></p>
+        <h2 class="sec-title" data-t="optApiTitle"></h2>
+        <p class="pay-unit" data-t="optApiUnit"></p>
+        <dl class="option-facts">
+          <dt data-t="factPay"></dt><dd data-t="optApiPay"></dd>
+          <dt data-t="factPrice"></dt><dd class="pay-price" data-price="api"></dd>
+          <dt data-t="factGrows"></dt><dd data-t="optApiGrows"></dd>
+          <dt data-t="factHidden"></dt><dd data-t="optApiHidden"></dd>
+          <dt data-t="factWhen"></dt><dd data-t="optApiWhen"></dd>
+        </dl>
+        <p class="pay-links"><a class="ghost-btn" href="agent.html" data-t="linkAgent"></a> <a class="ghost-btn" href="index.html" data-t="linkRag"></a></p>
+      </article>
+      <article class="card pay-card" id="opt-infra" data-accent="infra" data-option="infra">
+        <p class="pay-kicker" data-t="kicker3"></p>
+        <h2 class="sec-title" data-t="optInfraTitle"></h2>
+        <p class="pay-unit" data-t="optInfraUnit"></p>
+        <dl class="option-facts">
+          <dt data-t="factPay"></dt><dd data-t="optInfraPay"></dd>
+          <dt data-t="factPrice"></dt><dd class="pay-price" data-price="infra"></dd>
+          <dt data-t="factGrows"></dt><dd data-t="optInfraGrows"></dd>
+          <dt data-t="factHidden"></dt><dd data-t="optInfraHidden"></dd>
+          <dt data-t="factWhen"></dt><dd data-t="optInfraWhen"></dd>
+        </dl>
+        <p class="pay-links"><a class="ghost-btn" href="index.html" data-t="linkRagInfra"></a> <a class="ghost-btn" href="seats.html" data-t="linkSeatsLocal"></a></p>
+      </article>
+    </div>
+
+    <!-- ─── Side-by-side comparison ─── -->
+    <section class="card detail-card" id="payCompare" aria-labelledby="compareTitle">
+      <h2 class="sec-title" id="compareTitle" data-t="compareTitle"></h2>
+      <div class="table-wrap" tabindex="0" role="region" aria-labelledby="compareTitle">
+        <table class="data-tbl pay-tbl">
+          <thead><tr><th scope="col"><span class="sr-only" data-t="thAspect"></span></th><th scope="col" data-t="optAppTitle"></th><th scope="col" data-t="optApiTitle"></th><th scope="col" data-t="optInfraTitle"></th></tr></thead>
+          <tbody>
+            <tr><th scope="row" data-t="rowUnit"></th><td data-t="cmpAppUnit"></td><td data-t="cmpApiUnit"></td><td data-t="cmpInfraUnit"></td></tr>
+            <tr><th scope="row" data-t="rowShape"></th><td data-t="cmpAppShape"></td><td data-t="cmpApiShape"></td><td data-t="cmpInfraShape"></td></tr>
+            <tr><th scope="row" data-t="rowStart"></th><td data-t="cmpAppStart"></td><td data-t="cmpApiStart"></td><td data-t="cmpInfraStart"></td></tr>
+            <tr><th scope="row" data-t="rowWho"></th><td data-t="cmpAppWho"></td><td data-t="cmpApiWho"></td><td data-t="cmpInfraWho"></td></tr>
+            <tr><th scope="row" data-t="rowData"></th><td data-t="cmpAppData"></td><td data-t="cmpApiData"></td><td data-t="cmpInfraData"></td></tr>
+            <tr><th scope="row" data-t="rowModel"></th><td data-t="cmpAppModel"></td><td data-t="cmpApiModel"></td><td data-t="cmpInfraModel"></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="hint" data-t="compareNote"></p>
+    </section>
+
+    <p class="hint" id="pricesChecked"></p>
+    <details class="panel" id="checksPanel" hidden></details>
+    <footer class="shortcuts" data-t="payShortcuts"></footer>
+    <div class="sr-only" aria-live="polite" id="live"></div>
+  </div>
+</main>
+
+<script src="sub/core.js"></script>
+<script src="sub/ui.js"></script>
+<script src="sub/pay.js"></script>
+</body>
+</html>
