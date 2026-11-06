@@ -289,6 +289,16 @@ details.panel[open] { padding-bottom: 16px; }
 .seat-bar-row[data-win="true"] .seat-bar-fill { background: var(--blue); }
 .seat-bar-value { font-family: var(--font-mono); font-weight: 500; text-align: right; color: var(--ink); }
 @media (max-width: 1200px) { .seat-cards { grid-template-columns: minmax(0, 1fr); } }
+/* ─── What each option means ─── */
+#optionsExplained { margin-bottom: var(--sp-5); }
+.options-title { margin-bottom: var(--sp-3); }
+.option-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-4); }
+.option-card { margin: 0; min-width: 0; }
+.option-facts { margin: var(--sp-3) 0 0; display: grid; gap: var(--sp-1); }
+.option-facts dt { font-weight: 700; font-size: var(--small-size); color: var(--ink); margin-top: var(--sp-2); }
+.option-facts dt:first-child { margin-top: 0; }
+.option-facts dd { margin: 0; font-size: var(--body-sm); color: var(--ink-2); line-height: var(--line-height-body); }
+@media (max-width: 1200px) { .option-cards { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 768px) { .seat-bar-row { grid-template-columns: minmax(0, 1fr) minmax(90px, auto); } .seat-bar-track { grid-column: 1 / -1; grid-row: 2; } .seat-bar-label { grid-column: 1; } .seat-bar-value { grid-column: 2; grid-row: 1; } }
 .hint a { color: var(--blue-600); font-weight: 600; }
 

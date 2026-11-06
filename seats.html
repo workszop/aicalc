@@ -24,7 +24,8 @@
       <section class="settings-group">
         <h3 class="group-title" data-t="groupTeam"></h3>
         <div class="field"><label for="f-users" data-t="users"></label><input id="f-users" type="number" data-field="users"></div>
-        <div class="field"><label for="f-workDays" data-t="workDays"></label><input id="f-workDays" type="number" data-field="workDays"></div>
+        <div class="field"><label for="f-workDays" data-t="workDays"></label><input id="f-workDays" type="number" data-field="workDays" aria-describedby="h-workDays"></div>
+        <p class="hint" id="h-workDays" data-t="hWorkDays"></p>
       </section>
 
       <section class="settings-group" data-accent="seats">
@@ -44,9 +45,12 @@
           <button type="button" data-preset="15" data-t="presetMid"></button>
           <button type="button" data-preset="40" data-t="presetHeavy"></button>
         </div>
-        <div class="field"><label for="f-chatsPerDay" data-t="chatsPerDay"></label><input id="f-chatsPerDay" type="number" data-field="chatsPerDay"></div>
-        <div class="field"><label for="f-inTok" data-t="inTok"></label><input id="f-inTok" type="number" data-field="inTok"></div>
-        <div class="field"><label for="f-outTok" data-t="outTok"></label><input id="f-outTok" type="number" data-field="outTok"></div>
+        <div class="field"><label for="f-chatsPerDay" data-t="chatsPerDay"></label><input id="f-chatsPerDay" type="number" data-field="chatsPerDay" aria-describedby="h-chatsPerDay"></div>
+        <p class="hint" id="h-chatsPerDay" data-t="hChatsPerDay"></p>
+        <div class="field"><label for="f-inTok" data-t="inTok"></label><input id="f-inTok" type="number" data-field="inTok" aria-describedby="h-inTok"></div>
+        <p class="hint" id="h-inTok" data-t="hInTok"></p>
+        <div class="field"><label for="f-outTok" data-t="outTok"></label><input id="f-outTok" type="number" data-field="outTok" aria-describedby="h-outTok"></div>
+        <p class="hint" id="h-outTok" data-t="hOutTok"></p>
         <div class="field"><span class="field-label" id="docLangLabel" data-t="docLang"></span>
           <div class="edu-seg" role="group" aria-labelledby="docLangLabel" data-field="docLang">
             <button type="button" data-value="pl" data-t="docPl"></button>
@@ -57,7 +61,8 @@
 
       <section class="settings-group">
         <h3 class="group-title" data-t="groupApi"></h3>
-        <div class="field"><label for="f-model" data-t="model"></label><select id="f-model" data-field="model"></select></div>
+        <div class="field"><label for="f-model" data-t="model"></label><select id="f-model" data-field="model" aria-describedby="h-model"></select></div>
+        <p class="hint" id="h-model" data-t="hModel"></p>
         <div class="field"><label for="f-uiOps" data-t="uiOps"></label><input id="f-uiOps" type="number" data-field="uiOps"></div>
         <p class="hint" data-t="uiOpsHint"></p>
         <div class="field"><label for="f-fx" data-t="fx"></label><input id="f-fx" type="number" data-field="fx"></div>
@@ -65,12 +70,17 @@
 
       <section class="settings-group">
         <h3 class="group-title" data-t="groupLocal"></h3>
-        <div class="field"><label for="f-localCapex" data-t="localCapex"></label><input id="f-localCapex" type="number" data-field="localCapex"></div>
-        <div class="field"><label for="f-localAmort" data-t="localAmort"></label><input id="f-localAmort" type="number" data-field="localAmort"></div>
-        <div class="field"><label for="f-localPower" data-t="localPower"></label><input id="f-localPower" type="number" data-field="localPower"></div>
+        <div class="field"><label for="f-localCapex" data-t="localCapex"></label><input id="f-localCapex" type="number" data-field="localCapex" aria-describedby="h-localCapex"></div>
+        <p class="hint" id="h-localCapex" data-t="hLocalCapex"></p>
+        <div class="field"><label for="f-localAmort" data-t="localAmort"></label><input id="f-localAmort" type="number" data-field="localAmort" aria-describedby="h-localAmort"></div>
+        <p class="hint" id="h-localAmort" data-t="hLocalAmort"></p>
+        <div class="field"><label for="f-localPower" data-t="localPower"></label><input id="f-localPower" type="number" data-field="localPower" aria-describedby="h-localPower"></div>
+        <p class="hint" id="h-localPower" data-t="hLocalPower"></p>
         <div class="field"><label for="f-kwh" data-t="kwh"></label><input id="f-kwh" type="number" data-field="kwh"></div>
-        <div class="field"><label for="f-localOps" data-t="localOps"></label><input id="f-localOps" type="number" data-field="localOps"></div>
-        <div class="field"><label for="f-localMaxUsers" data-t="localMaxUsers"></label><input id="f-localMaxUsers" type="number" data-field="localMaxUsers"></div>
+        <div class="field"><label for="f-localOps" data-t="localOps"></label><input id="f-localOps" type="number" data-field="localOps" aria-describedby="h-localOps"></div>
+        <p class="hint" id="h-localOps" data-t="hLocalOps"></p>
+        <div class="field"><label for="f-localMaxUsers" data-t="localMaxUsers"></label><input id="f-localMaxUsers" type="number" data-field="localMaxUsers" aria-describedby="h-localMaxUsers"></div>
+        <p class="hint" id="h-localMaxUsers" data-t="hLocalMaxUsers"></p>
       </section>
     </div>
   </aside>
@@ -89,6 +99,38 @@
         <div id="seatBars" role="img" data-t-aria="barsAria"></div>
       </section>
     </div>
+    <section id="optionsExplained" aria-labelledby="optionsTitle">
+      <h2 class="sec-title options-title" id="optionsTitle" data-t="optionsTitle"></h2>
+      <div class="option-cards">
+        <article class="card option-card">
+          <h3 class="sec-title" data-t="optSub"></h3>
+          <dl class="option-facts">
+            <dt data-t="optWhat"></dt><dd data-t="optSubWhat"></dd>
+            <dt data-t="optPay"></dt><dd data-t="optSubPay"></dd>
+            <dt data-t="optCare"></dt><dd data-t="optSubCare"></dd>
+            <dt data-t="optWhen"></dt><dd data-t="optSubWhen"></dd>
+          </dl>
+        </article>
+        <article class="card option-card">
+          <h3 class="sec-title" data-t="optApi"></h3>
+          <dl class="option-facts">
+            <dt data-t="optWhat"></dt><dd data-t="optApiWhat"></dd>
+            <dt data-t="optPay"></dt><dd data-t="optApiPay"></dd>
+            <dt data-t="optCare"></dt><dd data-t="optApiCare"></dd>
+            <dt data-t="optWhen"></dt><dd data-t="optApiWhen"></dd>
+          </dl>
+        </article>
+        <article class="card option-card">
+          <h3 class="sec-title" data-t="optLocal"></h3>
+          <dl class="option-facts">
+            <dt data-t="optWhat"></dt><dd data-t="optLocalWhat"></dd>
+            <dt data-t="optPay"></dt><dd data-t="optLocalPay"></dd>
+            <dt data-t="optCare"></dt><dd data-t="optLocalCare"></dd>
+            <dt data-t="optWhen"></dt><dd data-t="optLocalWhen"></dd>
+          </dl>
+        </article>
+      </div>
+    </section>
     <p class="hint" data-t="estimateNote"></p>
     <details class="panel" id="checksPanel" hidden></details>
     <footer class="shortcuts" data-t="shortcuts"></footer>
