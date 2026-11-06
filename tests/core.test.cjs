@@ -17,7 +17,7 @@ const models = run(`modelsFromCsv(${JSON.stringify(csv)})`);
 context.models = models;
 const defaults = run('({ ...DEFAULTS, lang: "en", models: [] })');
 
-assert.equal(models.length, 11, 'built-in CSV has eleven models');
+assert.equal(models.length, 17, 'built-in CSV has seventeen models');
 assert.equal(new Set(models.map((m) => m.id)).size, models.length, 'model IDs are unique');
 assert.equal(new Set(models.map((m) => m.name)).size, models.length, 'model names are unique');
 assert.equal(models.find((m) => m.id === 'claude-fable-5-1').alwaysThinks, true, 'Fable is always reasoning');
