@@ -411,8 +411,8 @@ window.addEventListener('load', async () => {
     expect($('#priceMsg').getAttribute('aria-live') === 'polite' && /Pobieram/.test($('#priceMsg').textContent), 'loading message');
     await until(() => panel().dataset.state !== 'loading', 'fetch');
     expect(panel().dataset.state === 'ready', `state ${panel().dataset.state}: ${$('#priceMsg').textContent}`);
-    expect(msgLog.includes('Pobieranie cen twórców: 0/19') && msgLog.includes('Pobieranie cen twórców: 19/19'), `progress counter ${JSON.stringify(msgLog.slice(0, 4))}`);
-    expect(panel().dataset.progress === '19/19', `data-progress ${panel().dataset.progress}`);
+    expect(msgLog.includes('Pobieranie cen twórców: 0/17') && msgLog.includes('Pobieranie cen twórców: 17/17'), `progress counter ${JSON.stringify(msgLog.slice(0, 4))}`);
+    expect(panel().dataset.progress === '17/17', `data-progress ${panel().dataset.progress}`);
     expect(panel().dataset.changes === '5' && panel().dataset.new === '3' && panel().dataset.missing === '0' && panel().dataset.noCreator === '0', `counts ${panel().dataset.changes}/${panel().dataset.new}/${panel().dataset.missing}/${panel().dataset.noCreator}`);
     expect(!$('#priceChanges [data-flag="big"]') && !$('#priceNoCreator'), 'real creator data: nothing big, no creator price missing');
     const proCtx = $('#priceChanges tr[data-model-id="deepseek-v4-pro"][data-field="ctx"]');

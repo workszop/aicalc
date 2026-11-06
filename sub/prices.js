@@ -171,8 +171,32 @@ function cleanModel(m) {
   };
 }
 // Discovery from the list feed: up to `limit` new models, newest first (ids, names, created only).
+// A model line: the same product across versions (OpenAI tier, Claude Opus/Sonnet/Haiku/Fable, DeepSeek Flash/Pro, Gemini Flash).
+function lineOf(provider, id) {
+  if (provider === 'openai') { const m = id.match(OPENAI_TIER_RE); return m ? 'openai:' + m[2] : null; }
+  if (provider === 'anthropic') return 'anthropic:' + id.replace(/-[\d.]+(-\d{8})?$/, '');
+  if (provider === 'google') return 'google:flash';
+  if (provider === 'deepseek') { const m = id.match(/(?:^|-)(flash|pro|chat|reasoner)(?:-|$)/); return m ? 'deepseek:' + m[1] : null; }
+  return null;
+}
+// Claude before 4.7 uses the older tokenizer (family `claude`), 4.7 and later `claudeNew`.
+function familyOf(provider, id) {
+  if (provider !== 'anthropic') return FAMILY_BY_PROVIDER[provider];
+  const v = id.match(/-(\d+)(?:\.(\d+))?(?:-\d{8})?$/);
+  if (!v) return FAMILY_BY_PROVIDER.anthropic;
+  const major = Number(v[1]); const minor = Number(v[2] || 0);
+  return major > 4 || (major === 4 && minor >= 7) ? 'claudeNew' : 'claude';
+}
 function discover(models, map, limit) {
   const mapped = new Set(models.map((m) => m.openrouter).filter(Boolean));
+  // The newest `created` per line among mapped models: an older version of a line we already have is not news.
+  const newestMapped = new Map();
+  mapped.forEach((orId) => {
+    const f = map.get(orId); if (!f) return;
+    const slash = orId.indexOf('/');
+    const line = lineOf(orId.slice(0, slash), orId.slice(slash + 1));
+    if (line && (!newestMapped.has(line) || f.created > newestMapped.get(line))) newestMapped.set(line, f.created);
+  });
   const ids = new Set(models.map((m) => String(m.id).toLowerCase()));
   const out = [];
   map.forEach((f, orId) => {
@@ -182,12 +206,20 @@ function discover(models, map, limit) {
     if (!CANDIDATE_RULES[provider] || mapped.has(orId) || !OR_ID_RE.test(orId)) return;
     if (SKIP_PATTERNS.some((p) => orId.includes(p)) || !CANDIDATE_RULES[provider](orId, id, mapped)) return;
     if (!ID_RE.test(id) || ids.has(id.toLowerCase()) || f.ctx === null) return;
+    const line = lineOf(provider, id);
+    if (line && newestMapped.has(line) && f.created <= newestMapped.get(line)) return;
     out.push({ orId, provider, id, name: f.name, created: f.created });
   });
   out.sort((a, b) => b.created - a.created);
-  // Google: only the current Flash (the newest by `created`), not every older Flash version.
-  const firstGoogle = out.findIndex((c) => c.provider === 'google');
-  return out.filter((c, i) => c.provider !== 'google' || i === firstGoogle).slice(0, limit);
+  // One candidate per line: the newest (e.g. GPT-6.1 Sol, not also GPT-6 Sol; the current Gemini Flash only).
+  const seen = new Set();
+  return out.filter((c) => {
+    const line = lineOf(c.provider, c.id);
+    if (!line) return true;
+    if (seen.has(line)) return false;
+    seen.add(line);
+    return true;
+  }).slice(0, limit);
 }
 // OpenRouter ids whose endpoints are worth fetching: mapped models that are on the list, then the candidates.
 function creatorIds(models, json, limit = 15) {
@@ -207,10 +239,10 @@ function newModelCandidates(models, json, creators, limit = 15, day = today()) {
     let name = ourName(d.provider, d.name) || PROVIDER_LABEL[d.provider] + ' ' + d.id;
     if (names.has(name.toLowerCase())) name += ' (OpenRouter)';
     out.push(Object.assign(cleanModel({
-      id: d.id, name, openrouter: d.orId, family: FAMILY_BY_PROVIDER[d.provider], cls: 'standard', alwaysThinks: false,
+      id: d.id, name, openrouter: d.orId, family: familyOf(d.provider, d.id), cls: 'standard', alwaysThinks: false,
       pin: c.pin, pout: c.pout, ctx: c.ctx, maxOutput: c.maxOutput,
       checkedAt: day, source: 'https://openrouter.ai/' + d.orId + '/providers', note: NOTE_ADDED,
-    }), { created: d.created, canAdd: KNOWN_FAMILIES.includes(FAMILY_BY_PROVIDER[d.provider]) }));
+    }), { created: d.created, canAdd: KNOWN_FAMILIES.includes(familyOf(d.provider, d.id)) }));
   });
   return out;
 }
@@ -426,6 +458,7 @@ function newRowValue(m, column) {
 
 // ─── Exports ───
 globalThis.PriceSync = {
+  lineOf, familyOf,
   FEED_URL, STORE_KEY, STORE_VERSION, BIG_CHANGE, FIELDS, FAMILY_BY_PROVIDER, KNOWN_FAMILIES, CREATOR_TAG, CONCURRENCY, NOTE_UPDATED, NOTE_ADDED,
   today, round6, parseOpenRouter, endpointsUrl, endpointsFile, creatorEndpoint, creatorMap, diffModels,
   creatorIds, newModelCandidates, fetchCreatorData, creatorUpdate, applyUpdate,

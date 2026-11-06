@@ -951,7 +951,7 @@ window.addEventListener('load', async () => {
     expect(panel().open, 'panel did not open');
     click('#priceFetch');
     await until(() => panel().dataset.state !== 'loading', 'fetch');
-    expect(panel().dataset.state === 'ready' && panel().dataset.changes === '5' && panel().dataset.new === '3' && panel().dataset.noCreator === '0' && panel().dataset.progress === '19/19', `ready ${panel().dataset.state} ${panel().dataset.changes}/${panel().dataset.new}/${panel().dataset.noCreator} ${panel().dataset.progress}`);
+    expect(panel().dataset.state === 'ready' && panel().dataset.changes === '5' && panel().dataset.new === '3' && panel().dataset.noCreator === '0' && panel().dataset.progress === '17/17', `ready ${panel().dataset.state} ${panel().dataset.changes}/${panel().dataset.new}/${panel().dataset.noCreator} ${panel().dataset.progress}`);
     expect(!$('#priceChanges [data-flag="big"]'), 'nothing is flagged big on real creator data');
     expect($('#priceNew tr[data-openrouter="google/gemini-3.8-flash"] input').disabled, 'Gemini candidate can be added');
     document.querySelectorAll('#priceChanges input:checked').forEach((b) => { b.checked = false; b.dispatchEvent(new Event('change', { bubbles: true })); });
