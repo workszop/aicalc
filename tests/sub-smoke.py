@@ -426,8 +426,7 @@ window.addEventListener('load', async () => {
     const store = JSON.parse(localStorage.getItem(STORE));
     expect(store.version === 1 && store.changes['deepseek-v4-pro'].pout === 4.44 && !('pin' in store.changes['deepseek-v4-pro']), `store ${localStorage.getItem(STORE)}`);
     click('#priceClose');
-    await until(() => document.activeElement === $('#pricesBtn'), 'focus back on the button');
-    expect(!panel().open, 'panel still open after Zamknij');
+    expect(!panel().open && document.activeElement === $('#pricesBtn'), 'focus not returned to the button');
     // restore
     click('#pricesBtn');
     click('#priceRestore');

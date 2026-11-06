@@ -275,7 +275,7 @@ function mount(opts) {
     if (!dialog.open) dialog.showModal();
     fetchBtn.focus();
   }
-  function close() { if (dialog.open) dialog.close(); }
+  function close() { if (dialog.open) dialog.close(); opts.trigger.focus(); }
 
   // ─── Listeners ───
   opts.trigger.setAttribute('aria-haspopup', 'dialog');
