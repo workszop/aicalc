@@ -63,7 +63,12 @@ const AGENT_FIELDS = {
   retryPct:  num(10, 0, 500, false),
   toolPln:   num(0.05, 0, 10000, false),
   platform:  num(300, 0, 1e8, false),
+  contextMode: { def: 'growing', enum: ['growing', 'flat'] },
+  toolOutTok:  num(600, 0, 1e6, true),
+  budget:      num(1000, 0, 1e8, false),
 };
+// Runs per month for the "cost at different scale" table.
+const AGENT_SCALE_RUNS = [100, 1000, 10000, 100000];
 
 // ─── Helpers ───
 function defaultsOf(...schemas) {
@@ -170,26 +175,90 @@ function computeSeatResults(s, models) {
   };
 }
 
+// Input of step k (1-based) before the tokenizer factor. Growing: the model rereads the history and every tool result.
+function agentStepInput(s, k) {
+  return s.contextMode === 'flat' ? s.inTok : s.inTok + (k - 1) * (s.outTok + s.toolOutTok);
+}
+
+// Each step is priced on its own (long-context tier per step). The first step that does not fit decides the reason.
 function computeAgentResults(s, models) {
   const model = modelOf(s, models);
-  const step = chatCost(model, s, s.inTok, s.outTok);
-  const perStep = step.perCall;
-  const llmPerRun = perStep * s.steps * (1 + s.retryPct / 100);
+  const steps = [];
+  let inPerRun = 0;
+  let outPerRun = 0;
+  let reason = null;
+  for (let i = 1; i <= s.steps; i += 1) {
+    const c = chatCost(model, s, agentStepInput(s, i), s.outTok);
+    const r = modelRates(model, c.inTok);
+    const inCost = c.inTok * r.pin / 1e6 * s.fx;
+    const outCost = c.outTok * r.pout / 1e6 * s.fx;
+    inPerRun += inCost;
+    outPerRun += outCost;
+    steps.push({ k: i, inTok: c.inTok, outTok: c.outTok, cost: c.perCall });
+    if (reason === null && c.reason) reason = c.reason;
+  }
+  const llmBase = inPerRun + outPerRun;
+  const retryPerRun = llmBase * s.retryPct / 100;
+  const llmPerRun = llmBase * (1 + s.retryPct / 100);
   const toolsPerRun = s.toolPln;
   const perRun = llmPerRun + toolsPerRun;
+  const monthly = s.runs * perRun + s.platform;
   return {
-    model, perStep, llmPerRun, toolsPerRun, perRun,
-    monthly: s.runs * perRun + s.platform,
-    eligible: step.eligible, reason: step.reason,
+    model, perStep: s.steps ? llmBase / s.steps : 0, llmPerRun, toolsPerRun, perRun,
+    monthly,
+    eligible: reason === null, reason,
+    steps, inPerRun, outPerRun, retryPerRun,
+    annual: monthly * 12,
+    breakdown: {
+      input: s.runs * inPerRun,
+      output: s.runs * outPerRun,
+      retries: s.runs * retryPerRun,
+      tools: s.runs * toolsPerRun,
+      platform: s.platform,
+    },
   };
+}
+
+// Monthly cost when the agent needs fewer or more steps and retries than typed. Everything else stays the same.
+function agentRange(s, models) {
+  const low = computeAgentResults({ ...s, steps: Math.max(1, Math.round(s.steps * 0.5)), retryPct: s.retryPct * 0.5 }, models).monthly;
+  const high = computeAgentResults({ ...s, steps: Math.max(1, Math.round(s.steps * 1.5)), retryPct: s.retryPct * 2 }, models).monthly;
+  return { low, typical: computeAgentResults(s, models).monthly, high };
+}
+
+// The same agent on every model: eligible models by monthly cost (cheapest first), then the ineligible ones.
+function agentModelTable(s, models) {
+  const rows = models.map((m) => {
+    const r = computeAgentResults({ ...s, model: m.name }, models);
+    return { name: m.name, perRun: r.eligible ? r.perRun : null, monthly: r.eligible ? r.monthly : null, eligible: r.eligible, reason: r.reason };
+  });
+  const ok = rows.filter((r) => r.eligible).sort((a, b) => a.monthly - b.monthly);
+  return ok.concat(rows.filter((r) => !r.eligible));
+}
+
+function agentScale(s, models, runsList = AGENT_SCALE_RUNS) {
+  const r = computeAgentResults(s, models);
+  return runsList.map((runs) => {
+    const monthly = runs * r.perRun + s.platform;
+    return { runs, monthly, perRunAll: runs > 0 ? monthly / runs : null, platformShare: monthly > 0 ? s.platform / monthly : 0 };
+  });
+}
+
+// Runs that fit in the monthly budget after the platform; null when the model is ineligible or a run costs nothing.
+function agentBudgetRuns(s, models) {
+  const r = computeAgentResults(s, models);
+  if (!r.eligible || !(r.perRun > 0)) return null;
+  if (s.budget <= s.platform) return 0;
+  return Math.floor((s.budget - s.platform) / r.perRun);
 }
 
 // ─── Exports ───
 globalThis.SubCore = {
   MODELS, TOK_PER_WORD, BASE_FAMILY, EN_WORD_FACTOR, THINK_MULT, SEAT_PLANS,
-  SHARED_FIELDS, SEAT_FIELDS, AGENT_FIELDS,
+  SHARED_FIELDS, SEAT_FIELDS, AGENT_FIELDS, AGENT_SCALE_RUNS,
   defaultsOf, validateValue, loadState, familyFactor, modelRates, chatCost,
   seatPlanOf, computeSeatResults, computeAgentResults,
+  agentStepInput, agentRange, agentModelTable, agentScale, agentBudgetRuns,
 };
 if (typeof module !== 'undefined') module.exports = globalThis.SubCore;
 })();
