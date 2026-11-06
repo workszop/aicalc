@@ -49,8 +49,10 @@ const MAPPING = {
   'gpt-6-astra': 'openai/gpt-6-astra', 'claude-haiku-4-5-20251001': 'anthropic/claude-haiku-4.5',
   'claude-sonnet-5': 'anthropic/claude-sonnet-5', 'claude-opus-5': 'anthropic/claude-opus-5', 'claude-fable-5-1': 'anthropic/claude-fable-5.1',
   'deepseek-flash': 'deepseek/deepseek-v4.1-flash-1017', 'deepseek-v4-pro': 'deepseek/deepseek-v4-pro-0813',
+  'gemini-3.8-flash': 'google/gemini-3.8-flash',
 };
-assert.equal(SubCore.MODELS.length, 10);
+const N = Object.keys(MAPPING).length; // 11 built-in models
+assert.equal(SubCore.MODELS.length, N);
 SubCore.MODELS.forEach((m) => assert.equal(m.openrouter, MAPPING[m.id], `core ${m.id} maps to ${MAPPING[m.id]}`));
 indexModels.forEach((m) => assert.equal(m.openrouter, MAPPING[m.id], `index ${m.id} maps to ${MAPPING[m.id]}`));
 Object.values(MAPPING).forEach((orId) => assert.ok(orMap.has(orId) && endpointsById.has(orId), `fixtures carry ${orId} (list and endpoints)`));
@@ -60,7 +62,7 @@ const col = header.indexOf('openrouter_id');
 assert.ok(col >= 0, 'built-in CSV has an openrouter_id column');
 const legacyCsv = csv.replace(/^﻿/, '').trim().split('\n').map((line) => line.split(',').filter((_, i) => i !== col).join(',')).join('\n');
 const legacy = modelsFromCsv(legacyCsv);
-assert.equal(legacy.length, 10, 'CSV without openrouter_id loads');
+assert.equal(legacy.length, N, 'CSV without openrouter_id loads');
 assert.ok(legacy.every((m) => m.openrouter === ''), 'missing column means no mapping');
 
 // ─── creatorEndpoint / creatorMap ───
@@ -142,17 +144,17 @@ assert.deepEqual(PriceSync.diffModels(unmapped, creators, TODAY), [], 'models wi
 
 // ─── discovery / creatorIds ───
 const fetchIds = PriceSync.creatorIds(SubCore.MODELS, feed, 15);
-assert.deepEqual(fetchIds.slice(0, 10), Object.values(MAPPING), 'mapped models first');
-const discovered = fetchIds.slice(10);
+assert.deepEqual(fetchIds.slice(0, N), Object.values(MAPPING), 'mapped models first');
+const discovered = fetchIds.slice(N);
 assert.deepEqual(discovered, ['openai/gpt-6.1-terra', 'anthropic/claude-haiku-5.5', 'openai/gpt-6.1-sol', 'anthropic/claude-sonnet-5.5', 'openai/gpt-6-luna',
-  'anthropic/claude-opus-5.5', 'google/gemini-3.8-flash'], 'discovered candidates, newest first, one per line (GPT-6 Sol and the older DeepSeek V4 Flash drop out)');
+  'anthropic/claude-opus-5.5'], 'discovered candidates, newest first, one per line (GPT-6 Sol and the older DeepSeek V4 Flash drop out)');
 // filters, each on the real list plus synthetic entries
 const entry = (id, created) => ({ id, name: id, created, context_length: 1000, pricing: { prompt: '0.000001', completion: '0.000002' }, top_provider: { max_completion_tokens: null } });
 const extra = clone(feed);
 ['openai/gpt-7-astra', 'openai/gpt-7-solo', 'openai/o9-mini', 'openai/gpt-7-terra', 'openai/gpt-7.1-luna-mini', 'openai/gpt-7-preview',
   'deepseek/deepseek-v5-experimental', 'deepseek/deepseek-v4-pro', 'deepseek/deepseek-v4.1-flash-2', 'qwen/qwen9',
   'google/gemini-9-flash', 'google/gemini-9.1-flash-lite', 'google/gemini-9-pro', 'google/gemma-9-flash'].forEach((id, i) => extra.data.push(entry(id, 1999999999 - i)));
-const extraIds = PriceSync.creatorIds(SubCore.MODELS, extra, 50).slice(10);
+const extraIds = PriceSync.creatorIds(SubCore.MODELS, extra, 50).slice(N);
 const has_ = (id) => extraIds.includes(id);
 assert.ok(has_('openai/gpt-7-terra') && has_('openai/gpt-7.1-luna-mini'), 'OpenAI: luna / terra / sol tiers are candidates');
 ['openai/gpt-7-astra', 'openai/gpt-7-solo', 'openai/o9-mini'].forEach((id) => assert.ok(!has_(id), `OpenAI: ${id} is not a luna / terra / sol tier`));
@@ -177,28 +179,30 @@ assert.equal(PriceSync.familyOf('anthropic', 'claude-opus-4.7'), 'claudeNew');
 assert.equal(PriceSync.familyOf('anthropic', 'claude-haiku-5.5'), 'claudeNew');
 const lines = clone(feed);
 [['openai/gpt-8-sol', 1999999990], ['openai/gpt-8.1-sol', 1999999995], ['anthropic/claude-opus-4.9', 1000], ['anthropic/claude-fable-5', 1001]].forEach(([id, c]) => lines.data.push(entry(id, c)));
-const lineIds = PriceSync.creatorIds(SubCore.MODELS, lines, 50).slice(10);
+const lineIds = PriceSync.creatorIds(SubCore.MODELS, lines, 50).slice(N);
 assert.ok(lineIds.includes('openai/gpt-8.1-sol') && !lineIds.includes('openai/gpt-8-sol') && !lineIds.includes('openai/gpt-6.1-sol'), 'only the newest Sol is a candidate');
 assert.ok(!lineIds.includes('anthropic/claude-opus-4.9') && !lineIds.includes('anthropic/claude-fable-5'), 'an older version of a mapped line (Opus 5, Fable 5.1) is not a candidate');
-assert.equal(PriceSync.creatorIds(SubCore.MODELS, extra, 3).length, 13, 'limit is honoured: 10 mapped + 3');
+assert.equal(PriceSync.creatorIds(SubCore.MODELS, extra, 3).length, N + 3, 'limit is honoured: mapped + 3');
 const goneMapped = clone(SubCore.MODELS); goneMapped[1].openrouter = 'openai/gpt-gone';
 assert.ok(!PriceSync.creatorIds(goneMapped, feed, 15).includes('openai/gpt-gone'), 'a mapped id missing from the list is not fetched');
 
 // ─── newModelCandidates: priced by the creator endpoint ───
 const cands = PriceSync.newModelCandidates(SubCore.MODELS, feed, creators, 15, TODAY);
-assert.deepEqual(cands.map((c) => c.openrouter), ['openai/gpt-6.1-terra', 'anthropic/claude-haiku-5.5', 'google/gemini-3.8-flash'], 'candidates without a creator endpoint are dropped');
+assert.deepEqual(cands.map((c) => c.openrouter), ['openai/gpt-6.1-terra', 'anthropic/claude-haiku-5.5'], 'candidates without a creator endpoint are dropped');
 const haiku55 = cands.find((c) => c.openrouter === 'anthropic/claude-haiku-5.5');
 assert.deepEqual(
   { id: haiku55.id, name: haiku55.name, family: haiku55.family, cls: haiku55.cls, alwaysThinks: haiku55.alwaysThinks, pin: haiku55.pin, pout: haiku55.pout, ctx: haiku55.ctx, maxOutput: haiku55.maxOutput, checkedAt: haiku55.checkedAt, source: haiku55.source, note: haiku55.note, tier: haiku55.tier, offPeak: haiku55.offPeak, tierAbove: haiku55.tierAbove, canAdd: haiku55.canAdd },
   { id: 'claude-haiku-5.5', name: 'Anthropic Claude Haiku 5.5', family: 'claudeNew', cls: 'standard', alwaysThinks: false, pin: 0.1, pout: 0.5, ctx: 1000000, maxOutput: 128000, checkedAt: TODAY, source: 'https://openrouter.ai/anthropic/claude-haiku-5.5/providers', note: 'Cena twórcy modelu (z OpenRouter).', tier: null, offPeak: null, tierAbove: null, canAdd: true },
   'candidate fields: prices from the anthropic endpoint (0.1 / 0.5)');
-const gem = cands.find((c) => c.openrouter === 'google/gemini-3.8-flash');
-assert.deepEqual([gem.name, gem.family, gem.pin, gem.pout, gem.ctx, gem.maxOutput, gem.canAdd], ['Google Gemini 3.8 Flash', 'gemini', 0.75, 3.75, 1048576, 65536, false], 'Google candidate: creator price, family gemini, cannot be added');
-assert.ok(!PriceSync.KNOWN_FAMILIES.includes('gemini'), 'gemini is not a known (tokenisable) family');
-assert.ok(!SubCore.TOK_PER_WORD || !('gemini' in SubCore.TOK_PER_WORD), 'no gemini tokenizer factor');
-assert.equal(PriceSync.applyUpdate(SubCore.MODELS, { changes: [], added: [gem] }, TODAY).length, 10, 'a Google candidate is never added by applyUpdate');
-assert.equal(PriceSync.overridesFrom(null, { changes: [], added: [gem] }).added.length, 0, 'nor stored');
-assert.throws(() => PriceSync.parseStore(JSON.stringify(Object.assign(PriceSync.overridesFrom(null, {}), { added: [gem] }))), /family/, 'a stored gemini model is rejected');
+// Gemini is a built-in model with a measured tokenizer factor (2026-11-06), so a newer Gemini Flash can be added
+assert.ok(PriceSync.KNOWN_FAMILIES.includes('gemini') && SubCore.TOK_PER_WORD.gemini.pl === 2.24 && SubCore.TOK_PER_WORD.gemini.en === 1.46, 'gemini family with measured factors');
+const gem9 = Object.assign(clone(haiku55), { id: 'gemini-9-flash', name: 'Google Gemini 9 Flash', openrouter: 'google/gemini-9-flash', family: 'gemini' });
+assert.equal(PriceSync.applyUpdate(SubCore.MODELS, { changes: [], added: [gem9] }, TODAY).length, N + 1, 'a Gemini candidate can be added');
+// a family without a tokenizer factor is never added or stored
+const mystery = Object.assign(clone(haiku55), { id: 'mystery-1', name: 'Mystery 1', family: 'mystery', canAdd: false });
+assert.equal(PriceSync.applyUpdate(SubCore.MODELS, { changes: [], added: [mystery] }, TODAY).length, N, 'an unknown family is never added by applyUpdate');
+assert.equal(PriceSync.overridesFrom(null, { changes: [], added: [mystery] }).added.length, 0, 'nor stored');
+assert.throws(() => PriceSync.parseStore(JSON.stringify(Object.assign(PriceSync.overridesFrom(null, {}), { added: [mystery] }))), /family/, 'a stored unknown-family model is rejected');
 const lowHost = clone(endpointsOf('anthropic/claude-haiku-5.5'));
 lowHost.data.endpoints.unshift({ provider_name: 'Cheap', tag: 'cheap/fp4', pricing: { prompt: '0.00000001', completion: '0.00000002' }, context_length: 2000000, max_completion_tokens: 1, quantization: 'fp4' });
 assert.equal(PriceSync.newModelCandidates(SubCore.MODELS, feed, PriceSync.creatorMap({ 'anthropic/claude-haiku-5.5': lowHost }), 15, TODAY)[0].pin, 0.1, 'a cheaper host listed first is ignored');
@@ -212,7 +216,7 @@ const fake = { pin: 1, pout: 2, ctx: 1000, maxOutput: 1000, provider: 'X', tag: 
 const named = PriceSync.newModelCandidates(SubCore.MODELS, feed, new Map(discovered.map((id) => [id, fake])), 15, TODAY);
 assert.equal(named.length, discovered.length);
 assert.ok(named.every((c, i) => i === 0 || named[i - 1].created >= c.created), 'newest first');
-assert.equal(named.find((c) => c.openrouter === 'google/gemini-3.8-flash').name, 'Google Gemini 3.8 Flash', 'no doubled provider word');
+assert.equal(named.find((c) => c.openrouter === 'anthropic/claude-opus-5.5').name, 'Anthropic Claude Opus 5.5', 'no doubled provider word');
 const clash = clone(SubCore.MODELS); clash.push(Object.assign(clone(clash[0]), { id: 'x', name: 'OpenAI GPT-6 Luna', openrouter: '' }));
 assert.equal(PriceSync.newModelCandidates(clash, feed, new Map(discovered.map((id) => [id, fake])), 15, TODAY).find((c) => c.openrouter === 'openai/gpt-6-luna').name, 'OpenAI GPT-6 Luna (OpenRouter)', 'a name that clashes with a model on the list gets a suffix');
 const noCtx = new Map([['anthropic/claude-haiku-5.5', Object.assign({}, fake, { ctx: null })]]);
@@ -223,7 +227,7 @@ const data = { list: feed, listMap: orMap, endpoints: endpointsById };
 const upd = PriceSync.creatorUpdate(SubCore.MODELS, data, 15, TODAY);
 assert.equal(upd.rows.length, 5);
 assert.deepEqual([upd.missing, upd.noCreator], [[], []]);
-assert.equal(upd.candidates.length, 3);
+assert.equal(upd.candidates.length, 2);
 const broken = clone(SubCore.MODELS); broken[1].openrouter = 'openai/gpt-gone';
 const eps = new Map(endpointsById);
 eps.set('deepseek/deepseek-v4-pro-0813', only(proEp, ['wafer/us', 'alibaba', 'relace/fp4']));
@@ -241,8 +245,8 @@ const accepted = rows.filter((r) => !r.flags.includes('big'));
 const updated = PriceSync.applyUpdate(SubCore.MODELS, { changes: accepted, added: [haiku55] }, TODAY);
 assert.deepEqual(clone(SubCore.MODELS), before, 'applyUpdate does not mutate the input');
 assert.notEqual(updated, SubCore.MODELS);
-assert.equal(updated.length, 11, 'added model appended');
-assert.equal(updated[10].id, 'claude-haiku-5.5');
+assert.equal(updated.length, N + 1, 'added model appended');
+assert.equal(updated[N].id, 'claude-haiku-5.5');
 const pro = updated.find((m) => m.id === 'deepseek-v4-pro');
 assert.deepEqual([pro.pin, pro.pout, pro.ctx, pro.maxOutput], [1.32, 3.96, 1048576, 393216], 'DeepSeek V4 Pro keeps its prices, takes the context and max output');
 const haiku = updated.find((m) => m.id === 'claude-haiku-4-5-20251001');
@@ -250,7 +254,7 @@ assert.equal(haiku.pout, 5.5, 'accepted change applied');
 assert.equal(haiku.checkedAt, TODAY, 'checkedAt of a changed model becomes today');
 assert.equal(haiku.note, 'Cena twórcy modelu (z OpenRouter).', 'the note says it is the creator price via OpenRouter');
 assert.equal(updated.find((m) => m.id === 'gpt-5.6-luna').checkedAt, '2026-09-13', 'unchanged models keep their date');
-assert.equal(PriceSync.applyUpdate(updated, { changes: [], added: [haiku55] }, TODAY).length, 11, 'an existing id is not added twice');
+assert.equal(PriceSync.applyUpdate(updated, { changes: [], added: [haiku55] }, TODAY).length, N + 1, 'an existing id is not added twice');
 assert.deepEqual(PriceSync.diffModels(updated, creators, TODAY), [], 'after the update nothing is left');
 const notBig = PriceSync.applyUpdate(SubCore.MODELS, { changes: bigDiff.filter((r) => !r.flags.includes('big')) }, TODAY).find((m) => m.id === 'deepseek-v4-pro');
 assert.deepEqual([notBig.pin, notBig.ctx], [1.32, 1000000], 'a doubtful model keeps its built-in values when only non-big rows are accepted');
@@ -277,7 +281,7 @@ odd.changes['no-such-model'] = { pin: 1, checkedAt: TODAY };
 odd.added.push(clone(haiku55));
 odd.added.push(Object.assign(clone(haiku55), { id: 'gpt-5.6-luna', name: 'Dup id' }));
 const oddOut = PriceSync.applyOverrides(SubCore.MODELS, PriceSync.parseStore(JSON.stringify(odd)));
-assert.equal(oddOut.length, 11, 'unknown ids ignored, added ids not duplicated');
+assert.equal(oddOut.length, N + 1, 'unknown ids ignored, added ids not duplicated');
 assert.equal(oddOut.filter((m) => m.id === 'gpt-5.6-luna').length, 1);
 // the same overrides apply to index's model shape and to a CSV that lacks some ids
 const idxOut = PriceSync.applyOverrides(indexModels.slice(0, 9), store);
@@ -289,7 +293,7 @@ assert.ok(idxOut.find((m) => m.id === 'deepseek-flash').tier === null, 'index ti
   '{"version":1,"updatedAt":"x","changes":{"a":{"pin":-1,"checkedAt":"2026-11-06"}},"added":[]}',
   '{"version":1,"updatedAt":"x","changes":{"a":{"pin":"1","checkedAt":"2026-11-06"}},"added":[]}',
   '{"version":1,"updatedAt":"x","changes":{},"added":[{"id":"x"}]}',
-  JSON.stringify(Object.assign(clone(store), { added: [Object.assign(clone(haiku55), { family: 'gemini' })] })),
+  JSON.stringify(Object.assign(clone(store), { added: [Object.assign(clone(haiku55), { family: 'mystery' })] })),
 ].forEach((text) => assert.throws(() => PriceSync.parseStore(text), Error, `rejects ${text.slice(0, 60)}`));
 
 // ─── CSV rewrite (shared by index.html and the script) ───
@@ -297,7 +301,7 @@ const commaNote = Object.assign(clone(haiku55), { id: 'comma-note', name: 'Comma
 const csvOut = PriceSync.updateCsvText(csv, updated.concat([commaNote]));
 assert.ok(csvOut.startsWith('﻿' + csv.replace(/^﻿/, '').split('\n')[0] + '\n'), 'header and BOM preserved');
 const reparsed = modelsFromCsv(csvOut);
-assert.equal(reparsed.length, 12);
+assert.equal(reparsed.length, N + 2);
 assert.equal(reparsed.find((m) => m.id === 'claude-haiku-4-5-20251001').pout, 5.5);
 assert.equal(reparsed.find((m) => m.id === 'claude-haiku-4-5-20251001').note, 'Cena twórcy modelu (z OpenRouter).');
 assert.equal(reparsed.find((m) => m.id === 'deepseek-v4-pro').offPeak.pin, 0.66, 'off-peak kept');
@@ -328,7 +332,7 @@ async function fetchTests() {
     },
   };
   const got = await PriceSync.fetchCreatorData(SubCore.MODELS, io, { onProgress: (d, n) => progress.push(d + '/' + n) });
-  assert.equal(got.ids.length, 17, '10 mapped + 7 candidates');
+  assert.equal(got.ids.length, N + 6, 'mapped + 6 candidates');
   assert.deepEqual(asked.slice().sort(), got.ids.slice().sort(), 'each id is asked once');
   assert.ok(peak <= 4 && peak > 1, `at most 4 requests in flight (peak ${peak})`);
   assert.equal(progress[0], '0/17');
@@ -338,7 +342,7 @@ async function fetchTests() {
   const u = PriceSync.creatorUpdate(SubCore.MODELS, got, 15, TODAY);
   assert.deepEqual(u.noCreator.map((r) => r.id), ['claude-sonnet-5'], 'partial failure: that model has no creator price');
   assert.equal(u.rows.length, 5, 'the rest still works');
-  assert.deepEqual(u.candidates.map((c) => c.openrouter), ['openai/gpt-6.1-terra', 'anthropic/claude-haiku-5.5', 'google/gemini-3.8-flash']);
+  assert.deepEqual(u.candidates.map((c) => c.openrouter), ['openai/gpt-6.1-terra', 'anthropic/claude-haiku-5.5']);
   await assert.rejects(PriceSync.fetchCreatorData(SubCore.MODELS, { list: async () => { throw new Error('offline'); }, endpoints: io.endpoints }), /offline/, 'the list failing is a total failure');
   await assert.rejects(PriceSync.fetchCreatorData(SubCore.MODELS, { list: async () => ({ nope: 1 }), endpoints: io.endpoints }), /OpenRouter/, 'a malformed list is a total failure');
   const one = await PriceSync.fetchCreatorData(SubCore.MODELS, io, { concurrency: 1 });

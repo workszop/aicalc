@@ -66,7 +66,7 @@ assert.equal((dryOut.match(/\| do zapisu \|/g) || []).length, 5, 'Haiku output (
 assert.match(dryOut, /## Brak ceny twórcy w OpenRouter\n\nWszystkie zmapowane modele mają cenę twórcy\./);
 assert.match(dryOut, /## Nowe modele \(do decyzji\)/);
 assert.match(dryOut, /\| `anthropic\/claude-haiku-5\.5` \| Anthropic Claude Haiku 5\.5 \| claudeNew \| 0\.1 \| 0\.5 \| 1000000 \|  \|/, 'candidate priced by its creator');
-assert.match(dryOut, /\| `google\/gemini-3\.8-flash` \| Google Gemini 3\.8 Flash \| gemini \| 0\.75 \| 3\.75 \| 1048576 \| Brak współczynnika tokenizera Gemini – dodanie po pomiarze \|/, 'Google candidate listed with the tokenizer note');
+assert.ok(!/\| `google\/gemini-3\.8-flash` \|/.test(dryOut.split('## Nowe modele')[1] || ''), 'Gemini 3.8 Flash is a built-in model now, not a candidate');
 assert.ok(!/qwen\//.test(dryOut.split('## Nowe modele')[1]), 'no qwen candidates');
 assert.ok(!/gpt-6-luna/.test(dryOut), 'a candidate without a creator endpoint is not listed');
 assert.equal(fs.readFileSync(path.join(dry, 'index.html'), 'utf8'), realIndex, 'dry run leaves index.html alone');

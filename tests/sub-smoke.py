@@ -413,16 +413,14 @@ window.addEventListener('load', async () => {
     expect(panel().dataset.state === 'ready', `state ${panel().dataset.state}: ${$('#priceMsg').textContent}`);
     expect(msgLog.includes('Pobieranie cen twórców: 0/17') && msgLog.includes('Pobieranie cen twórców: 17/17'), `progress counter ${JSON.stringify(msgLog.slice(0, 4))}`);
     expect(panel().dataset.progress === '17/17', `data-progress ${panel().dataset.progress}`);
-    expect(panel().dataset.changes === '5' && panel().dataset.new === '3' && panel().dataset.missing === '0' && panel().dataset.noCreator === '0', `counts ${panel().dataset.changes}/${panel().dataset.new}/${panel().dataset.missing}/${panel().dataset.noCreator}`);
+    expect(panel().dataset.changes === '5' && panel().dataset.new === '2' && panel().dataset.missing === '0' && panel().dataset.noCreator === '0', `counts ${panel().dataset.changes}/${panel().dataset.new}/${panel().dataset.missing}/${panel().dataset.noCreator}`);
     expect(!$('#priceChanges [data-flag="big"]') && !$('#priceNoCreator'), 'real creator data: nothing big, no creator price missing');
     const proCtx = $('#priceChanges tr[data-model-id="deepseek-v4-pro"][data-field="ctx"]');
     expect(proCtx && proCtx.querySelector('input').checked && /1\s?000\s?000 → 1\s?048\s?576/.test(proCtx.textContent), `DeepSeek ctx row ${proCtx && proCtx.textContent}`);
     expect($('#priceChanges tr[data-model-id="claude-haiku-4-5-20251001"][data-field="pout"] input').checked, 'a normal change is not pre-checked');
     expect([...document.querySelectorAll('#priceNew input')].every((b) => !b.checked), 'new models are pre-checked');
     expect(/OpenAI GPT-6\.1 Terra/.test($('#priceNew').textContent), 'candidate names missing');
-    const gem = $('#priceNew tr[data-openrouter="google/gemini-3.8-flash"]');
-    expect(gem && gem.dataset.canAdd === 'false' && gem.querySelector('input').disabled && /Brak współczynnika tokenizera Gemini – dodanie po pomiarze/.test(gem.textContent), 'Gemini candidate is not disabled with the tokenizer note');
-    expect(/0,75/.test(gem.textContent) && /3,75/.test(gem.textContent), `Gemini creator price ${gem.textContent}`);
+    expect(!$('#priceNew tr[data-openrouter="google/gemini-3.8-flash"]') && SubCore.MODELS.some((m) => m.id === 'gemini-3.8-flash'), 'Gemini 3.8 Flash is a built-in model, not a candidate');
     expect(!$('#priceNew tr[data-openrouter^="qwen/"]'), 'qwen candidate listed');
     expect(panel().getBoundingClientRect().right <= window.innerWidth + 0.5, 'panel wider than the viewport');
     // accept only Claude Haiku 4.5 output 5 -> 5.5
@@ -494,17 +492,17 @@ AGENT_PRICES_STORED_FLOW = r"""
     const card = $('#agentCard');
     const defaults = SubCore.defaultsOf(SubCore.SHARED_FIELDS, SubCore.AGENT_FIELDS);
     expect(document.body.dataset.prices === 'openrouter', 'stored prices not reported');
-    expect(SubCore.MODELS.length === 11 && SubCore.MODELS[10].name === 'OpenAI GPT-6 Luna', 'added model missing or duplicated');
+    expect(SubCore.MODELS.length === 12 && SubCore.MODELS[11].name === 'OpenAI GPT-6 Luna', 'added model missing or duplicated');
     expect(SubCore.MODELS[0].pout === 2.4, 'stored change not applied');
     const want = SubCore.computeAgentResults(defaults, SubCore.MODELS);
     expect(card.dataset.monthly === SubUI.dataNum(want.monthly) && card.dataset.monthly !== '487.64', `stored monthly ${card.dataset.monthly}`);
     expect($('[data-field="model"] option[value="OpenAI GPT-6 Luna"]'), 'added model not in the select');
-    expect($('#modelTable').querySelectorAll('tbody tr').length === 11, 'model table without the added model');
+    expect($('#modelTable').querySelectorAll('tbody tr').length === 12, 'model table without the added model');
     expect($('#priceStatus').textContent === 'Zaktualizowane z OpenRouter 2026-11-06', `status ${$('#priceStatus').textContent}`);
     // restore brings back the built-in list
     click('#pricesBtn');
     click('#priceRestore');
-    expect(SubCore.MODELS.length === 10 && card.dataset.monthly === '487.64' && !$('[data-field="model"] option[value="OpenAI GPT-6 Luna"]'), 'restore did not bring back the built-in list');
+    expect(SubCore.MODELS.length === 11 && card.dataset.monthly === '487.64' && !$('[data-field="model"] option[value="OpenAI GPT-6 Luna"]'), 'restore did not bring back the built-in list');
     finish({ ok: true, assertions: assertions.n, viewport: viewport() });
   } catch (error) {
     finish({ ok: false, error: String(error && error.message || error), assertions: assertions.n });
@@ -539,16 +537,11 @@ window.addEventListener('load', async () => {
     click('#priceFetch');
     await until(() => panel().dataset.state !== 'loading', 'fetch');
     expect(panel().dataset.state === 'ready' && panel().dataset.changes === '5', `state ${panel().dataset.state}`);
-    // a Google candidate cannot be added, even when its box is forced on
-    const gemBox = $('#priceNew tr[data-openrouter="google/gemini-3.8-flash"] input');
-    expect(gemBox.disabled, 'Gemini add box enabled');
-    gemBox.checked = true; gemBox.dispatchEvent(new Event('change', { bubbles: true }));
-    expect(!gemBox.checked, 'Gemini add box stays unchecked');
     const box = [...document.querySelectorAll('#priceNew input')].find((b) => b.closest('tr').dataset.openrouter === 'openai/gpt-6.1-terra');
     box.checked = true; box.dispatchEvent(new Event('change', { bubbles: true }));
     click('#priceApply');
     expect(SubCore.MODELS.some((m) => m.id === 'gpt-6.1-terra') && $('[data-field="model"] option[value="OpenAI GPT-6.1 Terra"]'), 'added model not offered');
-    expect(!SubCore.MODELS.some((m) => m.family === 'gemini'), 'a Gemini model was added');
+    expect(SubCore.MODELS.filter((m) => m.family === 'gemini').length === 1, 'Gemini 3.8 Flash stays the only Gemini model');
     expect(Math.abs(Number(api()) - 835.70) < 0.011, 'seats default model changed by unrelated updates');
     setField('model', 'OpenAI GPT-6.1 Terra');
     expect(api() !== '' && api() !== '835.7', `api with the new model ${api()}`);

@@ -951,9 +951,9 @@ window.addEventListener('load', async () => {
     expect(panel().open, 'panel did not open');
     click('#priceFetch');
     await until(() => panel().dataset.state !== 'loading', 'fetch');
-    expect(panel().dataset.state === 'ready' && panel().dataset.changes === '5' && panel().dataset.new === '3' && panel().dataset.noCreator === '0' && panel().dataset.progress === '17/17', `ready ${panel().dataset.state} ${panel().dataset.changes}/${panel().dataset.new}/${panel().dataset.noCreator} ${panel().dataset.progress}`);
+    expect(panel().dataset.state === 'ready' && panel().dataset.changes === '5' && panel().dataset.new === '2' && panel().dataset.noCreator === '0' && panel().dataset.progress === '17/17', `ready ${panel().dataset.state} ${panel().dataset.changes}/${panel().dataset.new}/${panel().dataset.noCreator} ${panel().dataset.progress}`);
     expect(!$('#priceChanges [data-flag="big"]'), 'nothing is flagged big on real creator data');
-    expect($('#priceNew tr[data-openrouter="google/gemini-3.8-flash"] input').disabled, 'Gemini candidate can be added');
+    expect(!$('#priceNew tr[data-openrouter="google/gemini-3.8-flash"]'), 'Gemini 3.8 Flash is built in, not a candidate');
     document.querySelectorAll('#priceChanges input:checked').forEach((b) => { b.checked = false; b.dispatchEvent(new Event('change', { bubbles: true })); });
     const box = $('#priceChanges tr[data-model-id="claude-haiku-4-5-20251001"][data-field="pout"] input');
     box.checked = true; box.dispatchEvent(new Event('change', { bubbles: true }));
@@ -967,7 +967,7 @@ window.addEventListener('load', async () => {
     expect(state.models.find((m) => m.name === HAIKU).note === 'Cena twórcy modelu (z OpenRouter).', 'CSV note of an updated model');
     const saved = JSON.parse(localStorage.getItem('edulab-aicalc-scenario-v3'));
     expect(saved && modelsFromCsv(saved.csvText).find((m) => m.name === HAIKU).pout === 5.5, 'scenario save does not carry the update');
-    expect(parseScenario(JSON.stringify(saved)).models.length === 10, 'saved scenario does not parse');
+    expect(parseScenario(JSON.stringify(saved)).models.length === 11, 'saved scenario does not parse');
     expect(/^Zaktualizowane z OpenRouter/.test($('#priceStatusLine').textContent), 'status line after apply');
     click('#priceRestore');
     expect(localStorage.getItem(STORE) === null && document.body.dataset.prices === 'builtin' && api() === before, `restore: api ${api()}, expected ${before}`);
@@ -1008,7 +1008,7 @@ window.addEventListener('load', async () => {
 """ + PRICES_PRELUDE + r"""
   try {
     expect(document.body.dataset.prices === 'openrouter', 'stored prices not reported');
-    expect(state.models.length === 11 && $('#model option[value="OpenAI GPT-6 Luna"]'), 'added model missing');
+    expect(state.models.length === 12 && $('#model option[value="OpenAI GPT-6 Luna"]'), 'added model missing');
     expect(state.models.find((m) => m.id === 'gpt-5.6-terra').pout === 14, 'stored change not applied before the first render');
     const want = computeResults(Object.assign({}, state), state.models).api.monthly.toFixed(2);
     expect(api() === want && api() !== '6839.25', `stored api ${api()}, expected ${want}`);
@@ -1017,7 +1017,7 @@ window.addEventListener('load', async () => {
     expect(state.models.find((m) => m.id === 'gpt-5.6-terra').pout === 14, 'Cennik wbudowany dropped the stored prices');
     click('#priceUpdate');
     click('#priceRestore');
-    expect(state.models.length === 10 && api() === '6839.25', `restore: ${state.models.length} models, api ${api()}`);
+    expect(state.models.length === 11 && api() === '6839.25', `restore: ${state.models.length} models, api ${api()}`);
     finish({ ok: true, assertions, viewport: viewport() });
   } catch (error) {
     finish({ ok: false, error: String(error && error.message || error), assertions });

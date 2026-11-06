@@ -27,7 +27,7 @@ const CSV_RE = /(<script id="csvData"[^>]*>)([\s\S]*?)(<\/script>)/;
 const FIELD_LABEL = { pin: 'wejście USD/1M', pout: 'wyjście USD/1M', ctx: 'okno kontekstu', maxOutput: 'maks. wyjście' };
 const FLAG_LABEL = { big: 'duża zmiana, sprawdź u dostawcy', tiersKept: 'ceny dla długiego kontekstu nie są aktualizowane' };
 const CORE_KEYS = { pin: 'pin', pout: 'pout', ctx: 'ctx', maxOutput: 'maxOutput' };
-const NO_TOKENIZER = 'Brak współczynnika tokenizera Gemini – dodanie po pomiarze';
+const NO_TOKENIZER = 'Brak współczynnika tokenizera tej rodziny – dodanie po pomiarze';
 const LIST_TIMEOUT_MS = 30000;
 const ENDPOINTS_TIMEOUT_MS = 20000;
 

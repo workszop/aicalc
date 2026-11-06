@@ -360,20 +360,27 @@ ceny, `openai/fast` podwójna, `google-ai-studio/flex`, `/priority`,
   `experimental`) i bez bliźniaków modelu z listy (id zmapowanego modelu bez
   końcowego `-<cyfry>`); Google tylko `google/gemini-<wersja>-flash`. Qwen nie
   ma kandydatów. Wszędzie pomijane są `:batch`, aliasy `~`, `-pro`, `-image`,
-  `-vl-`, `guard`, `preview`. Kandydat bez endpointu twórcy jest pomijany; jego
+  `-vl-`, `guard`, `preview`. Z każdej linii modelu (np. OpenAI Sol, Claude Opus,
+  Gemini Flash) zostaje tylko najnowsza wersja, a wersja starsza od modelu z tej
+  linii, który już jest na liście, nie jest kandydatem. Claude przed 4.7 dostaje
+  rodzinę `claude`, od 4.7 `claudeNew`. Kandydat bez endpointu twórcy jest pomijany; jego
   ceny pochodzą z endpointu twórcy, a źródło to
   `https://openrouter.ai/<id>/providers`. Dodany model ma klasę `standard`, nie
   ma progów ani cen poza szczytem, a w uwadze: „Cena twórcy modelu
   (z OpenRouter).” (ta sama uwaga trafia do zaktualizowanych modeli).
-- **Gemini:** kalkulator nie ma jeszcze współczynnika tokenizera Gemini, więc
-  kandydat Google jest pokazany z uwagą „Brak współczynnika tokenizera Gemini –
-  dodanie po pomiarze” i nie da się go dodać.
+- **Gemini:** Gemini 3.8 Flash jest modelem wbudowanym (0,75 / 3,75 USD, cena
+  Google AI Studio). Współczynnik tokenizera `gemini` zmierzono 2026-11-06:
+  `countTokens` Gemini 3.8 Flash i `o200k` OpenAI na tych samych tekstach PL/EN z
+  interfejsu (977 / 1159 słów), przeskalowane do współczynników OpenAI: 2,24
+  (PL) i 1,46 (EN). Kandydat z rodziny bez współczynnika tokenizera jest
+  pokazany z uwagą „Brak współczynnika tokenizera tej rodziny – dodanie po
+  pomiarze” i nie da się go dodać.
 
 ### W przeglądarce
 
-Przycisk **Ceny modeli** w nagłówku `seats.html` i `agent.html` oraz
-**Aktualizuj z OpenRouter** w sekcji „Cennik modeli” w `index.html` otwierają
-panel. „Pobierz aktualne ceny” pobiera listę, a potem endpointy zmapowanych
+Przycisk **Ceny modeli** w nagłówku `index.html`, `seats.html` i `agent.html`
+(a w `index.html` także **Aktualizuj z OpenRouter** w sekcji „Cennik modeli”)
+otwiera panel. „Pobierz aktualne ceny” pobiera listę, a potem endpointy zmapowanych
 modeli i kandydatów (najwyżej 4 zapytania naraz, każde z limitem 10 s, całość
 z limitem 15 s; status pokazuje licznik „Pobieranie cen twórców: 7/25”). Panel pokazuje zmiany
 z polami wyboru (duże zmiany i nowe modele są odznaczone), a „Zastosuj
@@ -463,7 +470,7 @@ nazwa,cena_wejscie_per_1M_USD,cena_wyjscie_per_1M_USD,okno_kontekstu,klasa,uwaga
 | `klasa` | umowna klasa porównania, np. `mini`, `standard`, `frontier` |
 | `uwaga` | notatka, założenia i źródła dla człowieka |
 | `id` | stabilny, unikalny identyfikator modelu |
-| `family` | rodzina współczynnika tokenów, np. `openai`, `claude`, `claudeNew`, `deepseek`, `qwen` |
+| `family` | rodzina współczynnika tokenów, np. `openai`, `claude`, `claudeNew`, `deepseek`, `qwen`, `gemini` |
 | `max_output` | limit tokenów wyjściowych modelu |
 | `always_thinks` | czy model zawsze używa rozumowania (`true`/`false`) |
 | `tier_above` | próg długiego kontekstu w tokenach; puste, jeśli nie dotyczy |

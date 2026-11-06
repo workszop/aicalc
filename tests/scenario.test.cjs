@@ -15,7 +15,7 @@ vm.runInContext(`
   const original = { ...DEFAULTS, lang: 'en', models: modelsFromCsv(csv), csvText: csv, csvSource: null };
   const saved = serializeScenario(original);
   const loaded = parseScenario(JSON.stringify(saved));
-  if (loaded.values.users !== DEFAULTS.users || loaded.models.length !== 10 || loaded.values.lang !== 'en' || loaded.values.maxUtilization !== DEFAULTS.maxUtilization) throw Error('round trip');
+  if (loaded.values.users !== DEFAULTS.users || loaded.models.length !== 11 || loaded.values.lang !== 'en' || loaded.values.maxUtilization !== DEFAULTS.maxUtilization) throw Error('round trip');
   const customized = { ...original, maxUtilization: 67 };
   const customizedSaved = serializeScenario(customized);
   if (customizedSaved.values.maxUtilization !== 67 || parseScenario(JSON.stringify(customizedSaved)).values.maxUtilization !== 67) throw Error('max utilization round trip');

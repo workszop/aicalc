@@ -16,10 +16,10 @@ const FIELDS = ['pin', 'pout', 'ctx', 'maxOutput'];
 const PRICE_FIELDS = ['pin', 'pout'];
 const FAMILY_BY_PROVIDER = { openai: 'openai', anthropic: 'claudeNew', deepseek: 'deepseek', qwen: 'qwen', google: 'gemini' };
 const PROVIDER_LABEL = { openai: 'OpenAI', anthropic: 'Anthropic', deepseek: 'DeepSeek', qwen: 'Qwen', google: 'Google' };
-const KNOWN_FAMILIES = ['openai', 'deepseek', 'qwen', 'claude', 'claudeNew'];
+const KNOWN_FAMILIES = ['openai', 'deepseek', 'qwen', 'claude', 'claudeNew', 'gemini'];
 const SKIP_PATTERNS = ['-image', '-vl-', 'guard', '-pro', 'preview'];
-// New-model candidates per provider (qwen has a tokenizer family, but no candidates). `gemini` has no
-// tokenizer factor yet, so a Google candidate is listed but cannot be added (KNOWN_FAMILIES has no gemini).
+// New-model candidates per provider (qwen has a tokenizer family, but no candidates). A candidate whose family
+// has no tokenizer factor (not in KNOWN_FAMILIES) is listed but cannot be added.
 const OPENAI_TIER_RE = /(^|[-.])(luna|terra|sol)($|[-.])/;
 const DEEPSEEK_EXP_RE = /-exp|vision|experimental/;
 const GOOGLE_FLASH_RE = /^google\/gemini-[\d.]+-flash$/;

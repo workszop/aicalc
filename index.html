@@ -573,6 +573,7 @@ summary:focus-visible, #resultsPanel:focus-visible { outline: 3px solid transpar
   <span class="header-spacer"></span>
   <button type="button" class="ghost-btn" id="settingsToggle" aria-controls="settingsPanel" aria-expanded="false" data-t="settingsTitle"></button>
   <button type="button" class="ghost-btn" id="scenarioReset" data-t="scenarioReset"></button>
+  <button type="button" class="ghost-btn" id="pricesBtn" data-t="ppBtn"></button>
   <button type="button" class="ghost-btn js-assump" data-t="assumpBtn"></button>
   <div class="edu-seg" role="group" aria-label="Język / Language">
     <button type="button" data-lang="pl">PL</button>
@@ -891,6 +892,7 @@ Anthropic Claude Opus 5,5,25,1000000,frontier,Stawka standardowa bez cache i Bat
 Anthropic Claude Fable 5.1,10,50,1000000,frontier,Stawka standardowa bez cache i Batch.,claude-fable-5-1,claudeNew,128000,true,,,,,,2026-09-13,https://platform.claude.com/docs/en/about-claude/pricing,anthropic/claude-fable-5.1
 DeepSeek V4.1 Flash,0.3,1.2,1000000,mini,Stawka standardowa bez cache i Batch.,deepseek-flash,deepseek,384000,false,,,,0.15,0.6,2026-09-13,https://api-docs.deepseek.com/quick_start/pricing/,deepseek/deepseek-v4.1-flash-1017
 DeepSeek V4 Pro 0813,1.32,3.96,1000000,frontier,Stawka standardowa bez cache i Batch.,deepseek-v4-pro,deepseek,384000,false,,,,0.66,1.98,2026-09-13,https://api-docs.deepseek.com/quick_start/pricing/,deepseek/deepseek-v4-pro-0813
+Google Gemini 3.8 Flash,0.75,3.75,1048576,mini,Stawka standardowa Google AI Studio bez cache i Batch.,gemini-3.8-flash,gemini,65536,false,,,,,,2026-11-06,https://ai.google.dev/gemini-api/docs/pricing,google/gemini-3.8-flash
 </script>
 <script src="sub/prices.js"></script>
 <script src="sub/prices-ui.js"></script>
@@ -907,6 +909,8 @@ const TOK_PER_WORD = {
   qwen:      { pl: 2.61, en: 1.46, label: 'Qwen3' },
   claude:    { pl: 2.32, en: 1.37, label: 'Claude (Haiku 4.5)' },
   claudeNew: { pl: 3.02, en: 1.78, label: 'Claude 4.7+ (+30%)' },
+  // Measured 2026-11-06: Gemini 3.8 Flash countTokens vs o200k on the same PL/EN UI copy (977 / 1159 words), scaled to the openai factors.
+  gemini:    { pl: 2.24, en: 1.46, label: 'Gemini 3.8 Flash' },
 };
 const BASE_FAMILY = 'openai';      // workload tokens are entered as OpenAI o200k tokens of Polish text
 const SELF_HOSTED_FAMILY = 'qwen';
@@ -2724,10 +2728,13 @@ window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer
   syncSettingsPanel();
   render();
   App.prices = PriceUI.mount({
-    trigger: $('priceUpdate'), t, lang: () => state.lang, getModels: () => state.models, statusEl: $('priceStatusLine'),
+    trigger: $('pricesBtn'), t, lang: () => state.lang, getModels: () => state.models, statusEl: $('priceStatusLine'),
     onApply: (next) => loadCsvText(PriceSync.updateCsvText(state.csvText, next), state.csvSource),
     onRestore: () => loadCsvText($('csvData').textContent, null),
   });
+  // The header button ("Ceny modeli", as on the other pages) opens the panel; the button in the price-list
+  // section opens the same panel.
+  $('priceUpdate').addEventListener('click', () => $('pricesBtn').click());
   if ('IntersectionObserver' in window) {
     const ticker = $('ticker');
     new IntersectionObserver((entries) => {

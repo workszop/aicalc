@@ -13,6 +13,7 @@ const MODELS = [
   { id: 'claude-fable-5-1', name: 'Anthropic Claude Fable 5.1', pin: 10, pout: 50, ctx: 1000000, maxOutput: 128000, family: 'claudeNew', alwaysThinks: true, tierAbove: null, tierIn: null, tierOut: null, checkedAt: '2026-09-13', source: 'https://platform.claude.com/docs/en/about-claude/pricing', openrouter: 'anthropic/claude-fable-5.1' },
   { id: 'deepseek-flash', name: 'DeepSeek V4.1 Flash', pin: 0.3, pout: 1.2, ctx: 1000000, maxOutput: 384000, family: 'deepseek', alwaysThinks: false, tierAbove: null, tierIn: null, tierOut: null, checkedAt: '2026-09-13', source: 'https://api-docs.deepseek.com/quick_start/pricing/', openrouter: 'deepseek/deepseek-v4.1-flash-1017' },
   { id: 'deepseek-v4-pro', name: 'DeepSeek V4 Pro 0813', pin: 1.32, pout: 3.96, ctx: 1000000, maxOutput: 384000, family: 'deepseek', alwaysThinks: false, tierAbove: null, tierIn: null, tierOut: null, checkedAt: '2026-09-13', source: 'https://api-docs.deepseek.com/quick_start/pricing/', openrouter: 'deepseek/deepseek-v4-pro-0813' },
+  { id: 'gemini-3.8-flash', name: 'Google Gemini 3.8 Flash', pin: 0.75, pout: 3.75, ctx: 1048576, maxOutput: 65536, family: 'gemini', alwaysThinks: false, tierAbove: null, tierIn: null, tierOut: null, checkedAt: '2026-11-06', source: 'https://ai.google.dev/gemini-api/docs/pricing', openrouter: 'google/gemini-3.8-flash' },
 ];
 const TOK_PER_WORD = {
   openai:    { pl: 2.32, en: 1.37, label: 'OpenAI o200k' },
@@ -20,6 +21,8 @@ const TOK_PER_WORD = {
   qwen:      { pl: 2.61, en: 1.46, label: 'Qwen3' },
   claude:    { pl: 2.32, en: 1.37, label: 'Claude (Haiku 4.5)' },
   claudeNew: { pl: 3.02, en: 1.78, label: 'Claude 4.7+ (+30%)' },
+  // Measured 2026-11-06: Gemini 3.8 Flash countTokens vs o200k on the same PL/EN UI copy (977 / 1159 words), scaled to the openai factors.
+  gemini:    { pl: 2.24, en: 1.46, label: 'Gemini 3.8 Flash' },
 };
 const BASE_FAMILY = 'openai';
 const EN_WORD_FACTOR = 502 / 443;
