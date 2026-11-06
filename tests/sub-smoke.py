@@ -368,14 +368,191 @@ AGENT_PLANT_FLOW = r"""
 </script>
 """
 
+# ─── Price panel (sub/prices-ui.js) ───
+# The feed is the trimmed OpenRouter fixture served by the local test server (?pricesUrl= test hook).
+PRICES_QUERY = "?pricesUrl=fixtures/openrouter-models.json"
+PRICES_BAD_QUERY = "?pricesUrl=fixtures/missing.json"
+PRICES_PRELUDE = PRELUDE + r"""
+const until = async (fn, label, ms = 8000) => {
+  const t0 = performance.now();
+  while (!fn()) { if (performance.now() - t0 > ms) throw new Error('timed out: ' + label); await new Promise((r) => setTimeout(r, 25)); }
+};
+const panel = () => $('#pricePanel');
+const STORE = 'edulab-aicalc-prices-v1';
+"""
+AGENT_PRICES_FLOW = r"""
+<script>
+window.addEventListener('load', async () => {
+""" + PRICES_PRELUDE + r"""
+  try {
+    const card = $('#agentCard');
+    const PRO = 'DeepSeek V4 Pro 0813';
+    const defaults = SubCore.defaultsOf(SubCore.SHARED_FIELDS, SubCore.AGENT_FIELDS);
+    expect(document.body.dataset.prices === 'builtin', `body data-prices ${document.body.dataset.prices}`);
+    expect(card.dataset.monthly === '487.64', `built-in monthly ${card.dataset.monthly}`);
+    expect(panel() && panel().dataset.state === 'idle', 'panel missing or not idle');
+    expect($('#pricesBtn') && $('#resetBtn').nextElementSibling === $('#pricesBtn'), 'Ceny modeli button is not next to Resetuj');
+    expect($('#pricesBtn').textContent === 'Ceny modeli', `button label ${$('#pricesBtn').textContent}`);
+    expect($('#priceStatus').textContent === 'Ceny wbudowane, sprawdzone 2026-09-13', `status ${$('#priceStatus').textContent}`);
+    expect($('#priceRestore').disabled, 'restore enabled without a store');
+    setField('model', PRO);
+    const before = card.dataset.monthly;
+    const builtinPro = SubCore.MODELS.find((m) => m.name === PRO);
+    click('#pricesBtn');
+    expect(panel().open && document.activeElement === $('#priceFetch'), 'panel did not open with focus on fetch');
+    click('#priceFetch');
+    expect(panel().dataset.state === 'loading' && panel().getAttribute('aria-busy') === 'true', `state ${panel().dataset.state} right after fetch`);
+    expect($('#priceMsg').getAttribute('aria-live') === 'polite' && /Pobieram/.test($('#priceMsg').textContent), 'loading message');
+    await until(() => panel().dataset.state !== 'loading', 'fetch');
+    expect(panel().dataset.state === 'ready', `state ${panel().dataset.state}: ${$('#priceMsg').textContent}`);
+    expect(panel().dataset.changes === '6' && panel().dataset.new === '15' && panel().dataset.missing === '0', `counts ${panel().dataset.changes}/${panel().dataset.new}/${panel().dataset.missing}`);
+    const bigRow = $('#priceChanges tr[data-model-id="deepseek-v4-pro"][data-field="pin"]');
+    expect(bigRow && !bigRow.querySelector('input').checked && /duża zmiana, sprawdź u dostawcy/.test(bigRow.textContent), 'big change is not unchecked and badged');
+    expect([...document.querySelectorAll('#priceNew input')].every((b) => !b.checked), 'new models are pre-checked');
+    expect(/OpenAI GPT-6\.1 Terra/.test($('#priceNew').textContent), 'candidate names missing');
+    expect(panel().getBoundingClientRect().right <= window.innerWidth + 0.5, 'panel wider than the viewport');
+    // accept only DeepSeek V4 Pro output 3.96 -> 4.44
+    document.querySelectorAll('#priceChanges input:checked').forEach((b) => { b.checked = false; b.dispatchEvent(new Event('change', { bubbles: true })); });
+    expect($('#priceApply').disabled, 'apply enabled with nothing selected');
+    const box = $('#priceChanges tr[data-model-id="deepseek-v4-pro"][data-field="pout"] input');
+    box.checked = true; box.dispatchEvent(new Event('change', { bubbles: true }));
+    click('#priceApply');
+    expect(panel().dataset.state === 'applied', `state after apply ${panel().dataset.state}`);
+    const want = SubCore.computeAgentResults(Object.assign({}, defaults, { model: PRO }), SubCore.MODELS.map((m) => m.name === PRO ? Object.assign({}, builtinPro, { pout: 4.44 }) : m));
+    expect(card.dataset.monthly === SubUI.dataNum(want.monthly) && card.dataset.monthly !== before, `monthly after apply ${card.dataset.monthly}, expected ${SubUI.dataNum(want.monthly)} (before ${before})`);
+    expect($(`#modelTable tr[data-model="${PRO}"]`).dataset.monthly === SubUI.dataNum(want.monthly), 'model table not recomputed');
+    expect(SubCore.MODELS.find((m) => m.name === PRO).pin === 1.32, 'unselected big change was applied');
+    expect(document.body.dataset.prices === 'openrouter' && /^Zaktualizowane z OpenRouter \d{4}-\d{2}-\d{2}$/.test($('#priceStatus').textContent), 'status after apply');
+    const store = JSON.parse(localStorage.getItem(STORE));
+    expect(store.version === 1 && store.changes['deepseek-v4-pro'].pout === 4.44 && !('pin' in store.changes['deepseek-v4-pro']), `store ${localStorage.getItem(STORE)}`);
+    click('#priceClose');
+    await until(() => document.activeElement === $('#pricesBtn'), 'focus back on the button');
+    expect(!panel().open, 'panel still open after Zamknij');
+    // restore
+    click('#pricesBtn');
+    click('#priceRestore');
+    expect(localStorage.getItem(STORE) === null && document.body.dataset.prices === 'builtin' && panel().dataset.state === 'idle', 'restore did not clear the store');
+    expect(card.dataset.monthly === before, `restore monthly ${card.dataset.monthly}, expected ${before}`);
+    expect(/Przywrócono/.test($('#priceMsg').textContent), 'restore message');
+    // English labels
+    click('#priceClose');
+    click('[data-lang="en"]');
+    expect($('#pricesBtn').textContent === 'Model prices' && $('#priceFetch').textContent === 'Fetch current prices', 'EN labels');
+    click('[data-lang="pl"]');
+    setField('model', defaults.model);
+    expect(card.dataset.monthly === '487.64', 'built-in number not back');
+    finish({ ok: true, assertions: assertions.n, viewport: viewport() });
+  } catch (error) {
+    finish({ ok: false, error: String(error && error.message || error), assertions: assertions.n });
+  }
+});
+</script>
+"""
+AGENT_PRICES_ERROR_FLOW = r"""
+<script>
+window.addEventListener('load', async () => {
+""" + PRICES_PRELUDE + r"""
+  try {
+    const card = $('#agentCard');
+    click('#pricesBtn');
+    click('#priceFetch');
+    await until(() => panel().dataset.state !== 'loading', 'fetch');
+    expect(panel().dataset.state === 'error', `state ${panel().dataset.state}`);
+    expect($('#priceMsg').textContent === 'Nie udało się pobrać cen z OpenRouter. Spróbuj później.', `error message ${$('#priceMsg').textContent}`);
+    expect(card.dataset.monthly === '487.64' && localStorage.getItem(STORE) === null && document.body.dataset.prices === 'builtin', 'error path changed something');
+    expect($('#priceApply').closest('.pp-foot').hidden, 'apply shown on error');
+    finish({ ok: true, assertions: assertions.n, viewport: viewport() });
+  } catch (error) {
+    finish({ ok: false, error: String(error && error.message || error), assertions: assertions.n });
+  }
+});
+</script>
+"""
+# A store saved by an earlier visit (the reload case): applied before the first render.
+PRICES_STORE = {"version": 1, "updatedAt": "2026-11-06T08:00:00.000Z", "changes": {"gpt-5.6-luna": {"pout": 2.4, "checkedAt": "2026-11-06"}, "no-such-model": {"pin": 1, "checkedAt": "2026-11-06"}},
+                "added": [{"id": "gpt-6-luna", "name": "OpenAI GPT-6 Luna", "openrouter": "openai/gpt-6-luna", "family": "openai", "cls": "standard", "alwaysThinks": False,
+                           "pin": 0.1, "pout": 0.5, "ctx": 1050000, "maxOutput": 128000, "checkedAt": "2026-11-06", "source": "https://openrouter.ai/openai/gpt-6-luna", "note": "Dodany z OpenRouter, sprawdź cenę u dostawcy."}]}
+PRICES_PLANT_HEAD = "<script>try { localStorage.setItem('edulab-aicalc-prices-v1', " + json.dumps(json.dumps(PRICES_STORE)) + "); } catch (e) {}</script>"
+AGENT_PRICES_STORED_FLOW = r"""
+<script>
+(() => {
+""" + PRICES_PRELUDE + r"""
+  try {
+    const card = $('#agentCard');
+    const defaults = SubCore.defaultsOf(SubCore.SHARED_FIELDS, SubCore.AGENT_FIELDS);
+    expect(document.body.dataset.prices === 'openrouter', 'stored prices not reported');
+    expect(SubCore.MODELS.length === 11 && SubCore.MODELS[10].name === 'OpenAI GPT-6 Luna', 'added model missing or duplicated');
+    expect(SubCore.MODELS[0].pout === 2.4, 'stored change not applied');
+    const want = SubCore.computeAgentResults(defaults, SubCore.MODELS);
+    expect(card.dataset.monthly === SubUI.dataNum(want.monthly) && card.dataset.monthly !== '487.64', `stored monthly ${card.dataset.monthly}`);
+    expect($('[data-field="model"] option[value="OpenAI GPT-6 Luna"]'), 'added model not in the select');
+    expect($('#modelTable').querySelectorAll('tbody tr').length === 11, 'model table without the added model');
+    expect($('#priceStatus').textContent === 'Zaktualizowane z OpenRouter 2026-11-06', `status ${$('#priceStatus').textContent}`);
+    // restore brings back the built-in list
+    click('#pricesBtn');
+    click('#priceRestore');
+    expect(SubCore.MODELS.length === 10 && card.dataset.monthly === '487.64' && !$('[data-field="model"] option[value="OpenAI GPT-6 Luna"]'), 'restore did not bring back the built-in list');
+    finish({ ok: true, assertions: assertions.n, viewport: viewport() });
+  } catch (error) {
+    finish({ ok: false, error: String(error && error.message || error), assertions: assertions.n });
+  }
+})();
+</script>
+"""
+PRICES_CORRUPT_HEAD = """<script>try { localStorage.setItem('edulab-aicalc-prices-v1', '{"version":1,"changes":{"gpt-5.6-luna":{"pin":-5}}}'); } catch (e) {}</script>"""
+AGENT_PRICES_CORRUPT_FLOW = r"""
+<script>
+(() => {
+""" + PRICES_PRELUDE + r"""
+  try {
+    expect(document.body.dataset.prices === 'builtin' && localStorage.getItem(STORE) === null, 'corrupt store not removed');
+    expect($('#agentCard').dataset.monthly === '487.64', 'corrupt store changed the numbers');
+    finish({ ok: true, assertions: assertions.n, viewport: viewport() });
+  } catch (error) {
+    finish({ ok: false, error: String(error && error.message || error), assertions: assertions.n });
+  }
+})();
+</script>
+"""
+SEATS_PRICES_FLOW = r"""
+<script>
+window.addEventListener('load', async () => {
+""" + PRICES_PRELUDE + r"""
+  try {
+    const api = () => $('#seatCards [data-option="api"]').dataset.monthly;
+    expect(Math.abs(Number(api()) - 835.70) < 0.011, `built-in api ${api()}`);
+    expect($('#resetBtn').nextElementSibling === $('#pricesBtn'), 'button not next to Resetuj');
+    click('#pricesBtn');
+    click('#priceFetch');
+    await until(() => panel().dataset.state !== 'loading', 'fetch');
+    expect(panel().dataset.state === 'ready' && panel().dataset.changes === '6', `state ${panel().dataset.state}`);
+    const box = [...document.querySelectorAll('#priceNew input')].find((b) => b.closest('tr').dataset.openrouter === 'openai/gpt-6-luna');
+    box.checked = true; box.dispatchEvent(new Event('change', { bubbles: true }));
+    click('#priceApply');
+    expect(SubCore.MODELS.some((m) => m.id === 'gpt-6-luna') && $('[data-field="model"] option[value="OpenAI GPT-6 Luna"]'), 'added model not offered');
+    expect(Math.abs(Number(api()) - 835.70) < 0.011, 'seats default model changed by unrelated updates');
+    setField('model', 'OpenAI GPT-6 Luna');
+    expect(api() !== '' && api() !== '835.7', `api with the new model ${api()}`);
+    click('#priceClose');
+    click('#pricesBtn');
+    click('#priceRestore');
+    expect($('[data-field="model"]').value === SubCore.SEAT_FIELDS.model.def && Math.abs(Number(api()) - 835.70) < 0.011, 'restore did not fall back to the default model');
+    finish({ ok: true, assertions: assertions.n, viewport: viewport() });
+  } catch (error) {
+    finish({ ok: false, error: String(error && error.message || error), assertions: assertions.n });
+  }
+});
+</script>
+"""
+
 # Narrow phones: the agent page in an iframe 360 / 320 px wide. Tables may scroll inside .table-wrap, the page may not.
 NARROW_VIEWPORTS = ((360, 800), (320, 700))
 NARROW_FRAME_PAGE = """<!doctype html><html><head><meta charset="utf-8"></head><body style="margin:0">
-<div id="probe"></div><iframe src="{page}" width="{w}" height="{h}" style="border:0;display:block"></iframe>
+<div id="probe"></div><iframe src="{page}?pricesUrl=fixtures/openrouter-models.json" width="{w}" height="{h}" style="border:0;display:block"></iframe>
 </body></html>"""
 NARROW_SCRIPT = r"""
 <script>
-window.addEventListener('load', () => {
+window.addEventListener('load', async () => {
   const failures = [];
   const rp = document.querySelector('#resultsPanel');
   const de = document.documentElement;
@@ -393,6 +570,16 @@ window.addEventListener('load', () => {
   picks.forEach((btn) => { if (btn.getBoundingClientRect().right > edge + 0.5) failures.push(`Wybierz for ${btn.dataset.pick} is off-screen`); });
   const mtWrap = rp.querySelector('#modelTable').closest('.table-wrap');
   if (mtWrap && mtWrap.scrollWidth > mtWrap.clientWidth + 1) failures.push('the model table still scrolls sideways on a phone');
+  // the price panel at this width: open, load the fixture, nothing outside the viewport except inside .pp-wrap
+  document.getElementById('pricesBtn').click();
+  document.getElementById('priceFetch').click();
+  for (let i = 0; i < 300 && document.getElementById('pricePanel').dataset.state === 'loading'; i++) await new Promise((r) => setTimeout(r, 25));
+  const pp = document.getElementById('pricePanel');
+  if (pp.dataset.state !== 'ready') failures.push(`price panel state ${pp.dataset.state}`);
+  const ppRect = pp.getBoundingClientRect();
+  if (ppRect.left < 0 || ppRect.right > window.innerWidth + 0.5) failures.push(`price panel ${Math.round(ppRect.left)}-${Math.round(ppRect.right)} outside ${window.innerWidth}px`);
+  [...pp.querySelectorAll('*')].filter((n) => !n.closest('.pp-wrap') && n.getClientRects().length && n.getBoundingClientRect().right > ppRect.right + 0.5)
+    .slice(0, 5).forEach((n) => failures.push(`price panel: ${n.tagName.toLowerCase()}#${n.id || n.className} runs past the panel edge`));
   window.parent.document.getElementById('probe').setAttribute('data-narrow-smoke', encodeURIComponent(JSON.stringify({
     ok: failures.length === 0, failures, width: window.innerWidth,
     scrolling: wraps.filter((w) => w.scrollWidth > w.clientWidth).length,
@@ -411,7 +598,7 @@ def run_narrow(browser, page: str, lines: list[str]) -> None:
                 label = f"{page} narrow {width}px"
                 url = f"http://127.0.0.1:{server.server_port}/frame-{width}.html"
                 bs.probe_http(url)
-                probe = parse(bs.run_browser(browser, url, label, window_size=(max(width, 500), height + 100)), label).get("#probe", {})
+                probe = parse(bs.run_browser(browser, url, label, window_size=(max(width, 500), height + 100), virtual_time_ms=15000), label).get("#probe", {})
                 encoded = probe.get("data-narrow-smoke", "")
                 if not encoded:
                     raise SmokeFailure(f"{label}: the narrow probe emitted nothing")
@@ -420,7 +607,7 @@ def run_narrow(browser, page: str, lines: list[str]) -> None:
                     raise SmokeFailure(f"{label}: viewport is {payload.get('width')}px, expected {width}px")
                 if payload.get("ok") is not True:
                     raise SmokeFailure(f"{label}: " + "; ".join(payload.get("failures") or ["unknown failure"]))
-                lines.append(f"{label}: no sideways scroll ({payload.get('scrolling')} tables scroll inside their wrapper)")
+                lines.append(f"{label}: no sideways scroll ({payload.get('scrolling')} tables scroll inside their wrapper), price panel fits")
 
 
 # ─── DOM parsing ───
@@ -500,6 +687,7 @@ def page_fixture(page: str, flow: str, head: str = ""):
         shutil.copytree(ROOT / "sub", root / "sub")
         if (ROOT / "assets").is_dir():
             shutil.copytree(ROOT / "assets", root / "assets")
+        shutil.copytree(ROOT / "tests" / "fixtures", root / "fixtures")
         yield root
 
 
@@ -537,12 +725,34 @@ def run_page(browser, page: str, key: str, flow: str, query: str, lines: list[st
             lines.append(f"{label}: {n} assertions")
 
 
+def run_prices(browser, lines: list[str]) -> None:
+    """Price panel flows over http (the fetch needs a server); async flows get a virtual-time budget."""
+
+    cases = [
+        ("agent.html", "prices", AGENT_PRICES_FLOW, "", PRICES_QUERY),
+        ("agent.html", "prices-error", AGENT_PRICES_ERROR_FLOW, "", PRICES_BAD_QUERY),
+        ("agent.html", "prices-stored", AGENT_PRICES_STORED_FLOW, PRICES_PLANT_HEAD, ""),
+        ("agent.html", "prices-corrupt", AGENT_PRICES_CORRUPT_FLOW, PRICES_CORRUPT_HEAD, ""),
+        ("seats.html", "prices", SEATS_PRICES_FLOW, "", PRICES_QUERY),
+    ]
+    for page, tag, flow, head, query in cases:
+        with page_fixture(page, flow, head) as root:
+            with bs.local_server(root) as server:
+                for name, size in VIEWPORTS.items():
+                    label = f"{page} {tag} http {name}"
+                    url = f"http://127.0.0.1:{server.server_port}/{page}{query}"
+                    bs.probe_http(url)
+                    n = check_flow(bs.run_browser(browser, url, label, window_size=size, virtual_time_ms=15000), label)
+                    lines.append(f"{label}: {n} assertions")
+
+
 def run() -> list[str]:
     browser = bs.find_browser()
     lines: list[str] = []
     run_page(browser, "seats.html", "seats", SEATS_FLOW, "", lines, head_flows=[("stale-state", SEATS_PLANT_FLOW, SEATS_PLANT_HEAD)])
     run_page(browser, "agent.html", "agent", AGENT_FLOW, "", lines, head_flows=[("old-save", AGENT_PLANT_FLOW, AGENT_PLANT_HEAD)])
     run_narrow(browser, "agent.html", lines)
+    run_prices(browser, lines)
     return lines
 
 

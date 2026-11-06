@@ -107,6 +107,11 @@ SubUI.addStrings({
   },
 });
 
+SubUI.addStrings(PriceUI.STRINGS);
+// Stored OpenRouter prices replace the SubCore.MODELS contents in place before the first render.
+const BUILTIN_MODELS = MODELS.map((m) => Object.assign({}, m));
+MODELS.splice(0, MODELS.length, ...PriceSync.applyOverrides(MODELS, PriceUI.loadStore()));
+
 // ─── State ───
 const state = SubUI.restore(LS_KEY, SCHEMAS, MODELS);
 let fields = null;
@@ -357,6 +362,7 @@ SubUI.onLangChange(render);
 document.body.dataset.page = 'agent';
 SubUI.fillSelect(modelSelect, MODELS.map((m) => ({ value: m.name, label: m.name })));
 SubUI.renderNav('agent', { onReset: reset });
+PriceUI.mountSubPage({ models: MODELS, builtin: BUILTIN_MODELS, modelSelect, state, defaultModel: AGENT_FIELDS.model.def, sync: () => fields.sync(), onChange });
 fields = SubUI.bindFields(settingsPanel, SCHEMAS, state, onChange, { isActive });
 render();
 if (SubUI.isVerify()) SubUI.runChecks(pageChecks());

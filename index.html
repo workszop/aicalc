@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="sub/prices.css">
 <style>
 /* ============================================================
    edulab – Colors & Type foundation
@@ -740,7 +741,9 @@ summary:focus-visible, #resultsPanel:focus-visible { outline: 3px solid transpar
           <progress id="fileProgress" hidden aria-label="Import" max="1"></progress>
           <button class="ghost-btn" id="csvReset" type="button" data-t="csvReset"></button>
           <button class="ghost-btn" id="csvTemplate" type="button" data-t="csvTemplate"></button>
+          <button class="ghost-btn" id="priceUpdate" type="button" data-t="ppUpdateBtn"></button>
         </div>
+        <p class="hint" id="priceStatusLine"></p>
         <p class="hint" data-t="csvHelp"></p>
         <p id="csvError" role="alert" hidden></p>
       </div>
@@ -888,6 +891,8 @@ Anthropic Claude Fable 5.1,10,50,1000000,frontier,Stawka standardowa bez cache i
 DeepSeek V4.1 Flash,0.3,1.2,1000000,mini,Stawka standardowa bez cache i Batch.,deepseek-flash,deepseek,384000,false,,,,0.15,0.6,2026-09-13,https://api-docs.deepseek.com/quick_start/pricing/,deepseek/deepseek-v4.1-flash-1017
 DeepSeek V4 Pro 0813,1.32,3.96,1000000,frontier,Stawka standardowa bez cache i Batch.,deepseek-v4-pro,deepseek,384000,false,,,,0.66,1.98,2026-09-13,https://api-docs.deepseek.com/quick_start/pricing/,deepseek/deepseek-v4-pro-0813
 </script>
+<script src="sub/prices.js"></script>
+<script src="sub/prices-ui.js"></script>
 <script>
 // ─── Constants ───
 const CURRENCY = 'PLN';
@@ -2611,6 +2616,7 @@ function setLang(l) {
   state.lang = l;
   try { localStorage.setItem(LS_LANG, l); } catch (_) {}
   applyI18n(); renderModelSelect(); markDirty(); render();
+  if (App.prices) App.prices.refresh();
 }
 
 $('assumpClose').addEventListener('click', () => dialogEl.close());
@@ -2632,8 +2638,16 @@ function selectModel(name) {
   const row = modelTbody.querySelector(`tr[data-model="${CSS.escape(name)}"]`); if (row) row.focus();
 }
 
+// Stored OpenRouter prices (sub/prices-ui.js) apply by id to every list: built-in, imported or saved in a scenario.
+function withStoredPrices(text) {
+  try {
+    const store = PriceUI.loadStore();
+    return store ? PriceSync.updateCsvText(text, PriceSync.applyOverrides(modelsFromCsv(text), store)) : text;
+  } catch (_) { return text; }
+}
 function loadCsvText(text, source) {
   try {
+    text = withStoredPrices(text);
     const models = modelsFromCsv(text);
     const model = models.some((m) => m.name === state.model) ? state.model : models[0].name;
     computeResults({ ...state, model }, models);
@@ -2690,18 +2704,29 @@ window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer
   TEXT_FIELDS.forEach((id) => $(id).maxLength = 200);
   let preferredLang;
   try { const l = localStorage.getItem(LS_LANG); if (l === 'pl' || l === 'en') preferredLang = l; } catch (_) {}
-  state.csvText = $('csvData').textContent;
+  Object.assign(T.pl, PriceUI.STRINGS.pl);
+  Object.assign(T.en, PriceUI.STRINGS.en);
+  state.csvText = withStoredPrices($('csvData').textContent);
   state.models = modelsFromCsv(state.csvText);
   if (preferredLang) state.lang = preferredLang;
   try {
     const saved = localStorage.getItem(LS_SCENARIO);
-    if (saved) { const loaded = parseScenario(saved); Object.assign(state, loaded.values, { models: loaded.models, csvText: loaded.csvText, csvSource: loaded.csvSource }); }
+    if (saved) {
+      const loaded = parseScenario(saved);
+      const csvText = withStoredPrices(loaded.csvText);
+      Object.assign(state, loaded.values, { models: modelsFromCsv(csvText), csvText, csvSource: loaded.csvSource });
+    }
   } catch (_) { try { localStorage.removeItem(LS_SCENARIO); } catch (_e) {} }
   applyI18n();
   renderModelSelect();
   syncInputs();
   syncSettingsPanel();
   render();
+  App.prices = PriceUI.mount({
+    trigger: $('priceUpdate'), t, lang: () => state.lang, getModels: () => state.models, statusEl: $('priceStatusLine'),
+    onApply: (next) => loadCsvText(PriceSync.updateCsvText(state.csvText, next), state.csvSource),
+    onRestore: () => loadCsvText($('csvData').textContent, null),
+  });
   if ('IntersectionObserver' in window) {
     const ticker = $('ticker');
     new IntersectionObserver((entries) => {

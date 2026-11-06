@@ -534,6 +534,7 @@ def run_browser(
     url: str,
     label: str,
     window_size: tuple[int, int] | None = None,
+    virtual_time_ms: int | None = None,
 ) -> str:
     """Dump one URL's post-JavaScript DOM with a fresh temporary profile."""
 
@@ -552,6 +553,9 @@ def run_browser(
         ]
         if window_size:
             command.insert(-1, f"--window-size={window_size[0]},{window_size[1]}")
+        if virtual_time_ms:
+            # Lets async flows (fetch, timers) finish before the DOM is dumped.
+            command.insert(-1, f"--virtual-time-budget={virtual_time_ms}")
         try:
             process = subprocess.Popen(
                 command,
@@ -638,6 +642,15 @@ def check_dom_contract(dom: str, label: str) -> tuple[int, int]:
     return passed, total
 
 
+def copy_shared(source_root: Path, fixture_root: Path) -> None:
+    """index.html loads sub/prices.js, sub/prices-ui.js and sub/prices.css; fixtures need them too."""
+
+    if (source_root / "sub").is_dir():
+        shutil.copytree(source_root / "sub", fixture_root / "sub")
+    if (source_root / "tests" / "fixtures").is_dir():
+        shutil.copytree(source_root / "tests" / "fixtures", fixture_root / "fixtures")
+
+
 @contextmanager
 def capacity_fixture(index: Path):
     """Yield a temporary app copy with the real-browser capacity flow appended."""
@@ -660,6 +673,7 @@ def capacity_fixture(index: Path):
         assets = index.parent / "assets"
         if assets.is_dir():
             shutil.copytree(assets, fixture_root / "assets")
+        copy_shared(index.parent, fixture_root)
         yield fixture_root, fixture_index
 
 
@@ -833,6 +847,7 @@ def header_fixture(index: Path):
         assets = index.parent / "assets"
         if assets.is_dir():
             shutil.copytree(assets, fixture_root / "assets")
+        copy_shared(index.parent, fixture_root)
         yield fixture_root
 
 
@@ -897,6 +912,163 @@ def run_capacity_smoke(browser: str, index: Path) -> list[tuple[str, int, int]]:
     return results
 
 
+# ─── Price panel (sub/prices-ui.js) on index.html ───
+# Flows run against a temporary copy; the feed is tests/fixtures/openrouter-models.json served next to it.
+PRICES_MARKER = "data-prices-smoke"
+PRICES_QUERY = "?pricesUrl=fixtures/openrouter-models.json"
+PRICES_PRELUDE = r"""
+  const MARKER = 'data-prices-smoke';
+  let assertions = 0;
+  const expect = (cond, msg) => { assertions += 1; if (!cond) throw new Error(msg); };
+  const $ = (sel) => document.querySelector(sel);
+  const click = (sel) => { const n = $(sel); expect(n, `control ${sel} missing`); n.click(); };
+  const until = async (fn, label, ms = 8000) => {
+    const t0 = performance.now();
+    while (!fn()) { if (performance.now() - t0 > ms) throw new Error('timed out: ' + label); await new Promise((r) => setTimeout(r, 25)); }
+  };
+  const finish = (payload) => document.body.setAttribute(MARKER, encodeURIComponent(JSON.stringify(payload)));
+  const panel = () => $('#pricePanel');
+  const api = () => $('#optApi').dataset.monthly;
+  const STORE = 'edulab-aicalc-prices-v1';
+  const viewport = () => ({ width: window.innerWidth, scrollWidth: document.documentElement.scrollWidth });
+"""
+PRICES_FLOW = r"""
+<script>
+window.addEventListener('load', async () => {
+""" + PRICES_PRELUDE + r"""
+  try {
+    const PRO = 'DeepSeek V4 Pro 0813';
+    expect(document.body.dataset.prices === 'builtin', `body data-prices ${document.body.dataset.prices}`);
+    expect(api() === '6839.25', `S1 api ${api()}`);
+    expect($('#priceStatusLine').textContent === 'Ceny wbudowane, sprawdzone 2026-09-13', `status line ${$('#priceStatusLine').textContent}`);
+    expect($('#priceUpdate').textContent === 'Aktualizuj z OpenRouter' && $('#priceUpdate').parentElement === $('#csvReset').parentElement, 'update button not next to the CSV buttons');
+    const sel = $('#model');
+    sel.value = PRO; sel.dispatchEvent(new Event('input', { bubbles: true }));
+    const before = api();
+    expect(before && state.model === PRO, 'model select did not switch');
+    click('#priceUpdate');
+    expect(panel().open, 'panel did not open');
+    click('#priceFetch');
+    await until(() => panel().dataset.state !== 'loading', 'fetch');
+    expect(panel().dataset.state === 'ready' && panel().dataset.changes === '6' && panel().dataset.new === '15', `ready ${panel().dataset.state} ${panel().dataset.changes}/${panel().dataset.new}`);
+    document.querySelectorAll('#priceChanges input:checked').forEach((b) => { b.checked = false; b.dispatchEvent(new Event('change', { bubbles: true })); });
+    const box = $('#priceChanges tr[data-model-id="deepseek-v4-pro"][data-field="pout"] input');
+    box.checked = true; box.dispatchEvent(new Event('change', { bubbles: true }));
+    click('#priceApply');
+    expect(panel().dataset.state === 'applied' && document.body.dataset.prices === 'openrouter', 'not applied');
+    const mods = modelsFromCsv($('#csvData').textContent).map((m) => m.name === PRO ? Object.assign({}, m, { pout: 4.44 }) : m);
+    const want = computeResults(Object.assign({}, state), mods).api.monthly.toFixed(2);
+    expect(api() === want && api() !== before, `api after apply ${api()}, expected ${want} (before ${before})`);
+    expect($(`#modelTable tr[data-model="${PRO}"]`).dataset.monthly === want, 'model table not recomputed');
+    expect(state.models.find((m) => m.name === PRO).pin === 1.32, 'unselected big change applied');
+    const saved = JSON.parse(localStorage.getItem('edulab-aicalc-scenario-v3'));
+    expect(saved && /deepseek-v4-pro/.test(saved.csvText) && modelsFromCsv(saved.csvText).find((m) => m.name === PRO).pout === 4.44, 'scenario save does not carry the update');
+    expect(parseScenario(JSON.stringify(saved)).models.length === 10, 'saved scenario does not parse');
+    expect(/^Zaktualizowane z OpenRouter/.test($('#priceStatusLine').textContent), 'status line after apply');
+    click('#priceRestore');
+    expect(localStorage.getItem(STORE) === null && document.body.dataset.prices === 'builtin' && api() === before, `restore: api ${api()}, expected ${before}`);
+    click('#priceClose');
+    sel.value = 'OpenAI GPT-5.6 Terra'; sel.dispatchEvent(new Event('input', { bubbles: true }));
+    expect(api() === '6839.25', `S1 api not back: ${api()}`);
+    finish({ ok: true, assertions, viewport: viewport() });
+  } catch (error) {
+    finish({ ok: false, error: String(error && error.message || error), assertions });
+  }
+});
+</script>
+"""
+PRICES_ERROR_FLOW = r"""
+<script>
+window.addEventListener('load', async () => {
+""" + PRICES_PRELUDE + r"""
+  try {
+    click('#priceUpdate');
+    click('#priceFetch');
+    await until(() => panel().dataset.state !== 'loading', 'fetch');
+    expect(panel().dataset.state === 'error' && $('#priceMsg').textContent === 'Nie udało się pobrać cen z OpenRouter. Spróbuj później.', `error state ${panel().dataset.state}: ${$('#priceMsg').textContent}`);
+    expect(api() === '6839.25' && localStorage.getItem(STORE) === null, 'error path changed something');
+    finish({ ok: true, assertions, viewport: viewport() });
+  } catch (error) {
+    finish({ ok: false, error: String(error && error.message || error), assertions });
+  }
+});
+</script>
+"""
+PRICES_STORE = {"version": 1, "updatedAt": "2026-11-06T08:00:00.000Z", "changes": {"gpt-5.6-terra": {"pout": 14, "checkedAt": "2026-11-06"}},
+                "added": [{"id": "gpt-6-luna", "name": "OpenAI GPT-6 Luna", "openrouter": "openai/gpt-6-luna", "family": "openai", "cls": "standard", "alwaysThinks": False,
+                           "pin": 0.1, "pout": 0.5, "ctx": 1050000, "maxOutput": 128000, "checkedAt": "2026-11-06", "source": "https://openrouter.ai/openai/gpt-6-luna", "note": "Dodany z OpenRouter, sprawdź cenę u dostawcy."}]}
+PRICES_PLANT_HEAD = "<script>try { localStorage.setItem('edulab-aicalc-prices-v1', " + json.dumps(json.dumps(PRICES_STORE)) + "); } catch (e) {}</script>"
+PRICES_STORED_FLOW = r"""
+<script>
+window.addEventListener('load', async () => {
+""" + PRICES_PRELUDE + r"""
+  try {
+    expect(document.body.dataset.prices === 'openrouter', 'stored prices not reported');
+    expect(state.models.length === 11 && $('#model option[value="OpenAI GPT-6 Luna"]'), 'added model missing');
+    expect(state.models.find((m) => m.id === 'gpt-5.6-terra').pout === 14, 'stored change not applied before the first render');
+    const want = computeResults(Object.assign({}, state), state.models).api.monthly.toFixed(2);
+    expect(api() === want && api() !== '6839.25', `stored api ${api()}, expected ${want}`);
+    expect($('#priceStatusLine').textContent === 'Zaktualizowane z OpenRouter 2026-11-06', 'status line with a store');
+    click('#csvReset');
+    expect(state.models.find((m) => m.id === 'gpt-5.6-terra').pout === 14, 'Cennik wbudowany dropped the stored prices');
+    click('#priceUpdate');
+    click('#priceRestore');
+    expect(state.models.length === 10 && api() === '6839.25', `restore: ${state.models.length} models, api ${api()}`);
+    finish({ ok: true, assertions, viewport: viewport() });
+  } catch (error) {
+    finish({ ok: false, error: String(error && error.message || error), assertions });
+  }
+});
+</script>
+"""
+
+
+@contextmanager
+def prices_fixture(index: Path, script: str, head: str = ""):
+    source = index.read_text(encoding="utf-8")
+    with tempfile.TemporaryDirectory(prefix="aicalc-prices-fixture-") as directory:
+        fixture_root = Path(directory)
+        text = source.replace("</body>", script + "\n</body>", 1)
+        if head:
+            text = text.replace("</head>", head + "\n</head>", 1)
+        (fixture_root / "index.html").write_text(text, encoding="utf-8")
+        if (index.parent / "assets").is_dir():
+            shutil.copytree(index.parent / "assets", fixture_root / "assets")
+        copy_shared(index.parent, fixture_root)
+        yield fixture_root
+
+
+def run_prices_smoke(browser: str, index: Path) -> list[str]:
+    lines: list[str] = []
+    cases = [
+        ("prices", PRICES_FLOW, "", PRICES_QUERY),
+        ("prices-error", PRICES_ERROR_FLOW, "", "?pricesUrl=fixtures/missing.json"),
+        ("prices-stored", PRICES_STORED_FLOW, PRICES_PLANT_HEAD, ""),
+    ]
+    for tag, script, head, query in cases:
+        with prices_fixture(index, script, head) as root:
+            with local_server(root) as server:
+                for name, size in (("desktop", (1280, 900)), ("mobile", (390, 844))):
+                    label = f"index {tag} http {name}"
+                    url = f"http://127.0.0.1:{server.server_port}/index.html{query}"
+                    probe_http(url)
+                    parser = ContractParser()
+                    parser.feed(run_browser(browser, url, label, window_size=size, virtual_time_ms=15000))
+                    parser.close()
+                    body = next((r["attrs"] for r in parser.records if r["tag"] == "body"), {})
+                    encoded = body.get(PRICES_MARKER, "")
+                    if not encoded:
+                        raise SmokeFailure(f"{label}: the flow emitted no {PRICES_MARKER} (page script error?)")
+                    payload = json.loads(unquote(encoded))
+                    if payload.get("ok") is not True:
+                        raise SmokeFailure(f"{label}: {payload.get('error')} (after {payload.get('assertions')} assertions)")
+                    vp = payload["viewport"]
+                    if int(vp["scrollWidth"]) > int(vp["width"]) + 1:
+                        raise SmokeFailure(f"{label}: horizontal overflow ({vp['scrollWidth']}px > {vp['width']}px)")
+                    lines.append(f"{label}: {payload['assertions']} assertions")
+    return lines
+
+
 def run_smoke(root: Path) -> list[tuple[str, int, int]]:
     browser = find_browser()
     index = root / "index.html"
@@ -920,6 +1092,7 @@ def run_smoke(root: Path) -> list[tuple[str, int, int]]:
 
     results.extend(run_capacity_smoke(browser, index))
     HEADER_LINES.extend(run_header_smoke(browser, index))
+    HEADER_LINES.extend(run_prices_smoke(browser, index))
 
     return results
 

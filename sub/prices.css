@@ -1,0 +1,46 @@
+/* "Ceny modeli" panel (sub/prices-ui.js). Tokens only: the :root blocks of index.html and sub/sub.css. */
+dialog.price-panel { border: 1px solid var(--line-2); border-radius: var(--r-lg); padding: 0; width: min(860px, calc(100% - 16px));
+  max-height: calc(100dvh - 32px); background: var(--surface); color: var(--ink); box-shadow: var(--shadow-lg);
+  font-family: var(--font-sans); overflow: hidden; display: none; flex-direction: column; }
+dialog.price-panel[open] { display: flex; animation: ppFade .18s ease-out; }
+dialog.price-panel::backdrop { background: var(--dialog-backdrop); }
+@keyframes ppFade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.price-panel .pp-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3);
+  padding: var(--sp-4) var(--sp-5); background: var(--paper-2); border-bottom: 1px solid var(--line); }
+.price-panel h2 { font-family: var(--font-display); font-size: var(--stat-size); margin: 0; color: var(--ink); }
+.price-panel h3 { font-family: var(--font-display); font-size: var(--body-tight-size); margin: var(--sp-4) 0 var(--sp-2); color: var(--ink); }
+.price-panel .pp-body { padding: var(--sp-4) var(--sp-5); overflow-y: auto; min-height: 0; }
+.price-panel .pp-status { margin: 0 0 var(--sp-2); font-weight: 600; color: var(--ink); }
+.price-panel .pp-intro { margin: 0 0 var(--sp-3); }
+.price-panel .pp-actions, .price-panel .pp-foot { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); }
+.price-panel .pp-foot { padding: var(--sp-3) var(--sp-5); border-top: 1px solid var(--line); background: var(--paper-2); }
+.price-panel .pp-foot[hidden] { display: none; }
+.price-panel .pp-msg { min-height: 1.4em; margin: var(--sp-3) 0 0; color: var(--ink-2); font-size: var(--body-sm); }
+.price-panel[data-state="error"] .pp-msg { color: var(--ink); font-weight: 600; padding: var(--sp-2) var(--sp-3);
+  border: 1.5px solid var(--red); border-radius: var(--r-sm); }
+.price-panel .pp-ok { margin: 0; padding: var(--sp-2) var(--sp-3); border: 1.5px solid var(--green); border-radius: var(--r-sm); color: var(--ink); }
+.price-panel progress { width: 120px; accent-color: var(--yellow); }
+.price-panel progress[hidden] { display: none; }
+.pp-btn { font-family: var(--font-display); font-weight: 600; font-size: var(--body-sm); background: var(--yellow); color: var(--yellow-ink);
+  border: 1.5px solid var(--yellow-600); border-radius: var(--r-pill); padding: 9px 16px; cursor: pointer; }
+.pp-btn:hover { background: var(--yellow-600); }
+.pp-btn:disabled, .price-panel .ghost-btn:disabled { opacity: .55; cursor: not-allowed; }
+.pp-btn:focus-visible, .price-panel input:focus-visible, .pp-wrap:focus-visible { outline: 3px solid var(--transparent); box-shadow: var(--focus-ring); }
+.pp-wrap { overflow-x: auto; max-width: 100%; border: 1px solid var(--line-2); border-radius: var(--r-md); background: var(--surface); }
+.pp-tbl { width: 100%; border-collapse: collapse; font-size: var(--body-sm); }
+.pp-tbl th, .pp-tbl td { padding: 7px 10px; border-bottom: 1px solid var(--line); text-align: var(--align-start); white-space: nowrap; color: var(--ink-2); }
+.pp-tbl thead th { font-size: var(--label-size); font-weight: 600; color: var(--ink); background: var(--paper-2); }
+.pp-tbl tbody th { font-weight: 600; color: var(--ink); white-space: normal; min-width: 140px; }
+.pp-tbl .num { text-align: var(--align-end); font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink); }
+.pp-tbl td.pick { width: 1%; }
+.pp-tbl td.flags { white-space: normal; min-width: 160px; }
+.pp-tbl input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--ink); }
+.pp-badge { display: inline-block; margin: 2px 4px 2px 0; padding: 2px 8px; border: 1.5px solid var(--red); border-radius: var(--r-pill);
+  font-size: var(--label-size); font-weight: 600; color: var(--ink); white-space: normal; }
+.pp-badge[data-flag="tiersKept"] { border-color: var(--blue); }
+.price-panel ul { margin: 0; padding-left: var(--sp-5); color: var(--ink-2); }
+@media (max-width: 768px) {
+  dialog.price-panel { width: calc(100% - 16px); max-height: calc(100dvh - 16px); }
+  .price-panel .pp-head, .price-panel .pp-body, .price-panel .pp-foot { padding-left: var(--sp-3); padding-right: var(--sp-3); }
+  .pp-tbl th, .pp-tbl td { padding: 6px 8px; }
+}

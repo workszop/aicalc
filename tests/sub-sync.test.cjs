@@ -98,4 +98,19 @@ labourFiles.forEach((file) => {
 });
 ['roiCaveat', 'groupHuman', 'manualLine', 'savedHours', 'barManual', 'modeTime', 'timeBenefitValue'].forEach((key) => assert.ok(!(key in ui.T.pl) && !(key in ui.T.en), `T has no ${key}`));
 ['roiTitle', 'roiOn', 'benefitMonthly', 'benefitHelp', 'ramp', 'setup', 'training', 'horizon', 'tilePayback', 'chartTitle', 'navRoi', 'groupRoi'].forEach((key) => assert.ok(!(key in ui.T.pl) && !(key in ui.T.en), `T has no ${key}`));
+// ─── sub/prices-ui.js strings (registered on the sub pages and merged into index.html's T) ───
+const priceCtx = vm.createContext({ console });
+vm.runInContext(fs.readFileSync(path.join(__dirname, '../sub/prices-ui.js'), 'utf8'), priceCtx);
+const PRICE_STRINGS = vm.runInContext('globalThis.PriceUI.STRINGS', priceCtx);
+assert.deepEqual(Object.keys(PRICE_STRINGS.en), Object.keys(PRICE_STRINGS.pl), 'PriceUI.STRINGS pl/en keys match');
+Object.entries(PRICE_STRINGS).forEach(([lang, table]) => Object.entries(table).forEach(([key, value]) => {
+  assert.ok(typeof value === 'string' && value.length > 0 && !value.includes('\u2014'), `PriceUI ${lang}.${key} is non-empty and has no em-dash`);
+  assert.ok(!(key in ui.T.pl), `PriceUI ${key} does not shadow a SubUI key`);
+}));
+const indexT = vm.runInContext('T', idx);
+Object.keys(PRICE_STRINGS.pl).forEach((key) => assert.ok(!(key in indexT.pl), `PriceUI ${key} does not shadow an index.html key`));
+['seats.js', 'agent.js'].forEach((file) => {
+  const src = fs.readFileSync(path.join(__dirname, '../sub/' + file), 'utf8');
+  assert.ok(src.indexOf('SubUI.addStrings(PriceUI.STRINGS)') > src.indexOf('SubUI.addStrings({'), file + ' registers the price strings after its own');
+});
 console.log('sub-sync tests passed');
