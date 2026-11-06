@@ -118,6 +118,14 @@ SubUI.addStrings({
 
 // ─── State ───
 const fx = SHARED_FIELDS.fx.def;
+// Prices updated from OpenRouter on another page (panel "Ceny modeli") apply here too; a bad store is ignored.
+(function applyStoredPrices() {
+  if (!globalThis.PriceSync) return;
+  let text = null;
+  try { text = localStorage.getItem(PriceSync.STORE_KEY); } catch (_) { return; }
+  if (text === null) return;
+  try { MODELS.splice(0, MODELS.length, ...PriceSync.applyOverrides(MODELS, PriceSync.parseStore(text))); } catch (_) { /* keep built-in prices */ }
+})();
 
 // ─── DOM refs ───
 const priceNodes = { app: document.querySelector('[data-price="app"]'), api: document.querySelector('[data-price="api"]'), infra: document.querySelector('[data-price="infra"]') };
