@@ -95,7 +95,7 @@ Wzory (miesięcznie):
 | `plan` | ChatGPT Business (lub inny plan z listy, lub własna cena `customUsd` = 30 USD) |
 | `chatsPerDay` | 15 |
 | `inTok` / `outTok` | 3 000 / 700 tokenów na czat |
-| `model` | OpenAI GPT-5.6 Terra |
+| `model` | OpenAI GPT-6.1 Terra |
 | `uiOps` | 500 PLN / mies. (interfejs czatu przy API i lokalnie) |
 | `localCapex` / `localAmort` | 35 000 PLN / 36 mies. |
 | `localPower` / `kwh` | 240 W / 1,00 PLN za kWh |
@@ -165,9 +165,9 @@ Wzory:
 - budżet (`agentBudgetRuns`): `floor((budget − platform) / perRun)`; 0, gdy
   budżet nie przekracza platformy; brak wyniku, gdy model jest niedostępny,
 - domyślnie (tryb `growing`): wejścia kroków 4 000, 5 000, …, 9 000 tokenów,
-  0,0938 PLN na uruchomienie, 487,64 PLN / mies., 5 851,68 PLN / rok, zakres
-  434,78–567,58 PLN / mies., budżet 1 000 PLN mieści 7 461 uruchomień;
-  w trybie `flat` jak dawniej 0,0815 PLN i 463,02 PLN / mies.,
+  0,0709 PLN na uruchomienie, 441,85 PLN / mies., 5 302,21 PLN / rok, zakres
+  416,45–480,57 PLN / mies., budżet 1 000 PLN mieści 9 869 uruchomień;
+  w trybie `flat` 0,0648 PLN i 429,54 PLN / mies.,
 - strona opisuje w pięciu krokach, co agent robi w jednym uruchomieniu, a
   zaraz potem tabela „Kroki jednego uruchomienia” podaje liczby (przy
   ponad 12 krokach widać kroki 1–5, „…” i ostatnie 3; suma obejmuje wszystkie).
@@ -177,7 +177,7 @@ raport sprzedaży 20 / 12, faktury 800 / 5.
 
 | Parametr | Domyślnie |
 | --- | --- |
-| `model` | OpenAI GPT-5.6 Luna |
+| `model` | OpenAI GPT-6 Luna |
 | `runs` | 2 000 zadań / mies. |
 | `steps` | 6 kroków na zadanie |
 | `contextMode` | `growing` |
@@ -369,7 +369,7 @@ ceny, `openai/fast` podwójna, `google-ai-studio/flex`, `/priority`,
   ma progów ani cen poza szczytem, a w uwadze: „Cena twórcy modelu
   (z OpenRouter).” (ta sama uwaga trafia do zaktualizowanych modeli).
 - **Gemini:** Gemini 3.8 Flash jest modelem wbudowanym (0,75 / 3,75 USD, cena
-  Google AI Studio). Współczynnik tokenizera `gemini` zmierzono 2026-11-06:
+  promocyjna Google AI Studio do 31.12.2026, od 1.01.2027 1,50 / 7,50 USD). Współczynnik tokenizera `gemini` zmierzono 2026-11-06:
   `countTokens` Gemini 3.8 Flash i `o200k` OpenAI na tych samych tekstach PL/EN z
   interfejsu (977 / 1159 słów), przeskalowane do współczynników OpenAI: 2,24
   (PL) i 1,46 (EN). Kandydat z rodziny bez współczynnika tokenizera jest
@@ -409,7 +409,7 @@ endpointy są wtedy czytane z `<katalog listy>/endpoints/<id z / jako __>.json`.
 node scripts/update-prices.mjs                        # podgląd: tabela zmian, brakujące i nowe modele
 node scripts/update-prices.mjs --write                # zapis wszystkich zmian poza „dużymi”
 node scripts/update-prices.mjs --write --include-big  # także duże zmiany
-node scripts/update-prices.mjs --only deepseek-flash,claude-opus-5
+node scripts/update-prices.mjs --only deepseek-flash,claude-opus-5-5
 node scripts/update-prices.mjs --fixture tests/fixtures/openrouter-models.json \
   --endpoints-dir tests/fixtures/endpoints              # dane z plików (testy)
 ```
@@ -490,8 +490,18 @@ opcjonalnych stawek oznaczają brak danej taryfy.
 
 ## Założenia, które trzeba sprawdzić przed decyzją
 
-- Ceny modeli były sprawdzone **14.09.2026**. Są migawką, więc przed decyzją
-  zakupową trzeba sprawdzić aktualne cenniki dostawców.
+- Ceny modeli były sprawdzone **2026-11-06** w cennikach twórców (OpenAI,
+  Anthropic, DeepSeek, Google) i w ich endpointach w OpenRouter. Lista wbudowana
+  ma 11 modeli: OpenAI GPT-6 Luna, GPT-6.1 Terra, GPT-6.1 Sol, GPT-6 Astra;
+  Anthropic Claude Haiku 5.5, Sonnet 5.5, Opus 5.5, Fable 5.1; DeepSeek V4.1
+  Flash, V4 Pro 0813; Google Gemini 3.8 Flash. Próg długiego kontekstu ma tylko
+  Claude Haiku 5.5 (powyżej 100 000 tokenów promptu 0,50 / 2,50 USD). Ceny są
+  migawką, więc przed decyzją zakupową trzeba sprawdzić aktualne cenniki
+  dostawców.
+- Zapisany scenariusz na cenniku wbudowanym otwiera się na dzisiejszym cenniku
+  wbudowanym; model, którego już nie ma na liście, zastępuje model domyślny (tak
+  samo na `seats.html` i `agent.html`). Zaimportowany cennik zostaje taki, jak
+  był zapisany.
 - Współczynniki tokenów są **ilustracyjne**. Przeliczają przykładowe obciążenie
   między rodzinami modeli i nie są wywołaniem ani obietnicą zgodności z
   rzeczywistym tokenizerem.
@@ -572,7 +582,9 @@ PLN 35,000 (available up to 100 users, sized with an 80% utilization ceiling), a
 RAG software layer (SaaS 5,000 PLN per month with API/cloud;
 a 150,000 PLN licence with a 20,000 PLN yearly support contract on hardware).
 It is an estimate, not a quote or a capacity guarantee. Open `index.html` directly or
-serve the directory with Python. Prices were checked on 14 Sep 2026; token
+serve the directory with Python. Prices were checked on 6 Nov 2026 at the model
+creators' own pricing pages (default models: GPT-6.1 Terra for RAG and seats,
+GPT-6 Luna for the agent); token
 factors are illustrative and hardware throughput is not production-verified.
 On desktop, editable inputs live in a left settings sidebar; on small screens,
 use the Settings button and close it with the close control, backdrop, or
