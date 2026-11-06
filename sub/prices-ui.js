@@ -250,6 +250,12 @@ function mount(opts) {
     view.message = { key, vars };
     msg.textContent = t(key, vars);
   }
+  // Progress counter: visible text only. aria-busy keeps screen readers from reading every step;
+  // they hear the start and the result.
+  function sayProgress(key, vars) {
+    msg.setAttribute('aria-busy', 'true');
+    say(key, vars);
+  }
 
   // ─── Actions ───
   async function load() {
@@ -270,7 +276,7 @@ function mount(opts) {
       dialog.dataset.progress = done + '/' + total;
       progress.max = Math.max(total, 1);
       progress.value = done;
-      say('ppProgress', { done, total });
+      sayProgress('ppProgress', { done, total });
     };
     try {
       const models = opts.getModels();
@@ -279,9 +285,11 @@ function mount(opts) {
       view.missing = update.missing;
       view.noCreator = update.noCreator;
       view.candidates = update.candidates.map((c) => Object.assign(c, { checked: false }));
+      msg.removeAttribute('aria-busy');
       setState('ready');
       say('ppReady', { changes: view.rows.length, new: view.candidates.length, missing: view.missing.length, noCreator: view.noCreator.length });
     } catch (_) {
+      msg.removeAttribute('aria-busy');
       setState('error');
       say('ppError');
     } finally {

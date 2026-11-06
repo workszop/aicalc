@@ -162,7 +162,9 @@ assert.ok(!has_('deepseek/deepseek-v4.1-flash'), 'DeepSeek: near-duplicate of ma
 assert.ok(has_('deepseek/deepseek-v4.1-flash-2'), 'only an exact match after stripping the mapped id\'s date suffix is a near-duplicate');
 assert.ok(!has_('deepseek/deepseek-v4-pro'), 'DeepSeek: -pro still skipped by the general pattern');
 assert.ok(!extraIds.some((id) => id.startsWith('qwen/')), 'no qwen candidates');
-assert.ok(has_('google/gemini-3.8-flash') && has_('google/gemini-9-flash'), 'Google: gemini-<version>-flash is a candidate');
+assert.ok(has_('google/gemini-9-flash'), 'Google: gemini-<version>-flash is a candidate');
+assert.ok(!has_('google/gemini-3.8-flash'), 'Google: only the newest Flash is a candidate, an older one is dropped');
+assert.equal(extraIds.filter((id) => id.startsWith('google/')).length, 1, 'exactly one Google candidate');
 ['google/gemini-3.5-flash-lite', 'google/gemini-3.1-flash-image', 'google/gemini-omni-1.2-flash', 'google/gemini-9.1-flash-lite', 'google/gemini-9-pro', 'google/gemma-9-flash']
   .forEach((id) => assert.ok(!has_(id), `Google: ${id} skipped`));
 assert.ok(extraIds.every((id) => !id.endsWith(':batch') && !id.startsWith('~')), 'no batch or alias');

@@ -185,7 +185,9 @@ function discover(models, map, limit) {
     out.push({ orId, provider, id, name: f.name, created: f.created });
   });
   out.sort((a, b) => b.created - a.created);
-  return out.slice(0, limit);
+  // Google: only the current Flash (the newest by `created`), not every older Flash version.
+  const firstGoogle = out.findIndex((c) => c.provider === 'google');
+  return out.filter((c, i) => c.provider !== 'google' || i === firstGoogle).slice(0, limit);
 }
 // OpenRouter ids whose endpoints are worth fetching: mapped models that are on the list, then the candidates.
 function creatorIds(models, json, limit = 15) {
