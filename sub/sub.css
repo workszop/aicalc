@@ -394,23 +394,26 @@ body[data-page="pay"] main { grid-template-columns: minmax(0, 1fr); }
 .pay-fig { margin: 0 0 var(--sp-5); }
 .pay-fig > .sec-title { margin-bottom: var(--sp-4); }
 .pay-fig figcaption { margin-top: var(--sp-4); }
-.pay-flow { display: grid; grid-template-columns: minmax(180px, 1fr) 64px minmax(0, 1.6fr); align-items: center; }
-.pay-node { background: var(--surface); border: 1.5px solid var(--accent, var(--ink)); border-radius: var(--r-md); padding: var(--sp-3) var(--sp-4); min-width: 0; }
-.pay-node h3 { font-family: var(--font-display); font-weight: 700; font-size: var(--body); line-height: var(--line-height-tight); margin: 0 0 var(--sp-1); color: var(--ink); }
+.pay-flow { --pay-branch: 80px; --pay-or-h: 24px; display: grid; grid-template-columns: minmax(220px, 1fr) var(--pay-branch) minmax(0, 1.6fr); align-items: center; }
+.pay-node { background: var(--surface); border: 1.5px solid var(--accent, var(--ink)); border-radius: var(--r-md); padding: var(--sp-4) var(--sp-5); min-width: 0; }
+.pay-node h3 { font-family: var(--font-display); font-weight: 700; font-size: var(--h3); line-height: var(--line-height-tight); margin: 0 0 var(--sp-2); color: var(--ink); }
 .pay-node h3 a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--accent, var(--ink)); text-decoration-thickness: 2px; text-underline-offset: 3px; border-radius: var(--r-xs); }
 .pay-node h3 a:focus-visible { outline: 3px solid var(--transparent); box-shadow: var(--focus-ring); }
-.pay-quote { margin: 0; color: var(--ink-2); font-size: var(--body-sm); }
-.pay-cond { display: inline-block; margin: 0 0 var(--sp-2); font-family: var(--font-mono); font-size: var(--small-size); color: var(--ink); border: 1.5px solid var(--accent, var(--ink)); border-radius: var(--r-pill); padding: 1px 9px; }
-.pay-checks { margin: 0; padding-left: var(--sp-4); font-size: var(--body-sm); color: var(--ink-2); line-height: var(--line-height-body); }
+.pay-quote { margin: 0; color: var(--ink-2); font-size: var(--h4); }
+.pay-cond { display: inline-block; margin: 0 0 var(--sp-2); font-family: var(--font-mono); font-size: var(--body); color: var(--ink); border: 1.5px solid var(--accent, var(--ink)); border-radius: var(--r-md); padding: 2px 12px; }
+.pay-checks { margin: 0; padding-left: var(--sp-5); font-size: var(--h4); color: var(--ink-2); line-height: var(--line-height-body); }
 .pay-branch { position: relative; align-self: stretch; }
 .pay-branch::before { content: ''; position: absolute; left: 0; right: 50%; top: 50%; border-top: 1.5px solid var(--ink); }
-.pay-branch::after { content: ''; position: absolute; left: 50%; top: 16%; bottom: 16%; border-left: 1.5px solid var(--ink); }
-.pay-decision { position: absolute; z-index: 1; left: 50%; top: 50%; width: 30px; height: 30px; margin: -15px 0 0 -15px; display: grid; place-items: center; background: var(--yellow); color: var(--yellow-ink); border: 1.5px solid var(--ink); border-radius: var(--r-xs); transform: rotate(45deg); }
-.pay-decision b { transform: rotate(-45deg); font-family: var(--font-display); }
+.pay-decision { position: absolute; z-index: 1; left: 50%; top: 50%; width: 44px; height: 44px; margin: -22px 0 0 -22px; display: grid; place-items: center; background: var(--yellow); color: var(--yellow-ink); border: 1.5px solid var(--ink); border-radius: var(--r-xs); transform: rotate(45deg); }
+.pay-decision b { transform: rotate(-45deg); font-family: var(--font-display); font-size: var(--h3); }
 .pay-targets { list-style: none; margin: 0; padding: 0 0 0 var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-2); position: relative; }
 .pay-targets > .pay-node { position: relative; }
-.pay-targets > .pay-node::before { content: ''; position: absolute; left: calc(-1 * var(--sp-4) - 1px); width: var(--sp-4); top: 50%; border-top: 1.5px solid var(--ink); }
-.pay-or { display: flex; align-items: center; gap: var(--sp-2); font-family: var(--font-mono); font-size: var(--small-size); font-weight: 500; text-transform: uppercase; letter-spacing: .1em; color: var(--ink-3); }
+.pay-targets > .pay-node::before { content: ''; position: absolute; left: calc(-1 * (var(--pay-branch) / 2 + var(--sp-4)) - 1px); width: calc(var(--pay-branch) / 2 + var(--sp-4)); top: 50%; border-top: 1.5px solid var(--ink); }
+/* Vertical spine: each node draws its own segment, so it starts and ends exactly at the first and last stub. */
+.pay-targets > .pay-node::after { content: ''; position: absolute; left: calc(-1 * (var(--pay-branch) / 2 + var(--sp-4)) - 1px); top: -2px; bottom: calc(-1 * (var(--pay-or-h) + 2 * var(--sp-2)) - 4px); border-left: 1.5px solid var(--ink); }
+.pay-targets > .pay-node:first-child::after { top: 50%; }
+.pay-targets > .pay-node:last-child::after { bottom: 50%; }
+.pay-or { height: var(--pay-or-h); display: flex; align-items: center; gap: var(--sp-2); font-family: var(--font-mono); font-size: var(--body); font-weight: 500; text-transform: uppercase; letter-spacing: .1em; color: var(--ink-3); }
 .pay-or::before, .pay-or::after { content: ''; flex: 1; border-top: 1px dashed var(--line-strong); }
 .pay-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-4); margin-bottom: var(--sp-5); }
 .pay-card { margin: 0; min-width: 0; scroll-margin-top: var(--sp-4); }
@@ -428,5 +431,9 @@ body[data-page="pay"] main { grid-template-columns: minmax(0, 1fr); }
   .pay-flow { grid-template-columns: minmax(0, 1fr); gap: var(--sp-3); }
   .pay-branch { display: none; }
   .pay-targets { padding-left: 0; }
-  .pay-targets > .pay-node::before { display: none; }
+  .pay-targets > .pay-node::before, .pay-targets > .pay-node::after { display: none; }
+  .pay-node { padding: var(--sp-3) var(--sp-4); }
+  .pay-node h3 { font-size: 21px; }
+  .pay-quote, .pay-checks { font-size: var(--body-lg); }
+  .pay-cond { font-size: var(--body-sm); }
 }
