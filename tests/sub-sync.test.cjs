@@ -23,7 +23,7 @@ indexModels.forEach((m, i) => {
     id: m.id, name: m.name, pin: m.pin, pout: m.pout, ctx: m.ctx, maxOutput: m.maxOutput,
     family: m.family, alwaysThinks: m.alwaysThinks,
     tierAbove: m.tier ? m.tier.above : null, tierIn: m.tier ? m.tier.pin : null, tierOut: m.tier ? m.tier.pout : null,
-    checkedAt: m.checkedAt, source: m.source,
+    checkedAt: m.checkedAt, source: m.source, openrouter: m.openrouter,
   };
   const actual = {};
   Object.keys(expected).forEach((k) => { actual[k] = sub.MODELS[i][k]; });
