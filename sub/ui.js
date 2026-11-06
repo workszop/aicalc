@@ -7,6 +7,7 @@ const CURRENCY = 'PLN';
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const MOBILE_QUERY = '(max-width: 768px)';
 const NAV_PAGES = [
+  { id: 'pay', href: 'jak-placimy.html', key: 'navPay' },
   { id: 'rag', href: 'index.html', key: 'navRag' },
   { id: 'seats', href: 'seats.html', key: 'navSeats' },
   { id: 'agent', href: 'agent.html', key: 'navAgent' },
@@ -14,7 +15,7 @@ const NAV_PAGES = [
 const T = {
   pl: {
     // nav and page furniture
-    navLabel: 'Kalkulatory', navRag: 'Asystent RAG', navSeats: 'Subskrypcje vs API', navAgent: 'Agent / automatyzacja',
+    navLabel: 'Kalkulatory', navPay: 'Jak płacimy za AI?', navRag: 'Asystent RAG', navSeats: 'Subskrypcje vs API', navAgent: 'Agent / automatyzacja',
     langGroup: 'Język / Language', settingsTitle: 'Ustawienia', settingsDone: 'Gotowe', closeSettings: 'Zamknij ustawienia',
     reset: 'Resetuj', resetDone: 'Przywrócono wartości domyślne.',
     shortcuts: 'Skróty: Alt+R resetuje stronę · L zmienia język · Esc zamyka ustawienia',
@@ -27,7 +28,7 @@ const T = {
     users: 'Liczba osób', workDays: 'Dni robocze w roku', fx: 'Kurs USD/PLN',
   },
   en: {
-    navLabel: 'Calculators', navRag: 'RAG assistant', navSeats: 'Seats vs API', navAgent: 'Agent / automation',
+    navLabel: 'Calculators', navPay: 'How we pay for AI', navRag: 'RAG assistant', navSeats: 'Seats vs API', navAgent: 'Agent / automation',
     langGroup: 'Język / Language', settingsTitle: 'Settings', settingsDone: 'Done', closeSettings: 'Close settings',
     reset: 'Reset', resetDone: 'Defaults restored.',
     shortcuts: 'Shortcuts: Alt+R resets the page · L switches language · Esc closes settings',
@@ -240,7 +241,9 @@ function renderNav(current, opts = {}) {
   const reset = el('button', { type: 'button', class: 'ghost-btn', id: 'resetBtn', 'aria-keyshortcuts': 'Alt+R', 'data-t': 'reset' });
   const seg = el('div', { class: 'edu-seg', role: 'group', 'data-t-aria': 'langGroup' });
   seg.append(el('button', { type: 'button', 'data-lang': 'pl' }, 'PL'), el('button', { type: 'button', 'data-lang': 'en' }, 'EN'));
-  inner.append(brand, nav, el('span', { class: 'header-spacer' }), toggle, reset, seg);
+  // opts.tools === false: a page without settings (the explainer) gets no settings or reset button.
+  if (opts.tools === false) inner.append(brand, nav, el('span', { class: 'header-spacer' }), seg);
+  else inner.append(brand, nav, el('span', { class: 'header-spacer' }), toggle, reset, seg);
   header.replaceChildren(inner);
   seg.addEventListener('click', (e) => { const b = e.target.closest('[data-lang]'); if (b) setLang(b.dataset.lang); });
   reset.addEventListener('click', runReset);

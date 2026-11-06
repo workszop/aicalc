@@ -226,10 +226,10 @@ const headerNode = descendants(documentRoot, (node) => node.tag === 'header' && 
 const headerNav = headerNode && descendants(headerNode, (node) => node.tag === 'nav' && hasClass(node, 'sub-nav'))[0];
 assert.ok(headerNav, 'header has a nav.sub-nav');
 const navLinks = descendants(headerNav, (node) => node.tag === 'a');
-assert.deepEqual(navLinks.map((a) => a.attrs.href), ['index.html', 'seats.html', 'agent.html'], 'nav links to the three calculators');
-assert.deepEqual(navLinks.map((a) => a.attrs['data-nav']), ['rag', 'seats', 'agent'], 'nav links carry data-nav ids');
-assert.ok(navLinks.every((a) => /^nav(Rag|Seats|Agent)$/.test(a.attrs['data-t'] || '')), 'nav labels are translated via data-t');
-assert.equal(navLinks[0].attrs['aria-current'], 'page', 'RAG link is aria-current=page');
-assert.ok(navLinks.slice(1).every((a) => !('aria-current' in a.attrs)), 'other nav links are not current');
+assert.deepEqual(navLinks.map((a) => a.attrs.href), ['jak-placimy.html', 'index.html', 'seats.html', 'agent.html'], 'nav links the explainer and the three calculators');
+assert.deepEqual(navLinks.map((a) => a.attrs['data-nav']), ['pay', 'rag', 'seats', 'agent'], 'nav links carry data-nav ids');
+assert.ok(navLinks.every((a) => /^nav(Pay|Rag|Seats|Agent)$/.test(a.attrs['data-t'] || '')), 'nav labels are translated via data-t');
+assert.equal(navLinks[1].attrs['aria-current'], 'page', 'RAG link is aria-current=page');
+assert.ok(navLinks.filter((_, i) => i !== 1).every((a) => !('aria-current' in a.attrs)), 'other nav links are not current');
 
 console.log('Sidebar layout and keyboard contracts passed');
