@@ -369,7 +369,9 @@ AGENT_PLANT_FLOW = r"""
 """
 
 # ─── Price panel (sub/prices-ui.js) ───
-# The feed is the trimmed OpenRouter fixture served by the local test server (?pricesUrl= test hook).
+# The feed is the trimmed OpenRouter fixture served by the local test server (?pricesUrl= test hook);
+# creator endpoints come from fixtures/endpoints/ next to it. Real data except the Haiku 4.5 creator
+# output (5.5 instead of 5), the "normal change" these flows apply.
 PRICES_QUERY = "?pricesUrl=fixtures/openrouter-models.json"
 PRICES_BAD_QUERY = "?pricesUrl=fixtures/missing.json"
 PRICES_PRELUDE = PRELUDE + r"""
@@ -379,6 +381,9 @@ const until = async (fn, label, ms = 8000) => {
 };
 const panel = () => $('#pricePanel');
 const STORE = 'edulab-aicalc-prices-v1';
+// every text the live region shows while the update runs
+const msgLog = [];
+new MutationObserver(() => msgLog.push($('#priceMsg').textContent)).observe(document.body, { subtree: true, childList: true, characterData: true });
 """
 AGENT_PRICES_FLOW = r"""
 <script>
@@ -386,7 +391,7 @@ window.addEventListener('load', async () => {
 """ + PRICES_PRELUDE + r"""
   try {
     const card = $('#agentCard');
-    const PRO = 'DeepSeek V4 Pro 0813';
+    const HAIKU = 'Anthropic Claude Haiku 4.5';
     const defaults = SubCore.defaultsOf(SubCore.SHARED_FIELDS, SubCore.AGENT_FIELDS);
     expect(document.body.dataset.prices === 'builtin', `body data-prices ${document.body.dataset.prices}`);
     expect(card.dataset.monthly === '487.64', `built-in monthly ${card.dataset.monthly}`);
@@ -395,9 +400,10 @@ window.addEventListener('load', async () => {
     expect($('#pricesBtn').textContent === 'Ceny modeli', `button label ${$('#pricesBtn').textContent}`);
     expect($('#priceStatus').textContent === 'Ceny wbudowane, sprawdzone 2026-09-13', `status ${$('#priceStatus').textContent}`);
     expect($('#priceRestore').disabled, 'restore enabled without a store');
-    setField('model', PRO);
+    expect(/Ceny pochodzą od twórcy modelu \(np\. DeepSeek, OpenAI, Anthropic\), pobrane przez OpenRouter\./.test($('.pp-intro').textContent), `intro ${$('.pp-intro').textContent}`);
+    setField('model', HAIKU);
     const before = card.dataset.monthly;
-    const builtinPro = SubCore.MODELS.find((m) => m.name === PRO);
+    const builtinHaiku = SubCore.MODELS.find((m) => m.name === HAIKU);
     click('#pricesBtn');
     expect(panel().open && document.activeElement === $('#priceFetch'), 'panel did not open with focus on fetch');
     click('#priceFetch');
@@ -405,28 +411,34 @@ window.addEventListener('load', async () => {
     expect($('#priceMsg').getAttribute('aria-live') === 'polite' && /Pobieram/.test($('#priceMsg').textContent), 'loading message');
     await until(() => panel().dataset.state !== 'loading', 'fetch');
     expect(panel().dataset.state === 'ready', `state ${panel().dataset.state}: ${$('#priceMsg').textContent}`);
-    expect(panel().dataset.changes === '7' && panel().dataset.new === '15' && panel().dataset.missing === '0', `counts ${panel().dataset.changes}/${panel().dataset.new}/${panel().dataset.missing}`);
-    const bigRow = $('#priceChanges tr[data-model-id="deepseek-v4-pro"][data-field="pin"]');
-    expect(bigRow && !bigRow.querySelector('input').checked && /duża zmiana, sprawdź u dostawcy/.test(bigRow.textContent), 'big change is not unchecked and badged');
-    expect(!$('#priceChanges tr[data-model-id="deepseek-v4-pro"][data-field="pout"] input').checked, 'other changes of a doubtful model are pre-checked');
+    expect(msgLog.includes('Pobieranie cen twórców: 0/19') && msgLog.includes('Pobieranie cen twórców: 19/19'), `progress counter ${JSON.stringify(msgLog.slice(0, 4))}`);
+    expect(panel().dataset.progress === '19/19', `data-progress ${panel().dataset.progress}`);
+    expect(panel().dataset.changes === '5' && panel().dataset.new === '3' && panel().dataset.missing === '0' && panel().dataset.noCreator === '0', `counts ${panel().dataset.changes}/${panel().dataset.new}/${panel().dataset.missing}/${panel().dataset.noCreator}`);
+    expect(!$('#priceChanges [data-flag="big"]') && !$('#priceNoCreator'), 'real creator data: nothing big, no creator price missing');
+    const proCtx = $('#priceChanges tr[data-model-id="deepseek-v4-pro"][data-field="ctx"]');
+    expect(proCtx && proCtx.querySelector('input').checked && /1\s?000\s?000 → 1\s?048\s?576/.test(proCtx.textContent), `DeepSeek ctx row ${proCtx && proCtx.textContent}`);
     expect($('#priceChanges tr[data-model-id="claude-haiku-4-5-20251001"][data-field="pout"] input').checked, 'a normal change is not pre-checked');
     expect([...document.querySelectorAll('#priceNew input')].every((b) => !b.checked), 'new models are pre-checked');
     expect(/OpenAI GPT-6\.1 Terra/.test($('#priceNew').textContent), 'candidate names missing');
+    const gem = $('#priceNew tr[data-openrouter="google/gemini-3.8-flash"]');
+    expect(gem && gem.dataset.canAdd === 'false' && gem.querySelector('input').disabled && /Brak współczynnika tokenizera Gemini – dodanie po pomiarze/.test(gem.textContent), 'Gemini candidate is not disabled with the tokenizer note');
+    expect(/0,75/.test(gem.textContent) && /3,75/.test(gem.textContent), `Gemini creator price ${gem.textContent}`);
+    expect(!$('#priceNew tr[data-openrouter^="qwen/"]'), 'qwen candidate listed');
     expect(panel().getBoundingClientRect().right <= window.innerWidth + 0.5, 'panel wider than the viewport');
-    // accept only DeepSeek V4 Pro output 3.96 -> 4.44
+    // accept only Claude Haiku 4.5 output 5 -> 5.5
     document.querySelectorAll('#priceChanges input:checked').forEach((b) => { b.checked = false; b.dispatchEvent(new Event('change', { bubbles: true })); });
     expect($('#priceApply').disabled, 'apply enabled with nothing selected');
-    const box = $('#priceChanges tr[data-model-id="deepseek-v4-pro"][data-field="pout"] input');
+    const box = $('#priceChanges tr[data-model-id="claude-haiku-4-5-20251001"][data-field="pout"] input');
     box.checked = true; box.dispatchEvent(new Event('change', { bubbles: true }));
     click('#priceApply');
     expect(panel().dataset.state === 'applied', `state after apply ${panel().dataset.state}`);
-    const want = SubCore.computeAgentResults(Object.assign({}, defaults, { model: PRO }), SubCore.MODELS.map((m) => m.name === PRO ? Object.assign({}, builtinPro, { pout: 4.44 }) : m));
+    const want = SubCore.computeAgentResults(Object.assign({}, defaults, { model: HAIKU }), SubCore.MODELS.map((m) => m.name === HAIKU ? Object.assign({}, builtinHaiku, { pout: 5.5 }) : m));
     expect(card.dataset.monthly === SubUI.dataNum(want.monthly) && card.dataset.monthly !== before, `monthly after apply ${card.dataset.monthly}, expected ${SubUI.dataNum(want.monthly)} (before ${before})`);
-    expect($(`#modelTable tr[data-model="${PRO}"]`).dataset.monthly === SubUI.dataNum(want.monthly), 'model table not recomputed');
-    expect(SubCore.MODELS.find((m) => m.name === PRO).pin === 1.32, 'unselected big change was applied');
+    expect($(`#modelTable tr[data-model="${HAIKU}"]`).dataset.monthly === SubUI.dataNum(want.monthly), 'model table not recomputed');
+    expect(SubCore.MODELS.find((m) => m.id === 'deepseek-v4-pro').ctx === 1000000, 'an unselected change was applied');
     expect(document.body.dataset.prices === 'openrouter' && /^Zaktualizowane z OpenRouter \d{4}-\d{2}-\d{2}$/.test($('#priceStatus').textContent), 'status after apply');
     const store = JSON.parse(localStorage.getItem(STORE));
-    expect(store.version === 1 && store.changes['deepseek-v4-pro'].pout === 4.44 && !('pin' in store.changes['deepseek-v4-pro']), `store ${localStorage.getItem(STORE)}`);
+    expect(store.version === 1 && store.changes['claude-haiku-4-5-20251001'].pout === 5.5 && !('deepseek-v4-pro' in store.changes) && store.added.length === 0, `store ${localStorage.getItem(STORE)}`);
     click('#priceClose');
     expect(!panel().open && document.activeElement === $('#pricesBtn'), 'focus not returned to the button');
     // restore
@@ -526,13 +538,19 @@ window.addEventListener('load', async () => {
     click('#pricesBtn');
     click('#priceFetch');
     await until(() => panel().dataset.state !== 'loading', 'fetch');
-    expect(panel().dataset.state === 'ready' && panel().dataset.changes === '7', `state ${panel().dataset.state}`);
-    const box = [...document.querySelectorAll('#priceNew input')].find((b) => b.closest('tr').dataset.openrouter === 'openai/gpt-6-luna');
+    expect(panel().dataset.state === 'ready' && panel().dataset.changes === '5', `state ${panel().dataset.state}`);
+    // a Google candidate cannot be added, even when its box is forced on
+    const gemBox = $('#priceNew tr[data-openrouter="google/gemini-3.8-flash"] input');
+    expect(gemBox.disabled, 'Gemini add box enabled');
+    gemBox.checked = true; gemBox.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(!gemBox.checked, 'Gemini add box stays unchecked');
+    const box = [...document.querySelectorAll('#priceNew input')].find((b) => b.closest('tr').dataset.openrouter === 'openai/gpt-6.1-terra');
     box.checked = true; box.dispatchEvent(new Event('change', { bubbles: true }));
     click('#priceApply');
-    expect(SubCore.MODELS.some((m) => m.id === 'gpt-6-luna') && $('[data-field="model"] option[value="OpenAI GPT-6 Luna"]'), 'added model not offered');
+    expect(SubCore.MODELS.some((m) => m.id === 'gpt-6.1-terra') && $('[data-field="model"] option[value="OpenAI GPT-6.1 Terra"]'), 'added model not offered');
+    expect(!SubCore.MODELS.some((m) => m.family === 'gemini'), 'a Gemini model was added');
     expect(Math.abs(Number(api()) - 835.70) < 0.011, 'seats default model changed by unrelated updates');
-    setField('model', 'OpenAI GPT-6 Luna');
+    setField('model', 'OpenAI GPT-6.1 Terra');
     expect(api() !== '' && api() !== '835.7', `api with the new model ${api()}`);
     click('#priceClose');
     click('#pricesBtn');

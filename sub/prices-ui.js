@@ -3,16 +3,21 @@
 // the panel is built with createElement / textContent only.
 (function () {
 // ─── Constants ───
+// Whole update (list + every creator endpoint); each request also has its own limit.
 const TIMEOUT_MS = 15000;
+const REQUEST_TIMEOUT_MS = 10000;
 const STRINGS = {
   pl: {
     ppBtn: 'Ceny modeli', ppUpdateBtn: 'Aktualizuj z OpenRouter', ppTitle: 'Ceny modeli', ppClose: 'Zamknij',
     ppBuiltin: 'Ceny wbudowane, sprawdzone {date}', ppUpdated: 'Zaktualizowane z OpenRouter {date}',
-    ppIntro: 'Aktualne ceny pochodzą z publicznej listy modeli OpenRouter. OpenRouter może pokazywać cenę zewnętrznego hosta, a nie dostawcy, dlatego każdą zmianę zatwierdzasz sam. Ceny dla długiego kontekstu i poza szczytem nie są aktualizowane.',
+    ppIntro: 'Ceny pochodzą od twórcy modelu (np. DeepSeek, OpenAI, Anthropic), pobrane przez OpenRouter. Każdą zmianę zatwierdzasz sam. Ceny dla długiego kontekstu i poza szczytem nie są aktualizowane.',
     ppFetch: 'Pobierz aktualne ceny', ppRestore: 'Przywróć ceny wbudowane',
     ppLoading: 'Pobieram ceny z OpenRouter…', ppError: 'Nie udało się pobrać cen z OpenRouter. Spróbuj później.',
-    ppReady: 'Zmiany cen: {changes} · nowe modele: {new} · brak w OpenRouter: {missing}.',
+    ppProgress: 'Pobieranie cen twórców: {done}/{total}',
+    ppReady: 'Zmiany cen: {changes} · nowe modele: {new} · brak w OpenRouter: {missing} · brak ceny twórcy: {noCreator}.',
     ppChanges: 'Zmiany cen', ppNoChanges: 'Ceny są aktualne.', ppMissing: 'Brak w OpenRouter',
+    ppNoCreator: 'Brak ceny twórcy w OpenRouter', ppNoCreatorHint: 'Te modele zachowują dotychczasowe ceny.',
+    ppNoTokenizer: 'Brak współczynnika tokenizera Gemini – dodanie po pomiarze',
     ppNew: 'Nowe modele', ppNewHint: 'Nowe modele nie są zaznaczone. Sprawdź cenę u dostawcy, zanim je dodasz.',
     ppBigHint: 'Zmiany oznaczone jako duże nie są zaznaczone.',
     ppApply: 'Zastosuj zaznaczone', ppCancel: 'Anuluj',
@@ -27,11 +32,14 @@ const STRINGS = {
   en: {
     ppBtn: 'Model prices', ppUpdateBtn: 'Update from OpenRouter', ppTitle: 'Model prices', ppClose: 'Close',
     ppBuiltin: 'Built-in prices, checked {date}', ppUpdated: 'Updated from OpenRouter {date}',
-    ppIntro: 'Current prices come from the public OpenRouter model list. OpenRouter may show a third-party host\'s price rather than the provider\'s, so you approve every change yourself. Long-context and off-peak prices are not updated.',
+    ppIntro: 'Prices come from the model\'s creator (e.g. DeepSeek, OpenAI, Anthropic), fetched through OpenRouter. You approve every change yourself. Long-context and off-peak prices are not updated.',
     ppFetch: 'Fetch current prices', ppRestore: 'Restore built-in prices',
     ppLoading: 'Fetching prices from OpenRouter…', ppError: 'Could not fetch prices from OpenRouter. Try again later.',
-    ppReady: 'Price changes: {changes} · new models: {new} · missing from OpenRouter: {missing}.',
+    ppProgress: 'Fetching creator prices: {done}/{total}',
+    ppReady: 'Price changes: {changes} · new models: {new} · missing from OpenRouter: {missing} · no creator price: {noCreator}.',
     ppChanges: 'Price changes', ppNoChanges: 'Prices are up to date.', ppMissing: 'Missing from OpenRouter',
+    ppNoCreator: 'No creator price on OpenRouter', ppNoCreatorHint: 'These models keep their current prices.',
+    ppNoTokenizer: 'No Gemini tokenizer factor yet – can be added after measurement',
     ppNew: 'New models', ppNewHint: 'New models are not selected. Check the price with the provider before adding them.',
     ppBigHint: 'Changes flagged as large are not selected.',
     ppApply: 'Apply selected', ppCancel: 'Cancel',
@@ -76,14 +84,21 @@ function feedUrl() {
     return u.origin === location.origin ? u.href : PS().FEED_URL;
   } catch (_) { return PS().FEED_URL; }
 }
-async function fetchFeed(url) {
+// A model's endpoints: the OpenRouter API, or <dir of the test feed>/endpoints/<id with / as __>.json.
+function endpointsUrl(id, feed) {
+  return feed === PS().FEED_URL ? PS().endpointsUrl(id) : new URL('endpoints/' + PS().endpointsFile(id), feed).href;
+}
+// One request, aborted by its own timeout or by the whole update's signal.
+async function fetchJson(url, budget) {
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
+  const stop = () => ctrl.abort();
+  const timer = setTimeout(stop, REQUEST_TIMEOUT_MS);
+  if (budget.aborted) stop(); else budget.addEventListener('abort', stop);
   try {
     const res = await fetch(url, { signal: ctrl.signal, headers: { accept: 'application/json' }, credentials: 'omit' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     return await res.json();
-  } finally { clearTimeout(timer); }
+  } finally { clearTimeout(timer); budget.removeEventListener('abort', stop); }
 }
 function oldestDate(models) {
   return models.map((m) => m.checkedAt).filter(Boolean).sort()[0] || '';
@@ -93,11 +108,12 @@ function oldestDate(models) {
 // opts: { trigger, t(key, vars), lang() -> 'pl'|'en', getModels(), onApply(nextModels), onRestore(), statusEl? }
 function mount(opts) {
   const t = opts.t;
-  const view = { state: 'idle', rows: [], missing: [], candidates: [], message: '' };
+  const view = { state: 'idle', rows: [], missing: [], noCreator: [], candidates: [], message: '' };
+  const clearView = () => { view.rows = []; view.missing = []; view.noCreator = []; view.candidates = []; };
   const fmt = (v) => new Intl.NumberFormat(opts.lang() === 'pl' ? 'pl-PL' : 'en-GB', { maximumFractionDigits: 6 }).format(v);
 
   // ─── DOM ───
-  const dialog = el('dialog', { id: 'pricePanel', class: 'price-panel', 'aria-labelledby': 'pricePanelTitle', 'data-state': 'idle', 'data-changes': '0', 'data-new': '0', 'data-missing': '0' });
+  const dialog = el('dialog', { id: 'pricePanel', class: 'price-panel', 'aria-labelledby': 'pricePanelTitle', 'data-state': 'idle', 'data-changes': '0', 'data-new': '0', 'data-missing': '0', 'data-no-creator': '0', 'data-progress': '' });
   const title = el('h2', { id: 'pricePanelTitle' });
   const closeBtn = el('button', { type: 'button', class: 'ghost-btn', id: 'priceClose' });
   const head = el('div', { class: 'pp-head' });
@@ -162,7 +178,7 @@ function mount(opts) {
   }
   function renderResults() {
     results.replaceChildren();
-    Object.assign(dialog.dataset, { changes: String(view.rows.length), new: String(view.candidates.length), missing: String(view.missing.length) });
+    Object.assign(dialog.dataset, { changes: String(view.rows.length), new: String(view.candidates.length), missing: String(view.missing.length), noCreator: String(view.noCreator.length) });
     foot.hidden = view.state !== 'ready';
     if (view.state !== 'ready') return;
     const changes = section('priceChanges', t('ppChanges'));
@@ -188,13 +204,26 @@ function mount(opts) {
       s.append(ul);
       results.append(s);
     }
+    if (view.noCreator.length) {
+      const s = section('priceNoCreator', t('ppNoCreator'));
+      s.append(el('p', { class: 'hint' }, t('ppNoCreatorHint')));
+      const ul = el('ul');
+      view.noCreator.forEach((m) => ul.append(el('li', { 'data-model-id': m.id }, m.name + ' (' + m.openrouter + ')')));
+      s.append(ul);
+      results.append(s);
+    }
     if (view.candidates.length) {
       const s = section('priceNew', t('ppNew'));
       s.append(el('p', { class: 'hint' }, t('ppNewHint')));
-      s.append(table([t('ppThPick'), t('ppThModel'), t('ppThIn'), t('ppThOut'), t('ppThCtx')], view.candidates.map((c, i) => {
-        const tr = el('tr', { 'data-openrouter': c.openrouter });
-        tr.append(checkCell({ 'data-candidate': String(i) }, t('ppPickNew', { model: c.name }), c.checked),
-          el('th', { scope: 'row' }, c.name), el('td', { class: 'num' }, fmt(c.pin)), el('td', { class: 'num' }, fmt(c.pout)), el('td', { class: 'num' }, fmt(c.ctx)));
+      s.append(table([t('ppThPick'), t('ppThModel'), t('ppThIn'), t('ppThOut'), t('ppThCtx'), t('ppThFlags')], view.candidates.map((c, i) => {
+        const tr = el('tr', { 'data-openrouter': c.openrouter, 'data-can-add': String(c.canAdd) });
+        const pick = checkCell({ 'data-candidate': String(i) }, t('ppPickNew', { model: c.name }), c.checked);
+        const notes = el('td', { class: 'flags' });
+        if (!c.canAdd) {
+          pick.querySelector('input').disabled = true;
+          notes.append(el('span', { class: 'pp-badge', 'data-flag': 'noTokenizer' }, t('ppNoTokenizer')));
+        }
+        tr.append(pick, el('th', { scope: 'row' }, c.name), el('td', { class: 'num' }, fmt(c.pin)), el('td', { class: 'num' }, fmt(c.pout)), el('td', { class: 'num' }, fmt(c.ctx)), notes);
         return tr;
       })));
       results.append(s);
@@ -202,7 +231,7 @@ function mount(opts) {
     syncApply();
   }
   function syncApply() {
-    applyBtn.disabled = !view.rows.some((r) => r.checked) && !view.candidates.some((c) => c.checked);
+    applyBtn.disabled = !view.rows.some((r) => r.checked) && !view.candidates.some((c) => c.checked && c.canAdd);
   }
   function refresh() {
     title.textContent = t('ppTitle');
@@ -226,24 +255,37 @@ function mount(opts) {
   async function load() {
     if (view.state === 'loading') return;
     setState('loading');
-    view.rows = []; view.missing = []; view.candidates = [];
+    clearView();
     renderResults();
     fetchBtn.disabled = true;
     progress.hidden = false;
+    progress.removeAttribute('value');
+    dialog.dataset.progress = '';
     say('ppLoading');
+    const budget = new AbortController();
+    const timer = setTimeout(() => budget.abort(), TIMEOUT_MS);
+    const feed = feedUrl();
+    const io = { list: () => fetchJson(feed, budget.signal), endpoints: (id) => fetchJson(endpointsUrl(id, feed), budget.signal) };
+    const onProgress = (done, total) => {
+      dialog.dataset.progress = done + '/' + total;
+      progress.max = Math.max(total, 1);
+      progress.value = done;
+      say('ppProgress', { done, total });
+    };
     try {
-      const json = await fetchFeed(feedUrl());
       const models = opts.getModels();
-      const diff = PS().diffModels(models, PS().parseOpenRouter(json));
-      view.rows = diff.filter((r) => !r.missing).map((r) => Object.assign(r, { checked: !r.flags.includes('big') }));
-      view.missing = diff.filter((r) => r.missing);
-      view.candidates = PS().newModelCandidates(models, json).map((c) => Object.assign(c, { checked: false }));
+      const update = PS().creatorUpdate(models, await PS().fetchCreatorData(models, io, { onProgress }));
+      view.rows = update.rows.map((r) => Object.assign(r, { checked: !r.flags.includes('big') }));
+      view.missing = update.missing;
+      view.noCreator = update.noCreator;
+      view.candidates = update.candidates.map((c) => Object.assign(c, { checked: false }));
       setState('ready');
-      say('ppReady', { changes: view.rows.length, new: view.candidates.length, missing: view.missing.length });
+      say('ppReady', { changes: view.rows.length, new: view.candidates.length, missing: view.missing.length, noCreator: view.noCreator.length });
     } catch (_) {
       setState('error');
       say('ppError');
     } finally {
+      clearTimeout(timer);
       fetchBtn.disabled = false;
       progress.hidden = true;
       renderResults();
@@ -251,11 +293,11 @@ function mount(opts) {
   }
   function apply() {
     const changes = view.rows.filter((r) => r.checked);
-    const added = view.candidates.filter((c) => c.checked);
+    const added = view.candidates.filter((c) => c.checked && c.canAdd);
     if (!changes.length && !added.length) { say('ppNothing'); return; }
     const saved = saveStore(PS().overridesFrom(loadStore(), { changes, added }));
     opts.onApply(PS().applyUpdate(opts.getModels(), { changes, added }));
-    view.rows = []; view.missing = []; view.candidates = [];
+    clearView();
     setState('applied');
     renderStatus();
     renderResults();
@@ -265,7 +307,7 @@ function mount(opts) {
   function restore() {
     clearStore();
     opts.onRestore();
-    view.rows = []; view.missing = []; view.candidates = [];
+    clearView();
     setState('idle');
     renderStatus();
     renderResults();
@@ -283,7 +325,7 @@ function mount(opts) {
   opts.trigger.addEventListener('click', open);
   closeBtn.addEventListener('click', close);
   cancelBtn.addEventListener('click', () => {
-    view.rows = []; view.missing = []; view.candidates = [];
+    clearView();
     if (view.state === 'ready') setState('idle');
     renderResults();
     close();
@@ -295,7 +337,7 @@ function mount(opts) {
     const box = e.target.closest('input[type="checkbox"]');
     if (!box) return;
     if (box.dataset.change !== undefined) view.rows[Number(box.dataset.change)].checked = box.checked;
-    if (box.dataset.candidate !== undefined) view.candidates[Number(box.dataset.candidate)].checked = box.checked;
+    if (box.dataset.candidate !== undefined) { const c = view.candidates[Number(box.dataset.candidate)]; c.checked = c.canAdd && box.checked; box.checked = c.checked; }
     syncApply();
   });
   // Page shortcuts (L, 1-3, Alt+R) must not fire behind the modal; Esc closes it natively.
@@ -329,5 +371,5 @@ function mountSubPage(o) {
 }
 
 // ─── Exports ───
-globalThis.PriceUI = { STRINGS, TIMEOUT_MS, loadStore, saveStore, clearStore, feedUrl, mount, mountSubPage };
+globalThis.PriceUI = { STRINGS, TIMEOUT_MS, REQUEST_TIMEOUT_MS, loadStore, saveStore, clearStore, feedUrl, mount, mountSubPage };
 })();

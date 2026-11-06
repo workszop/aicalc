@@ -913,7 +913,8 @@ def run_capacity_smoke(browser: str, index: Path) -> list[tuple[str, int, int]]:
 
 
 # ─── Price panel (sub/prices-ui.js) on index.html ───
-# Flows run against a temporary copy; the feed is tests/fixtures/openrouter-models.json served next to it.
+# Flows run against a temporary copy; the feed is tests/fixtures/openrouter-models.json served next to it,
+# creator endpoints are fixtures/endpoints/ (real data except the Haiku 4.5 creator output, 5.5 instead of 5).
 PRICES_MARKER = "data-prices-smoke"
 PRICES_QUERY = "?pricesUrl=fixtures/openrouter-models.json"
 PRICES_PRELUDE = r"""
@@ -937,32 +938,35 @@ PRICES_FLOW = r"""
 window.addEventListener('load', async () => {
 """ + PRICES_PRELUDE + r"""
   try {
-    const PRO = 'DeepSeek V4 Pro 0813';
+    const HAIKU = 'Anthropic Claude Haiku 4.5';
     expect(document.body.dataset.prices === 'builtin', `body data-prices ${document.body.dataset.prices}`);
     expect(api() === '6839.25', `S1 api ${api()}`);
     expect($('#priceStatusLine').textContent === 'Ceny wbudowane, sprawdzone 2026-09-13', `status line ${$('#priceStatusLine').textContent}`);
     expect($('#priceUpdate').textContent === 'Aktualizuj z OpenRouter' && $('#priceUpdate').parentElement === $('#csvReset').parentElement, 'update button not next to the CSV buttons');
     const sel = $('#model');
-    sel.value = PRO; sel.dispatchEvent(new Event('input', { bubbles: true }));
+    sel.value = HAIKU; sel.dispatchEvent(new Event('input', { bubbles: true }));
     const before = api();
-    expect(before && state.model === PRO, 'model select did not switch');
+    expect(before && state.model === HAIKU, 'model select did not switch');
     click('#priceUpdate');
     expect(panel().open, 'panel did not open');
     click('#priceFetch');
     await until(() => panel().dataset.state !== 'loading', 'fetch');
-    expect(panel().dataset.state === 'ready' && panel().dataset.changes === '7' && panel().dataset.new === '15', `ready ${panel().dataset.state} ${panel().dataset.changes}/${panel().dataset.new}`);
+    expect(panel().dataset.state === 'ready' && panel().dataset.changes === '5' && panel().dataset.new === '3' && panel().dataset.noCreator === '0' && panel().dataset.progress === '19/19', `ready ${panel().dataset.state} ${panel().dataset.changes}/${panel().dataset.new}/${panel().dataset.noCreator} ${panel().dataset.progress}`);
+    expect(!$('#priceChanges [data-flag="big"]'), 'nothing is flagged big on real creator data');
+    expect($('#priceNew tr[data-openrouter="google/gemini-3.8-flash"] input').disabled, 'Gemini candidate can be added');
     document.querySelectorAll('#priceChanges input:checked').forEach((b) => { b.checked = false; b.dispatchEvent(new Event('change', { bubbles: true })); });
-    const box = $('#priceChanges tr[data-model-id="deepseek-v4-pro"][data-field="pout"] input');
+    const box = $('#priceChanges tr[data-model-id="claude-haiku-4-5-20251001"][data-field="pout"] input');
     box.checked = true; box.dispatchEvent(new Event('change', { bubbles: true }));
     click('#priceApply');
     expect(panel().dataset.state === 'applied' && document.body.dataset.prices === 'openrouter', 'not applied');
-    const mods = modelsFromCsv($('#csvData').textContent).map((m) => m.name === PRO ? Object.assign({}, m, { pout: 4.44 }) : m);
+    const mods = modelsFromCsv($('#csvData').textContent).map((m) => m.name === HAIKU ? Object.assign({}, m, { pout: 5.5 }) : m);
     const want = computeResults(Object.assign({}, state), mods).api.monthly.toFixed(2);
     expect(api() === want && api() !== before, `api after apply ${api()}, expected ${want} (before ${before})`);
-    expect($(`#modelTable tr[data-model="${PRO}"]`).dataset.monthly === want, 'model table not recomputed');
-    expect(state.models.find((m) => m.name === PRO).pin === 1.32, 'unselected big change applied');
+    expect($(`#modelTable tr[data-model="${HAIKU}"]`).dataset.monthly === want, 'model table not recomputed');
+    expect(state.models.find((m) => m.id === 'deepseek-v4-pro').ctx === 1000000, 'unselected change applied');
+    expect(state.models.find((m) => m.name === HAIKU).note === 'Cena twórcy modelu (z OpenRouter).', 'CSV note of an updated model');
     const saved = JSON.parse(localStorage.getItem('edulab-aicalc-scenario-v3'));
-    expect(saved && /deepseek-v4-pro/.test(saved.csvText) && modelsFromCsv(saved.csvText).find((m) => m.name === PRO).pout === 4.44, 'scenario save does not carry the update');
+    expect(saved && modelsFromCsv(saved.csvText).find((m) => m.name === HAIKU).pout === 5.5, 'scenario save does not carry the update');
     expect(parseScenario(JSON.stringify(saved)).models.length === 10, 'saved scenario does not parse');
     expect(/^Zaktualizowane z OpenRouter/.test($('#priceStatusLine').textContent), 'status line after apply');
     click('#priceRestore');
