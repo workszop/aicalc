@@ -316,38 +316,66 @@ potrzebny jest test obciążeniowy własnej konfiguracji.
 
 ## Aktualizacja cen
 
-Ceny modeli można odświeżyć z publicznej listy modeli **OpenRouter**
-(`GET https://openrouter.ai/api/v1/models`, bez klucza API). Dostawcy modeli
-publikują przez API listy modeli, ale nie ceny, dlatego źródłem jest OpenRouter.
+Ceny pochodzą od twórcy modelu (np. DeepSeek, OpenAI, Anthropic), pobrane przez
+OpenRouter. Publiczna lista modeli (`GET https://openrouter.ai/api/v1/models`,
+bez klucza API) służy tylko do znalezienia modeli. Cenę, okno kontekstu i limit
+odpowiedzi daje lista endpointów modelu
+(`GET https://openrouter.ai/api/v1/models/{id}/endpoints`), z której brany jest
+wyłącznie endpoint twórcy, czyli ten, którego `tag` jest dokładnie tagiem
+twórcy (`PriceSync.CREATOR_TAG`):
+
+| Dostawca w id | Tag twórcy |
+|---|---|
+| `openai/` | `openai` |
+| `anthropic/` | `anthropic` |
+| `deepseek/` | `deepseek` |
+| `qwen/` | `alibaba` |
+| `google/` | `google-ai-studio` |
+
+Warianty tagu to inne taryfy i nie są brane pod uwagę (`openai/flex` to połowa
+ceny, `openai/fast` podwójna, `google-ai-studio/flex`, `/priority`,
+`google-vertex*`). Cena z listy modeli bywa ceną innego hosta: DeepSeek V4 Pro
+0813 ma tam 0,1165 / 4,66 USD (host Wafer), a DeepSeek liczy 1,32 / 3,96 USD.
 
 - **Co się aktualizuje:** cena wejścia i wyjścia za 1 mln tokenów, okno
   kontekstu i limit odpowiedzi. **Co się nie aktualizuje:** ceny dla długiego
   kontekstu (`tier_*`) i ceny poza szczytem (`offpeak_*`). Jeśli zmienia się
   cena modelu z progiem długiego kontekstu, zmiana dostaje uwagę „ceny dla
   długiego kontekstu nie są aktualizowane”.
-- **Uwaga na hosta:** OpenRouter może pokazywać cenę zewnętrznego hosta, a nie
-  dostawcy. Przykład: DeepSeek V4 Pro 0813 ma tam 0,111 / 4,44 USD, a cena
-  u DeepSeek to 1,32 / 3,96 USD. Dlatego nic nie zmienia się samo: każda zmiana
-  jest pokazana jako „było → jest” i wymaga zatwierdzenia, a zmiana o więcej
-  niż 30% (ceny, okna kontekstu albo limitu wyjścia) jest oznaczona „duża zmiana,
-  sprawdź u dostawcy”. Gdy duża zmiana dotyczy ceny, oznaczone są wszystkie zmiany
-  tego modelu, bo cały wpis pochodzi wtedy pewnie od innego hosta. Oznaczone zmiany
-  są domyślnie odznaczone, a skrypt z `--write` ich nie zapisuje (chyba że z
-  `--include-big`).
+- **Zatwierdzanie:** nic nie zmienia się samo, każda zmiana jest pokazana jako
+  „było → jest”. Zmiana o więcej niż 30% (ceny, okna kontekstu albo limitu
+  wyjścia) jest oznaczona „duża zmiana, sprawdź u dostawcy”; gdy dotyczy ceny,
+  oznaczone są wszystkie zmiany tego modelu. Przy cenach twórcy to zabezpieczenie
+  powinno działać rzadko. Oznaczone zmiany są domyślnie odznaczone, a skrypt
+  z `--write` ich nie zapisuje (chyba że z `--include-big`).
 - **Mapowanie** modeli jest jawne: kolumna `openrouter_id` w CSV i pole
   `openrouter` w `SubCore.MODELS`. Model bez mapowania nie jest porównywany.
-  Model, którego nie ma już w OpenRouter, trafia na listę „Brak w OpenRouter”.
-- **Nowe modele** (OpenAI, Anthropic, DeepSeek, Qwen; bez wariantów `:batch`,
-  aliasów `~`, `-pro`, `-image`, `-vl-`, `guard`, `preview`) są pokazane od
-  najnowszego, najwyżej 15, i domyślnie nie są zaznaczone. Dodany model ma klasę
-  `standard`, nie ma progów ani cen poza szczytem, a w uwadze: „Dodany
-  z OpenRouter, sprawdź cenę u dostawcy.”
+  Model, którego nie ma już na liście, trafia do „Brak w OpenRouter”. Model,
+  który jest na liście, ale nie ma endpointu twórcy (albo jego zapytanie się nie
+  udało), trafia do „Brak ceny twórcy w OpenRouter” i zachowuje dotychczasowe
+  wartości; nie ma zastępowania ceną z listy ani ceną innego hosta.
+- **Nowe modele** są pokazane od najnowszego, najwyżej 15, i domyślnie nie są
+  zaznaczone. Kandydaci: OpenAI tylko z poziomami `luna`, `terra`, `sol`;
+  Anthropic; DeepSeek bez wersji eksperymentalnych (`-exp`, `vision`,
+  `experimental`) i bez bliźniaków modelu z listy (id zmapowanego modelu bez
+  końcowego `-<cyfry>`); Google tylko `google/gemini-<wersja>-flash`. Qwen nie
+  ma kandydatów. Wszędzie pomijane są `:batch`, aliasy `~`, `-pro`, `-image`,
+  `-vl-`, `guard`, `preview`. Kandydat bez endpointu twórcy jest pomijany; jego
+  ceny pochodzą z endpointu twórcy, a źródło to
+  `https://openrouter.ai/<id>/providers`. Dodany model ma klasę `standard`, nie
+  ma progów ani cen poza szczytem, a w uwadze: „Cena twórcy modelu
+  (z OpenRouter).” (ta sama uwaga trafia do zaktualizowanych modeli).
+- **Gemini:** kalkulator nie ma jeszcze współczynnika tokenizera Gemini, więc
+  kandydat Google jest pokazany z uwagą „Brak współczynnika tokenizera Gemini –
+  dodanie po pomiarze” i nie da się go dodać.
 
 ### W przeglądarce
 
 Przycisk **Ceny modeli** w nagłówku `seats.html` i `agent.html` oraz
 **Aktualizuj z OpenRouter** w sekcji „Cennik modeli” w `index.html` otwierają
-panel. „Pobierz aktualne ceny” pobiera listę (limit 15 s), panel pokazuje zmiany
+panel. „Pobierz aktualne ceny” pobiera listę, a potem endpointy zmapowanych
+modeli i kandydatów (najwyżej 4 zapytania naraz, każde z limitem 10 s, całość
+z limitem 15 s; status pokazuje licznik „Pobieranie cen twórców: 7/25”). Panel pokazuje zmiany
 z polami wyboru (duże zmiany i nowe modele są odznaczone), a „Zastosuj
 zaznaczone” przelicza stronę. Zatwierdzone zmiany są zapisane tylko w tej
 przeglądarce (`localStorage`, klucz `edulab-aicalc-prices-v1`) i działają na
@@ -357,10 +385,16 @@ też cennik wbudowany. Uszkodzony lub starszy zapis jest pomijany i usuwany.
 Pobieranie wymaga sieci; bez niej panel pokazuje „Nie udało się pobrać cen
 z OpenRouter. Spróbuj później.” i niczego nie zmienia.
 
+Gdy nie uda się pobrać samej listy, panel pokazuje ten sam komunikat; nieudane
+zapytanie o endpointy jednego modelu przenosi tylko ten model do „Brak ceny
+twórcy w OpenRouter”.
+
 Kontrakt DOM: `#pricePanel[data-state="idle|loading|ready|error|applied"]`
-z `data-changes`, `data-new`, `data-missing` oraz `body[data-prices="builtin|openrouter"]`.
-Testy podają własną listę parametrem `?pricesUrl=` (tylko względna ścieżka
-z tego samego źródła).
+z `data-changes`, `data-new`, `data-missing`, `data-no-creator`,
+`data-progress` („gotowe/wszystkie”), wiersze kandydatów z `data-can-add`
+oraz `body[data-prices="builtin|openrouter"]`. Testy podają własną listę
+parametrem `?pricesUrl=` (tylko względna ścieżka z tego samego źródła);
+endpointy są wtedy czytane z `<katalog listy>/endpoints/<id z / jako __>.json`.
 
 ### Skrypt i cotygodniowy PR
 
@@ -369,7 +403,13 @@ node scripts/update-prices.mjs                        # podgląd: tabela zmian, 
 node scripts/update-prices.mjs --write                # zapis wszystkich zmian poza „dużymi”
 node scripts/update-prices.mjs --write --include-big  # także duże zmiany
 node scripts/update-prices.mjs --only deepseek-flash,claude-opus-5
+node scripts/update-prices.mjs --fixture tests/fixtures/openrouter-models.json \
+  --endpoints-dir tests/fixtures/endpoints              # dane z plików (testy)
 ```
+
+Bez `--endpoints-dir` przy `--fixture` endpointy są czytane z katalogu
+`endpoints/` obok pliku listy. Raport ma sekcje „Zmiany cen”, „Brak
+w OpenRouter”, „Brak ceny twórcy w OpenRouter” i „Nowe modele (do decyzji)”.
 
 `--write` zmienia te same wartości w `#csvData` w `index.html` i w `MODELS`
 w `sub/core.js`, zachowując format i kolejność kolumn, ustawia `checked_at` na
