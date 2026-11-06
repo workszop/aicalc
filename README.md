@@ -202,6 +202,9 @@ wartości domyślne są ilustracyjne.
 | `sub/seats.js` | logika strony `seats.html` |
 | `sub/agent.js` | logika strony `agent.html` |
 | `sub/sub.css` | wspólne style stron pomocniczych (tokeny w `:root`) |
+| `sub/prices.js` | czysta logika aktualizacji cen z OpenRouter (`PriceSync`), używana też przez `scripts/update-prices.mjs` |
+| `sub/prices-ui.js` | panel „Ceny modeli” (`PriceUI`) na wszystkich trzech stronach, także w `index.html` |
+| `sub/prices.css` | style panelu, tylko tokeny z `:root` |
 
 ## Małe wdrożenie: Dell GB10
 
@@ -297,6 +300,71 @@ potrzebny jest test obciążeniowy własnej konfiguracji.
   dostarczoną z aplikacją. Jeśli ma być zachowana po ponownym uruchomieniu,
   zapisz scenariusz lokalnie.
 
+## Aktualizacja cen
+
+Ceny modeli można odświeżyć z publicznej listy modeli **OpenRouter**
+(`GET https://openrouter.ai/api/v1/models`, bez klucza API). Dostawcy modeli
+publikują przez API listy modeli, ale nie ceny, dlatego źródłem jest OpenRouter.
+
+- **Co się aktualizuje:** cena wejścia i wyjścia za 1 mln tokenów, okno
+  kontekstu i limit odpowiedzi. **Co się nie aktualizuje:** ceny dla długiego
+  kontekstu (`tier_*`) i ceny poza szczytem (`offpeak_*`). Jeśli zmienia się
+  cena modelu z progiem długiego kontekstu, zmiana dostaje uwagę „ceny dla
+  długiego kontekstu nie są aktualizowane”.
+- **Uwaga na hosta:** OpenRouter może pokazywać cenę zewnętrznego hosta, a nie
+  dostawcy. Przykład: DeepSeek V4 Pro 0813 ma tam 0,111 / 4,44 USD, a cena
+  u DeepSeek to 1,32 / 3,96 USD. Dlatego nic nie zmienia się samo: każda zmiana
+  jest pokazana jako „było → jest” i wymaga zatwierdzenia, a zmiana ceny o więcej
+  niż 30% jest oznaczona „duża zmiana, sprawdź u dostawcy”.
+- **Mapowanie** modeli jest jawne: kolumna `openrouter_id` w CSV i pole
+  `openrouter` w `SubCore.MODELS`. Model bez mapowania nie jest porównywany.
+  Model, którego nie ma już w OpenRouter, trafia na listę „Brak w OpenRouter”.
+- **Nowe modele** (OpenAI, Anthropic, DeepSeek, Qwen; bez wariantów `:batch`,
+  aliasów `~`, `-pro`, `-image`, `-vl-`, `guard`, `preview`) są pokazane od
+  najnowszego, najwyżej 15, i domyślnie nie są zaznaczone. Dodany model ma klasę
+  `standard`, nie ma progów ani cen poza szczytem, a w uwadze: „Dodany
+  z OpenRouter, sprawdź cenę u dostawcy.”
+
+### W przeglądarce
+
+Przycisk **Ceny modeli** w nagłówku `seats.html` i `agent.html` oraz
+**Aktualizuj z OpenRouter** w sekcji „Cennik modeli” w `index.html` otwierają
+panel. „Pobierz aktualne ceny” pobiera listę (limit 15 s), panel pokazuje zmiany
+z polami wyboru (duże zmiany i nowe modele są odznaczone), a „Zastosuj
+zaznaczone” przelicza stronę. Zatwierdzone zmiany są zapisane tylko w tej
+przeglądarce (`localStorage`, klucz `edulab-aicalc-prices-v1`) i działają na
+wszystkich trzech stronach, także na zaimportowanym cenniku CSV i w zapisanym
+scenariuszu. **Przywróć ceny wbudowane** usuwa ten zapis; w `index.html` wczytuje
+też cennik wbudowany. Uszkodzony lub starszy zapis jest pomijany i usuwany.
+Pobieranie wymaga sieci; bez niej panel pokazuje „Nie udało się pobrać cen
+z OpenRouter. Spróbuj później.” i niczego nie zmienia.
+
+Kontrakt DOM: `#pricePanel[data-state="idle|loading|ready|error|applied"]`
+z `data-changes`, `data-new`, `data-missing` oraz `body[data-prices="builtin|openrouter"]`.
+Testy podają własną listę parametrem `?pricesUrl=` (tylko względna ścieżka
+z tego samego źródła).
+
+### Skrypt i cotygodniowy PR
+
+```bash
+node scripts/update-prices.mjs                        # podgląd: tabela zmian, brakujące i nowe modele
+node scripts/update-prices.mjs --write                # zapis wszystkich zmian poza „dużymi”
+node scripts/update-prices.mjs --write --include-big  # także duże zmiany
+node scripts/update-prices.mjs --only deepseek-flash,claude-opus-5
+```
+
+`--write` zmienia te same wartości w `#csvData` w `index.html` i w `MODELS`
+w `sub/core.js`, zachowując format i kolejność kolumn, ustawia `checked_at` na
+dzisiejszą datę i sprawdza zgodność obu plików przed zapisem. Nowych modeli
+nie dodaje, tylko je wypisuje. Po zapisie uruchom testy z sekcji „Weryfikacja”.
+
+Workflow `.github/workflows/update-prices.yml` uruchamia skrypt w poniedziałki
+o 06:00 UTC (i ręcznie), uruchamia testy i jeśli coś się zmieniło, otwiera PR
+z gałęzi `bot/price-update-<data>`; opis PR to raport skryptu z pozycjami „do
+decyzji”. Nic nie trafia bezpośrednio do gałęzi głównej. Wymaga włączenia
+w ustawieniach repozytorium: *Settings → Actions → General → Allow GitHub
+Actions to create and approve pull requests*.
+
 ## Układ interfejsu
 
 Na dużym ekranie ustawienia są zebrane w niezależnie przewijanym panelu po
@@ -325,7 +393,7 @@ przecinka jako separatora oraz standardowego cudzysłowu CSV (`"`); przecinki i
 nowe linie w polu należy ująć w cudzysłowy. Nagłówek ma następujące kolumny:
 
 ```text
-nazwa,cena_wejscie_per_1M_USD,cena_wyjscie_per_1M_USD,okno_kontekstu,klasa,uwaga,id,family,max_output,always_thinks,tier_above,tier_input,tier_output,offpeak_input,offpeak_output,checked_at,source
+nazwa,cena_wejscie_per_1M_USD,cena_wyjscie_per_1M_USD,okno_kontekstu,klasa,uwaga,id,family,max_output,always_thinks,tier_above,tier_input,tier_output,offpeak_input,offpeak_output,checked_at,source,openrouter_id
 ```
 
 | Kolumna | Znaczenie |
@@ -347,6 +415,7 @@ nazwa,cena_wejscie_per_1M_USD,cena_wyjscie_per_1M_USD,okno_kontekstu,klasa,uwaga
 | `offpeak_output` | cena wyjścia poza szczytem; puste, jeśli nie dotyczy |
 | `checked_at` | data sprawdzenia ceny, `YYYY-MM-DD` |
 | `source` | URL źródła ceny lub dokumentacji |
+| `openrouter_id` | opcjonalna: id modelu w OpenRouter do aktualizacji cen; CSV bez tej kolumny też się wczytuje |
 
 Pierwszy wiersz musi być nagłówkiem. Wartości cen, limitów i progów muszą być
 liczbami nieujemnymi, nie większymi niż 1 miliard; limity i progi muszą być
@@ -389,6 +458,8 @@ node tests/layout.test.cjs
 python3 tests/browser-smoke.py
 node tests/sub-core.test.cjs
 node tests/sub-sync.test.cjs
+node tests/prices.test.cjs
+node tests/update-prices.test.cjs
 python3 tests/sub-smoke.py
 ```
 
@@ -411,10 +482,18 @@ Co sprawdzają:
   subskrypcji, API i agenta,
 - `sub-sync.test.cjs` – zgodność cen modeli i współczynników tokenów z
   `index.html`,
+- `prices.test.cjs` – logika aktualizacji cen na przyciętej, prawdziwej liście
+  OpenRouter (`tests/fixtures/openrouter-models.json`): zaokrąglenia, pomijanie
+  `:batch` i `~`, mapowanie, flagi, nowe modele, zapis w przeglądarce,
+- `update-prices.test.cjs` – `scripts/update-prices.mjs --write` na tymczasowej
+  kopii plików: zgodność CSV i `core.js`, pomijanie dużych zmian, drugi przebieg
+  bez zmian,
 - `sub-smoke.py` – przeglądarkowy test `seats.html` i `agent.html` przez `http://` (desktop i mobile) oraz `file://`: kontrakt DOM,
   przepływy użytkownika i stan po zmianie ustawień; na stronie agenta także
   przycisk „Wybierz”, przełącznik kontekstu i brak przewijania w bok przy
-  szerokości 360 i 320 px.
+  szerokości 360 i 320 px; panel „Ceny modeli” (stany, zastosowanie,
+  przywrócenie, zapis po przeładowaniu, błąd pobierania). `browser-smoke.py`
+  sprawdza ten sam panel w `index.html`.
 
 Jeśli przeglądarka nie jest zainstalowana, testy przeglądarkowe kończą się
 czytelnym komunikatem z instrukcją instalacji. Skrypty niczego nie instalują.
@@ -446,6 +525,14 @@ history and tool results, and a "flat" mode keeps every step's input fixed). On 
 is one of three kinds: `from` a number of chats, `always` or `never`. All figures are estimates in net
 PLN; no page prices people's working time and none calculates a return on
 investment; GB10 throughput is not checked on the seats
-page. They will be online at <https://workszop.github.io/aicalc/seats.html>,
-and `agent.html` after deployment. Run all seven checks listed under
+page. Model prices can be refreshed from the public OpenRouter model list
+(no API key): in the browser through the "Ceny modeli" / "Aktualizuj z
+OpenRouter" panel, where every change is shown old → new and must be approved
+(stored per browser under `edulab-aicalc-prices-v1`, removable with "Przywróć
+ceny wbudowane"), or in the repo with `node scripts/update-prices.mjs [--write]`
+and a weekly workflow that opens a PR (enable "Allow GitHub Actions to create
+and approve pull requests"). OpenRouter may list a third-party host's price,
+so changes above 30% are flagged and not applied by default; long-context and
+off-peak prices are never updated. They will be online at <https://workszop.github.io/aicalc/seats.html>,
+and `agent.html` after deployment. Run all nine checks listed under
 "Weryfikacja"; CI runs the same commands.
