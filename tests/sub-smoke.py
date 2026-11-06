@@ -69,13 +69,13 @@ SEATS_FLOW = r"""
     // defaults
     const wins = cards.querySelectorAll('[data-win="true"]');
     expect(wins.length === 1 && wins[0].dataset.option === 'api', 'default winner is not api');
-    expect(near(card('api').dataset.monthly, 835.70), `api monthly ${card('api').dataset.monthly}`);
+    expect(near(card('api').dataset.monthly, 651.53), `api monthly ${card('api').dataset.monthly}`);
     expect(near(card('sub').dataset.monthly, 1865.00), `sub monthly ${card('sub').dataset.monthly}`);
-    expect(cards.dataset.breakEvenChats === '61.0', `break-even ${cards.dataset.breakEvenChats}`);
+    expect(cards.dataset.breakEvenChats === '135.1', `break-even ${cards.dataset.breakEvenChats}`);
     expect(cards.dataset.breakEvenKind === 'from', `break-even kind ${cards.dataset.breakEvenKind}, expected from`);
     const verdictText = () => $('#verdict').textContent;
     expect($('#verdict').getAttribute('aria-live') === 'polite', 'verdict is not a polite live region');
-    expect(verdictText() === 'Przy 15 rozmowach dziennie na osobę najtaniej wychodzi API z własnym czatem. Subskrypcja wychodzi taniej niż API od 61 rozmów dziennie na osobę. Lokalnie jest taniej niż subskrypcja przy tym zespole.', `default verdict: ${verdictText()}`);
+    expect(verdictText() === 'Przy 15 rozmowach dziennie na osobę najtaniej wychodzi API z własnym czatem. Subskrypcja wychodzi taniej niż API od 136 rozmów dziennie na osobę. Lokalnie jest taniej niż subskrypcja przy tym zespole.', `default verdict: ${verdictText()}`);
     expect(/na osobę miesięcznie/.test(card('sub').querySelector('.seat-peruser').textContent), 'per-person line is not "na osobę miesięcznie"');
     // Polish plurals
     expect(SubUI.plural(1, 'a', 'b', 'c') === 'a' && SubUI.plural(2, 'a', 'b', 'c') === 'b' && SubUI.plural(4, 'a', 'b', 'c') === 'b' && SubUI.plural(5, 'a', 'b', 'c') === 'c'
@@ -124,8 +124,8 @@ SEATS_FLOW = r"""
     expect(winners.length === 1 && winners[0].dataset.option === want.winner, `winner ${winners[0] && winners[0].dataset.option}, expected ${want.winner}`);
     expect(near(card('api').dataset.monthly, want.api.monthly) && near(card('sub').dataset.monthly, want.sub.monthly), 'card amounts differ from core');
     // ineligible API option: the warning must be readable
-    setField('inTok', 250000);
-    setField('model', 'Anthropic Claude Haiku 4.5');
+    setField('inTok', 800000);
+    setField('model', 'Anthropic Claude Haiku 5.5');
     expect(card('api').dataset.eligible === 'false' && card('api').querySelector('.seat-warn'), 'api card did not show the warning');
     expect(!/API od|od API|niż API/.test(verdictText()), `ineligible API still has a break-even sentence: ${verdictText()}`);
     expect(visibleOn(card('api').querySelector('.seat-warn')), 'seats warning has the same colour as its card background');
@@ -144,7 +144,7 @@ SEATS_FLOW = r"""
     const verdictPl = $('#verdict').textContent;
     click('[data-lang="en"]');
     expect($('#verdict').textContent !== verdictPl && card('sub').dataset.monthly === monthly, 'EN switch changed numbers or did not translate');
-    expect(verdictText() === 'At 15 chats per person per day, the API with your own chat is the cheapest. A subscription is cheaper than the API from 61 chats per person per day. Local hosting is cheaper than the subscription for this team.', `EN verdict: ${verdictText()}`);
+    expect(verdictText() === 'At 15 chats per person per day, the API with your own chat is the cheapest. A subscription is cheaper than the API from 136 chats per person per day. Local hosting is cheaper than the subscription for this team.', `EN verdict: ${verdictText()}`);
     expect(/25\.2 USD/.test($('[data-field="plan"] option[value="m365-copilot"]').textContent), 'EN plan label not refreshed on language change');
     expect($('nav a[aria-current="page"]').getAttribute('href') === 'seats.html', 'nav current link wrong');
     click('[data-lang="pl"]');
@@ -178,14 +178,14 @@ AGENT_FLOW = r"""
     expect(leadNode && !/\bN\b/.test(leadNode.textContent) && /powtarza się/.test(leadNode.textContent), `agent lead still has a literal N: ${leadNode && leadNode.textContent}`);
     expect(!/ręczn|człowiek|ludzi|godzin/i.test(leadNode.textContent), `agent lead mentions manual work or people's time: ${leadNode.textContent}`);
     expect(document.body.dataset.state === 'ready', 'body[data-state] is not ready on load');
-    expect(card && near(card.dataset.monthly, 487.64), `monthly ${card && card.dataset.monthly}`);
-    expect(card.dataset.perRun === '0.0938', `per run ${card.dataset.perRun}`);
+    expect(card && near(card.dataset.monthly, 441.85), `monthly ${card && card.dataset.monthly}`);
+    expect(card.dataset.perRun === '0.0709', `per run ${card.dataset.perRun}`);
     expect(card.dataset.eligible === 'true', 'default model not eligible');
     const defaults = core.defaultsOf(core.SHARED_FIELDS, core.AGENT_FIELDS);
     const want = core.computeAgentResults(defaults, core.MODELS);
     // ─── details: DOM contract at the defaults (growing context) ───
     const range = core.agentRange(defaults, core.MODELS);
-    expect(card.dataset.annual === SubUI.dataNum(want.annual) && card.dataset.annual === '5851.68', `annual ${card.dataset.annual}`);
+    expect(card.dataset.annual === SubUI.dataNum(want.annual) && card.dataset.annual === '5302.21', `annual ${card.dataset.annual}`);
     expect(card.dataset.low === SubUI.dataNum(range.low) && card.dataset.high === SubUI.dataNum(range.high), `range ${card.dataset.low}-${card.dataset.high}`);
     expect(Number(card.dataset.low) <= Number(card.dataset.monthly) && Number(card.dataset.monthly) <= Number(card.dataset.high), 'range order');
     expect(/Zwykle od .* do .* \/ mies\./.test($('#rangeLine').textContent) && /od połowy do 1,5 raza kroków/.test(card.textContent), `range line: ${$('#rangeLine').textContent}`);
@@ -193,7 +193,7 @@ AGENT_FLOW = r"""
     const bd = $('#costBreakdown');
     expect(!bd.hidden && ['input', 'output', 'retries', 'tools', 'platform'].every((k) => bd.dataset[k] === SubUI.dataNum(want.breakdown[k])), `breakdown ${JSON.stringify(bd.dataset)}`);
     expect(bd.querySelectorAll('.bd-seg').length === 5 && bd.querySelectorAll('.bd-legend li').length === 5, 'breakdown bar or legend incomplete');
-    expect(/Najwięcej kosztuje platforma: 61,5% kosztu miesięcznego\./.test(bd.textContent), `largest-part sentence: ${bd.querySelector('.bd-largest').textContent}`);
+    expect(/Najwięcej kosztuje platforma: 67,9% kosztu miesięcznego\./.test(bd.textContent), `largest-part sentence: ${bd.querySelector('.bd-largest').textContent}`);
     const segBorders = [...bd.querySelectorAll('.bd-seg')].map((n) => { const cs = getComputedStyle(n); return [cs.borderTopWidth, cs.borderRightWidth, cs.borderBottomWidth, cs.borderLeftWidth]; });
     expect(segBorders.every((b) => b.every((w) => w === b[0] && parseFloat(w) > 0)), `segments are not outlined on all sides: ${JSON.stringify(segBorders)}`);
     const st = $('#stepTable');
@@ -209,7 +209,7 @@ AGENT_FLOW = r"""
     expect(mt.querySelector('tbody tr[aria-current="true"]').dataset.model === defaults.model && /wybrany/.test(mt.querySelector('tbody tr[aria-current="true"]').textContent), 'current model not marked');
     expect($('#scaleTable').dataset.rows === '4' && $('#scaleTable').querySelectorAll('tbody tr').length === 4, 'scale rows');
     expect($('#scaleTable tbody tr').dataset.runs === '100' && $('#scaleTable tbody tr:last-child').dataset.runs === '100000', 'scale runs');
-    expect($('#budgetLine').dataset.runs === '7461' && /Za 1\s000 PLN miesięcznie zmieścisz ok\. 7\s461 uruchomień\./.test($('#budgetLine').textContent), `budget line: ${$('#budgetLine').textContent}`);
+    expect($('#budgetLine').dataset.runs === '9869' && /Za 1\s000 PLN miesięcznie zmieścisz ok\. 9\s869 uruchomień\./.test($('#budgetLine').textContent), `budget line: ${$('#budgetLine').textContent}`);
     setField('budget', 300);
     expect($('#budgetLine').dataset.runs === '0' && /Budżet nie pokrywa nawet platformy/.test($('#budgetLine').textContent), 'budget below platform');
     setField('budget', 1000);
@@ -224,7 +224,7 @@ AGENT_FLOW = r"""
     expect(!$('#toolOutTokField').hidden, 'toolOutTok hidden in growing mode');
     const growingMonthly = card.dataset.monthly;
     click('[data-field="contextMode"] button[data-value="flat"]');
-    expect(card.dataset.monthly === '463.02' && card.dataset.monthly !== growingMonthly, `flat monthly ${card.dataset.monthly}`);
+    expect(card.dataset.monthly === '429.54' && card.dataset.monthly !== growingMonthly, `flat monthly ${card.dataset.monthly}`);
     expect($('#toolOutTokField').hidden, 'toolOutTok visible in flat mode');
     setField('toolOutTok', -5);
     expect(document.body.dataset.state === 'ready', 'inactive toolOutTok blocks in flat mode');
@@ -268,9 +268,9 @@ AGENT_FLOW = r"""
     // ineligible model
     setField('inTok', 2000000);
     expect(document.body.dataset.state === 'invalid', 'inTok above schema max must be invalid');
-    setField('inTok', 250000);
-    expect(card.dataset.eligible === 'true', 'Luna should still fit 250k tokens');
-    setField('model', 'Anthropic Claude Haiku 4.5');
+    setField('inTok', 800000);
+    expect(card.dataset.eligible === 'true', 'Luna should still fit 800k tokens');
+    setField('model', 'Anthropic Claude Haiku 5.5');
     expect(card.dataset.eligible === 'false', `eligible ${card.dataset.eligible} for a context over the model window`);
     expect(/Niedostępne/.test(card.textContent) && /Za długi kontekst/.test(card.textContent), 'ineligible copy missing');
     expect(visibleOn(card.querySelector('.agent-warn')), 'ineligible reason has the same colour as its card background');
@@ -316,7 +316,7 @@ AGENT_FLOW = r"""
     setField('budget', 5);
     setField('toolOutTok', 1);
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'r', code: 'KeyR', altKey: true, bubbles: true }));
-    expect($('[data-field="steps"]').value === '6' && card.dataset.perRun === '0.0938', 'Alt+R did not reset');
+    expect($('[data-field="steps"]').value === '6' && card.dataset.perRun === '0.0709', 'Alt+R did not reset');
     expect($('[data-field="budget"]').value === '1000' && $('[data-field="toolOutTok"]').value === '600' && $('[data-field="contextMode"] button[data-value="growing"]').getAttribute('aria-pressed') === 'true', 'Alt+R did not reset the new fields');
     finish({ ok: true, assertions: assertions.n, viewport: vp });
   } catch (error) {
@@ -327,7 +327,8 @@ AGENT_FLOW = r"""
 """
 
 # Runs before the page scripts: plants a stale state, as an old save from an earlier version would leave it.
-SEATS_PLANT_HEAD = """<script>try { localStorage.setItem('edulab-aicalc-seats-v1', '{"model":"gone","users":"x"}'); } catch (e) {}</script>"""
+# GPT-5.6 Terra was the default until 2026-11-06 and is no longer built in.
+SEATS_PLANT_HEAD = """<script>try { localStorage.setItem('edulab-aicalc-seats-v1', '{"model":"OpenAI GPT-5.6 Terra","users":"x"}'); } catch (e) {}</script>"""
 SEATS_PLANT_FLOW = r"""
 <script>
 (() => {
@@ -346,7 +347,8 @@ SEATS_PLANT_FLOW = r"""
 """
 
 # An agent save from before the labour-cost removal: the removed keys are ignored, the rest is kept.
-AGENT_PLANT_HEAD = """<script>try { localStorage.setItem('edulab-aicalc-agent-v1', '{"hourlyRate":120,"reviewPct":50,"reviewMin":5,"manualMin":30,"runs":500,"roiOn":true,"benefitMonthly":9000,"horizon":24,"setup":1}'); } catch (e) {}</script>"""
+# It also names GPT-5.6 Luna, the agent default until 2026-11-06, which is no longer built in.
+AGENT_PLANT_HEAD = """<script>try { localStorage.setItem('edulab-aicalc-agent-v1', '{"model":"OpenAI GPT-5.6 Luna","hourlyRate":120,"reviewPct":50,"reviewMin":5,"manualMin":30,"runs":500,"roiOn":true,"benefitMonthly":9000,"horizon":24,"setup":1}'); } catch (e) {}</script>"""
 AGENT_PLANT_FLOW = r"""
 <script>
 (() => {
@@ -354,6 +356,7 @@ AGENT_PLANT_FLOW = r"""
   try {
     expect(document.body.dataset.page === 'agent' && document.body.dataset.state === 'ready', 'old agent save did not render ready');
     expect($('[data-field="runs"]').value === '500', 'old agent save lost runs');
+    expect($('[data-field="model"]').value === SubCore.AGENT_FIELDS.model.def, `removed model did not fall back to the default: ${$('[data-field="model"]').value}`);
     const s = SubCore.loadState([SubCore.SHARED_FIELDS, SubCore.AGENT_FIELDS], { runs: 500 }, SubCore.MODELS);
     const want = SubCore.computeAgentResults(s, SubCore.MODELS);
     expect($('#agentCard').dataset.monthly === SubUI.dataNum(want.monthly), `old agent save monthly ${$('#agentCard').dataset.monthly}, expected ${SubUI.dataNum(want.monthly)}`);
@@ -785,17 +788,38 @@ def run_page(browser, page: str, key: str, flow: str, query: str, lines: list[st
 BASELINE = Path(__file__).resolve().parent / "fixtures" / "baseline"
 
 
+# The default models of that day, pinned because today's defaults are not on the frozen list.
+BASELINE_SEAT_MODEL = "OpenAI GPT-5.6 Terra"
+BASELINE_AGENT_MODEL = "OpenAI GPT-5.6 Luna"
+BASELINE_INDEX_MODEL = "OpenAI GPT-5.6 Terra"
+
+
+def _pin_default(text: str, block: str, model: str) -> str:
+    import re
+    pattern = re.compile(r"(" + re.escape(block) + r"[\s\S]*?model:\s*\{ def: ')[^']*(')")
+    out, n = pattern.subn(lambda m: m.group(1) + model + m.group(2), text, count=1)
+    if n != 1:
+        raise SmokeFailure(f"baseline: no default model in {block}")
+    return out
+
+
 def baseline_core(core_js: str) -> str:
     models = (BASELINE / "core-models.js").read_text(encoding="utf-8").split("\n", 1)[1].rstrip()
     i = core_js.index("const MODELS = [")
     j = core_js.index("];", i) + 2
-    return core_js[:i] + models + core_js[j:]
+    out = core_js[:i] + models + core_js[j:]
+    out = _pin_default(out, "const SEAT_FIELDS = {", BASELINE_SEAT_MODEL)
+    return _pin_default(out, "const AGENT_FIELDS = {", BASELINE_AGENT_MODEL)
 
 
 def baseline_index(html: str) -> str:
     import re
     csv = (BASELINE / "models.csv").read_text(encoding="utf-8")
-    return re.sub(r'(<script id="csvData"[^>]*>)[\s\S]*?(</script>)', lambda m: m.group(1) + csv + m.group(2), html, count=1)
+    html = re.sub(r'(<script id="csvData"[^>]*>)[\s\S]*?(</script>)', lambda m: m.group(1) + csv + m.group(2), html, count=1)
+    html, n = re.subn(r"(const DEFAULTS = \{[\s\S]*?\n  model: ')[^']*(')", lambda m: m.group(1) + BASELINE_INDEX_MODEL + m.group(2), html, count=1)
+    if n != 1:
+        raise SmokeFailure("baseline: no default model in index.html DEFAULTS")
+    return html
 
 
 def run_prices(browser, lines: list[str]) -> None:

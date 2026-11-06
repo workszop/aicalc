@@ -27,21 +27,36 @@ assert.equal(st.plan, 'chatgpt-business');
 assert.deepEqual({ ...C.loadState(schemas, 'garbage', MODELS) }, { ...C.defaultsOf(...schemas) });
 assert.equal(C.loadState(schemas, { model: 'DeepSeek V4.1 Flash' }, MODELS).model, 'DeepSeek V4.1 Flash');
 assert.ok(MODELS.some((m) => m.name === SEAT_FIELDS.model.def) && MODELS.some((m) => m.name === AGENT_FIELDS.model.def), 'default models exist');
+assert.equal(SEAT_FIELDS.model.def, 'OpenAI GPT-6.1 Terra');
+assert.equal(AGENT_FIELDS.model.def, 'OpenAI GPT-6 Luna');
+// Saves from before 2026-11-06 name models that are no longer listed: they load with the default model.
+assert.equal(C.loadState(schemas, { model: 'OpenAI GPT-5.6 Terra', users: 7 }, MODELS).model, 'OpenAI GPT-6.1 Terra');
+assert.equal(C.loadState(schemas, { model: 'OpenAI GPT-5.6 Terra', users: 7 }, MODELS).users, 7);
+assert.equal(C.loadState([SHARED_FIELDS, AGENT_FIELDS], { model: 'Anthropic Claude Haiku 4.5', runs: 9 }, MODELS).model, 'OpenAI GPT-6 Luna');
+['OpenAI GPT-5.6 Luna', 'OpenAI GPT-5.6 Terra', 'OpenAI GPT-5.6 Sol', 'Anthropic Claude Haiku 4.5', 'Anthropic Claude Sonnet 5', 'Anthropic Claude Opus 5']
+  .forEach((name) => assert.ok(!MODELS.some((m) => m.name === name), name + ' is no longer built in'));
+assert.equal(MODELS.length, 11);
+assert.ok(MODELS.every((m) => m.checkedAt === '2026-11-06'), 'every built-in price checked 2026-11-06');
 
 assert.equal(C.familyFactor('openai', 'pl'), 1);
 const terra = find('Terra');
 const s = { docLang: 'pl', fx: 3.73 };
-assert.ok(Math.abs(C.chatCost(terra, s, 3000, 700).perCall - 0.053712) < 1e-9);
+assert.ok(Math.abs(C.chatCost(terra, s, 3000, 700).perCall - 0.024245) < 1e-9);
 assert.equal(C.chatCost(terra, s, 2000000, 0).reason, 'ctxOver');
 assert.equal(C.chatCost(terra, s, 2000000, 0).eligible, false);
 assert.equal(C.chatCost(terra, s, 1000, 200000).reason, 'outputOver');
 assert.equal(C.chatCost(terra, s, 1000, 100).reason, null);
 const fable = find('Fable');
 assert.equal(C.chatCost(fable, s, 1000, 100).outTok, 3 * 100 * C.familyFactor('claudeNew', 'pl'));
-// long-context tier
-assert.equal(C.modelRates(terra, 300000).tiered, true);
-assert.equal(C.modelRates(terra, 300000).pin, 4);
-assert.equal(C.modelRates(terra, 1000).pin, 2);
+// long-context tier (Claude Haiku 5.5 above 100K prompt tokens; GPT-6.x has no long-context price)
+const haiku55 = find('Haiku');
+assert.equal(C.modelRates(haiku55, 100001).tiered, true);
+assert.equal(C.modelRates(haiku55, 100001).pin, 0.5);
+assert.equal(C.modelRates(haiku55, 100001).pout, 2.5);
+assert.equal(C.modelRates(haiku55, 100000).tiered, false);
+assert.equal(C.modelRates(haiku55, 1000).pin, 0.1);
+assert.equal(C.modelRates(terra, 300000).tiered, false);
+assert.equal(C.modelRates(terra, 300000).pin, 1);
 assert.equal(C.modelRates(find('Opus'), 900000).tiered, false);
 
 // ─── Seats model ───
@@ -50,11 +65,11 @@ const seatBase = () => ({ ...C.defaultsOf(SHARED_FIELDS, SEAT_FIELDS) });
   const r = C.computeSeatResults(seatBase(), MODELS);
   assert.ok(near(r.sub.monthly, 1865, 0.01));
   assert.ok(near(r.sub.perUser, 93.25, 0.01));
-  assert.ok(near(r.api.monthly, 835.7, 0.01));
+  assert.ok(near(r.api.monthly, 651.53, 0.01));
   assert.equal(r.local.units, 1);
   assert.ok(near(r.local.monthly, 1647.33, 0.01));
   assert.equal(r.winner, 'api');
-  assert.ok(near(r.breakEvenChats, 60.99, 0.01));
+  assert.ok(near(r.breakEvenChats, 135.12, 0.01));
   assert.equal(r.model, terra);
   assert.equal(r.plan.id, 'chatgpt-business');
   noNaN(r);
@@ -80,10 +95,10 @@ const seatBase = () => ({ ...C.defaultsOf(SHARED_FIELDS, SEAT_FIELDS) });
 
 // ─── Seats break-even kinds and winner ───
 {
-  // defaults: seats beat the API from ~61 chats per person per day
+  // defaults: seats beat the API from ~135 chats per person per day
   const def = C.computeSeatResults(seatBase(), MODELS);
   assert.equal(def.breakEven.kind, 'from');
-  assert.ok(near(def.breakEven.value, 60.99, 0.01));
+  assert.ok(near(def.breakEven.value, 135.12, 0.01));
   assert.equal(def.breakEven.value, def.breakEvenChats);
   // 3 users: the chat upkeep per person exceeds the seat price, so seats win at any usage
   const three = C.computeSeatResults({ ...seatBase(), users: 3 }, MODELS);
@@ -99,7 +114,7 @@ const seatBase = () => ({ ...C.defaultsOf(SHARED_FIELDS, SEAT_FIELDS) });
   // a custom price of 0 is cheaper than the API at any usage
   assert.equal(C.computeSeatResults({ ...seatBase(), plan: 'custom', customUsd: 0 }, MODELS).breakEven.kind, 'always');
   // heavy use: the local box wins
-  const heavy = C.computeSeatResults({ ...seatBase(), users: 20, chatsPerDay: 100 }, MODELS);
+  const heavy = C.computeSeatResults({ ...seatBase(), users: 20, chatsPerDay: 150 }, MODELS);
   assert.equal(heavy.winner, 'local');
   assert.ok(heavy.local.monthly < heavy.sub.monthly && heavy.local.monthly < heavy.api.monthly);
   // ties break in the order sub, api, local
@@ -120,12 +135,12 @@ const flatBase = () => ({ ...agentBase(), contextMode: 'flat' });
 {
   const r = C.computeAgentResults(flatBase(), MODELS);
   assert.equal(r.model, find('Luna'));
-  assert.ok(near(r.perStep, 0.0047744, 1e-7));
-  assert.ok(near(r.llmPerRun, 0.03151104, 1e-7));
+  assert.ok(near(r.perStep, 0.002238, 1e-7));
+  assert.ok(near(r.llmPerRun, 0.0147708, 1e-7));
   assert.equal(r.toolsPerRun, 0.05);
-  assert.ok(near(r.perRun, 0.08151104, 1e-7), 'perRun = LLM + tools');
+  assert.ok(near(r.perRun, 0.0647708, 1e-7), 'perRun = LLM + tools');
   assert.equal(r.perRun, r.llmPerRun + r.toolsPerRun);
-  assert.ok(near(r.monthly, 463.02, 0.01), 'monthly = runs x perRun + platform');
+  assert.ok(near(r.monthly, 429.54, 0.01), 'monthly = runs x perRun + platform');
   assert.equal(r.monthly, 2000 * r.perRun + 300);
   assert.deepEqual(Object.keys(r), ['model', 'perStep', 'llmPerRun', 'toolsPerRun', 'perRun', 'monthly', 'eligible', 'reason',
     'steps', 'inPerRun', 'outPerRun', 'retryPerRun', 'annual', 'breakdown'], 'no labour-cost results');
@@ -167,7 +182,7 @@ const flatBase = () => ({ ...agentBase(), contextMode: 'flat' });
   assert.equal(st2.toolOutTok, 600);
   assert.equal(st2.budget, 1000);
   const ar = C.computeAgentResults({ ...st2, contextMode: 'flat' }, MODELS);
-  assert.ok(near(ar.monthly, 500 * 0.08151104 + 300, 1e-6));
+  assert.ok(near(ar.monthly, 500 * 0.0647708 + 300, 1e-6));
   noNaN(ar);
   const seatState = C.loadState([SHARED_FIELDS, SEAT_FIELDS], old, MODELS);
   gone.forEach((id) => assert.ok(!Object.prototype.hasOwnProperty.call(seatState, id), 'seats: old key ' + id + ' is not restored'));
@@ -187,7 +202,7 @@ const flatBase = () => ({ ...agentBase(), contextMode: 'flat' });
   // flat: every step reads inTok; the internal sums hold
   const f = C.computeAgentResults(flatBase(), MODELS);
   assert.equal(f.steps.length, 6);
-  f.steps.forEach((st, i) => { assert.equal(st.k, i + 1); assert.equal(st.inTok, 4000); assert.equal(st.outTok, 400); assert.ok(near(st.cost, 0.0047744, 1e-12)); });
+  f.steps.forEach((st, i) => { assert.equal(st.k, i + 1); assert.equal(st.inTok, 4000); assert.equal(st.outTok, 400); assert.ok(near(st.cost, 0.002238, 1e-12)); });
   assert.ok(near(f.llmPerRun, (f.inPerRun + f.outPerRun) * 1.1, 1e-15));
   assert.ok(near(f.retryPerRun, (f.inPerRun + f.outPerRun) * 0.1, 1e-15));
   assert.equal(f.perRun, f.llmPerRun + f.toolsPerRun);
@@ -197,14 +212,15 @@ const flatBase = () => ({ ...agentBase(), contextMode: 'flat' });
   const g = C.computeAgentResults(agentBase(), MODELS);
   assert.deepEqual([...g.steps.map((st) => st.inTok)], [4000, 5000, 6000, 7000, 8000, 9000]);
   assert.ok(g.steps.every((st) => st.outTok === 400));
-  // hand check, step 3: (6000 x 0.2 + 400 x 1.2) / 1e6 x 3.73 = 0.0062664
-  assert.ok(near(g.steps[2].cost, 0.0062664, 1e-12));
-  assert.ok(near(g.inPerRun, 39000 * 0.2 / 1e6 * 3.73, 1e-12));
-  assert.ok(near(g.outPerRun, 2400 * 1.2 / 1e6 * 3.73, 1e-12));
-  assert.ok(near(g.llmPerRun, 0.04382004, 1e-10));
-  assert.ok(near(g.perRun, 0.09382004, 1e-10));
-  assert.ok(near(g.monthly, 487.64008, 1e-7));
-  assert.ok(near(g.annual, 5851.68096, 1e-6));
+  // hand check, step 3: (6000 x 0.1 + 400 x 0.5) / 1e6 x 3.73 = 0.002984
+  assert.ok(near(g.steps[2].cost, 0.002984, 1e-12));
+  assert.ok(near(g.inPerRun, 39000 * 0.1 / 1e6 * 3.73, 1e-12));
+  assert.ok(near(g.outPerRun, 2400 * 0.5 / 1e6 * 3.73, 1e-12));
+  // per run: (39 000 x 0.1 + 2 400 x 0.5) / 1e6 x 3.73 = 0.019023, x 1.1 retries = 0.0209253, + 0.05 tools = 0.0709253
+  assert.ok(near(g.llmPerRun, 0.0209253, 1e-10));
+  assert.ok(near(g.perRun, 0.0709253, 1e-10));
+  assert.ok(near(g.monthly, 441.8506, 1e-7));
+  assert.ok(near(g.annual, 5302.2072, 1e-6));
   assert.ok(near(g.perStep, (g.inPerRun + g.outPerRun) / 6, 1e-15));
   assert.ok(near(g.steps.reduce((a, st) => a + st.cost, 0), g.inPerRun + g.outPerRun, 1e-15));
   assert.equal(g.eligible, true);
@@ -222,21 +238,24 @@ const flatBase = () => ({ ...agentBase(), contextMode: 'flat' });
   // one step: growing equals flat
   assert.ok(near(C.computeAgentResults({ ...agentBase(), steps: 1 }, MODELS).perRun, C.computeAgentResults({ ...flatBase(), steps: 1 }, MODELS).perRun, 1e-15));
 
-  // per-step long-context tier: Luna is tiered above 272k input tokens
-  const tierS = { ...agentBase(), inTok: 270000, outTok: 0, toolOutTok: 1000, steps: 4, retryPct: 0 };
+  // per-step long-context tier: Haiku 5.5 is tiered above 100k Claude tokens (76 821.2 o200k tokens of Polish text)
+  const haiku = find('Haiku');
+  const k = C.familyFactor('claudeNew', 'pl');
+  const tierS = { ...agentBase(), model: haiku.name, inTok: 76819, outTok: 0, toolOutTok: 1, steps: 4, retryPct: 0 };
   const tr = C.computeAgentResults(tierS, MODELS);
-  assert.deepEqual([...tr.steps.map((st) => st.inTok)], [270000, 271000, 272000, 273000]);
-  const rate = (inT, pin) => inT * pin / 1e6 * 3.73;
-  assert.ok(near(tr.steps[2].cost, rate(272000, 0.2), 1e-12), 'exactly at the threshold: base price');
-  assert.ok(near(tr.steps[3].cost, rate(273000, 0.4), 1e-12), 'above the threshold: tier price');
-  assert.ok(near(tr.inPerRun, rate(270000 + 271000 + 272000, 0.2) + rate(273000, 0.4), 1e-12));
-  assert.ok(tr.steps[3].cost / tr.steps[2].cost > 1.9);
-  assert.equal(luna.tierAbove, 272000);
+  assert.deepEqual([...tr.steps.map((st) => st.inTok / k)].map((v) => Math.round(v)), [76819, 76820, 76821, 76822]);
+  assert.ok(tr.steps[2].inTok <= 100000 && tr.steps[3].inTok > 100000, 'steps 3 and 4 straddle the threshold');
+  const rate = (inT, pin) => inT * k * pin / 1e6 * 3.73;
+  assert.ok(near(tr.steps[2].cost, rate(76821, 0.1), 1e-12), 'below the threshold: base price');
+  assert.ok(near(tr.steps[3].cost, rate(76822, 0.5), 1e-12), 'above the threshold: tier price');
+  assert.ok(near(tr.inPerRun, rate(76819 + 76820 + 76821, 0.1) + rate(76822, 0.5), 1e-12));
+  assert.ok(tr.steps[3].cost / tr.steps[2].cost > 4.9);
+  assert.equal(haiku.tierAbove, 100000);
+  assert.equal(luna.tierAbove, null, 'GPT-6 Luna has no long-context price');
 
   // eligibility: the last step overflows the context even though the first fits
-  const haiku = find('Haiku');
-  const ctxS = { ...agentBase(), model: haiku.name, inTok: 150000, outTok: 1000, toolOutTok: 9000, steps: 6 };
-  assert.equal(C.chatCost(haiku, ctxS, 150000, 1000).eligible, true, 'step 1 alone fits Haiku');
+  const ctxS = { ...agentBase(), model: haiku.name, inTok: 700000, outTok: 1000, toolOutTok: 30000, steps: 6 };
+  assert.equal(C.chatCost(haiku, ctxS, 700000, 1000).eligible, true, 'step 1 alone fits Haiku');
   const ce = C.computeAgentResults(ctxS, MODELS);
   assert.equal(ce.eligible, false);
   assert.equal(ce.reason, 'ctxOver');
@@ -250,7 +269,7 @@ const flatBase = () => ({ ...agentBase(), contextMode: 'flat' });
   assert.equal(rg.highSteps, 9);
   assert.equal(rg.highEligible, true);
   // the pessimistic run can outgrow the context window while the typical run still fits
-  const tight = { ...agentBase(), model: 'Anthropic Claude Haiku 4.5', contextMode: 'growing', inTok: 150000, outTok: 400, toolOutTok: 30000, steps: 2 };
+  const tight = { ...agentBase(), model: 'Anthropic Claude Haiku 5.5', contextMode: 'growing', inTok: 600000, outTok: 400, toolOutTok: 150000, steps: 2 };
   assert.equal(C.computeAgentResults(tight, MODELS).eligible, true);
   const tightRange = C.agentRange(tight, MODELS);
   assert.equal(tightRange.highSteps, 3);
@@ -275,7 +294,7 @@ const flatBase = () => ({ ...agentBase(), contextMode: 'flat' });
   assert.ok(mt.every((row) => row.eligible));
   for (let i = 1; i < mt.length; i += 1) assert.ok(mt[i - 1].monthly <= mt[i].monthly, 'sorted by monthly');
   assert.equal(mt.find((row) => row.name === luna.name).monthly, g.monthly);
-  const mtBig = C.agentModelTable({ ...agentBase(), inTok: 198000 }, MODELS);
+  const mtBig = C.agentModelTable({ ...agentBase(), inTok: 800000 }, MODELS);
   const firstBad = mtBig.findIndex((row) => !row.eligible);
   assert.ok(firstBad > 0, 'some models stay eligible');
   assert.ok(mtBig.slice(firstBad).every((row) => !row.eligible), 'ineligible models go last');
@@ -301,7 +320,7 @@ const flatBase = () => ({ ...agentBase(), contextMode: 'flat' });
 
   // budget: floor((budget - platform) / perRun)
   assert.equal(C.agentBudgetRuns(agentBase(), MODELS), Math.floor(700 / g.perRun));
-  assert.equal(C.agentBudgetRuns(agentBase(), MODELS), 7461);
+  assert.equal(C.agentBudgetRuns(agentBase(), MODELS), 9869);
   assert.equal(C.agentBudgetRuns({ ...agentBase(), budget: 300 }, MODELS), 0, 'budget = platform');
   assert.equal(C.agentBudgetRuns({ ...agentBase(), budget: 100 }, MODELS), 0, 'budget below platform');
   assert.equal(C.agentBudgetRuns(ctxS, MODELS), null, 'ineligible model');

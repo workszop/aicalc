@@ -180,12 +180,15 @@ CAPACITY_SMOKE_SCRIPT = r"""
     const ceiling57Checks = checkDomContract(document, App.results);
     expect(ceiling57Checks.every((check) => check.pass), 'DOM contract at 57% ceiling');
 
-    // GB10 remains unavailable at 101+ users, while 100 is still eligible and recommends the next option.
+    // GB10 remains unavailable at 101+ users, while 100 is still eligible. Where it wins (90 users; at 100 it needs a
+    // second unit and the API is cheaper) it recommends the next option.
     setInput('maxUtilization', 80);
     setInput('users', 100);
     assertSized('small', numeric(readCard('small'), 'units'), 100);
     const optData = (key) => document.querySelector(cardId(key)).dataset;
-    expect(optData('small').winner === 'true' && app.dataset.recommended === 'api' && optData('api').recommended === 'true' && document.querySelector(cardId('api') + ' .chip-rec'), 'API recommended while GB10 wins at 100 users');
+    expect(optData('small').eligible === 'true' && optData('api').winner === 'true' && app.dataset.recommended === '', 'GB10 eligible at 100 users, API cheapest');
+    setInput('users', 90);
+    expect(optData('small').winner === 'true' && app.dataset.recommended === 'api' && optData('api').recommended === 'true' && document.querySelector(cardId('api') + ' .chip-rec'), 'API recommended while GB10 wins at 90 users');
     setInput('users', 49);
     expect(optData('small').winner === 'true' && app.dataset.recommended === '' && optData('api').recommended === 'false' && !document.querySelector('.chip-rec'), 'no recommendation below 50 users');
     setInput('users', 101);
@@ -212,7 +215,7 @@ CAPACITY_SMOKE_SCRIPT = r"""
     expect(document.documentElement.lang === 'en' && app.dataset.lang === 'en', 'English toggle');
     click('[data-lang="pl"]');
     expect(document.documentElement.lang === 'pl' && app.dataset.lang === 'pl', 'Polish toggle');
-    // Regression: the S1/S2/S3 card amounts stay exactly as before the labour-cost removal (2026-11-05).
+    // Regression: the S1/S2/S3 card amounts at the built-in prices of 2026-11-06 (default GPT-6.1 Terra).
     const expectMonthly = (label, want) => Object.entries(want).forEach(([key, value]) => {
       const node = document.querySelector(cardId(key));
       if (value === null) expect(node.dataset.eligible === 'false' && node.dataset.monthly === '', `${label} ${key}: expected unavailable`);
@@ -223,16 +226,16 @@ CAPACITY_SMOKE_SCRIPT = r"""
     click('[data-preset="S2"]');
     expect(document.querySelector('#users').value === '100', 'S2 preset users');
     assertSized('small', 2, 100);
-    expectMonthly('S2', { api: 10196.25, cloud: 15000, small: 8127.99, own: 13434.42 });
+    expectMonthly('S2', { api: 8020.42, cloud: 15000, small: 8127.99, own: 13434.42 });
     expectNoLabour('S2');
     click('[data-preset="S3"]');
     expect(document.querySelector('#users').value === '300', 'S3 preset users');
     assertUnavailable('small');
-    expectMonthly('S3', { api: 18588.75, cloud: 15000, small: null, own: 13434.42 });
+    expectMonthly('S3', { api: 12061.25, cloud: 15000, small: null, own: 13434.42 });
     click('[data-preset="S1"]');
     expect(document.querySelector('#users').value === '20', 'S1 preset users');
     assertSized('small', 1, 20);
-    expectMonthly('S1', { api: 6839.25, cloud: 15000, small: 6980.66, own: 13434.42 });
+    expectMonthly('S1', { api: 6404.08, cloud: 15000, small: 6980.66, own: 13434.42 });
     expectNoLabour('S1');
     const answerCount = document.querySelectorAll('#answers li:not(.hint)').length;
     expect(answerCount === 5, `S1: ${answerCount} answers, expected 5 (three break-evens, two paybacks)`);
@@ -1031,17 +1034,38 @@ window.addEventListener('load', async () => {
 BASELINE = Path(__file__).resolve().parent / "fixtures" / "baseline"
 
 
+# The default models of that day, pinned because today's defaults are not on the frozen list.
+BASELINE_SEAT_MODEL = "OpenAI GPT-5.6 Terra"
+BASELINE_AGENT_MODEL = "OpenAI GPT-5.6 Luna"
+BASELINE_INDEX_MODEL = "OpenAI GPT-5.6 Terra"
+
+
+def _pin_default(text: str, block: str, model: str) -> str:
+    import re
+    pattern = re.compile(r"(" + re.escape(block) + r"[\s\S]*?model:\s*\{ def: ')[^']*(')")
+    out, n = pattern.subn(lambda m: m.group(1) + model + m.group(2), text, count=1)
+    if n != 1:
+        raise SmokeFailure(f"baseline: no default model in {block}")
+    return out
+
+
 def baseline_core(core_js: str) -> str:
     models = (BASELINE / "core-models.js").read_text(encoding="utf-8").split("\n", 1)[1].rstrip()
     i = core_js.index("const MODELS = [")
     j = core_js.index("];", i) + 2
-    return core_js[:i] + models + core_js[j:]
+    out = core_js[:i] + models + core_js[j:]
+    out = _pin_default(out, "const SEAT_FIELDS = {", BASELINE_SEAT_MODEL)
+    return _pin_default(out, "const AGENT_FIELDS = {", BASELINE_AGENT_MODEL)
 
 
 def baseline_index(html: str) -> str:
     import re
     csv = (BASELINE / "models.csv").read_text(encoding="utf-8")
-    return re.sub(r'(<script id="csvData"[^>]*>)[\s\S]*?(</script>)', lambda m: m.group(1) + csv + m.group(2), html, count=1)
+    html = re.sub(r'(<script id="csvData"[^>]*>)[\s\S]*?(</script>)', lambda m: m.group(1) + csv + m.group(2), html, count=1)
+    html, n = re.subn(r"(const DEFAULTS = \{[\s\S]*?\n  model: ')[^']*(')", lambda m: m.group(1) + BASELINE_INDEX_MODEL + m.group(2), html, count=1)
+    if n != 1:
+        raise SmokeFailure("baseline: no default model in index.html DEFAULTS")
+    return html
 
 
 @contextmanager

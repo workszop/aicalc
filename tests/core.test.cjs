@@ -17,11 +17,14 @@ const models = run(`modelsFromCsv(${JSON.stringify(csv)})`);
 context.models = models;
 const defaults = run('({ ...DEFAULTS, lang: "en", models: [] })');
 
-assert.equal(models.length, 17, 'built-in CSV has seventeen models');
+assert.equal(models.length, 11, 'built-in CSV has eleven models');
 assert.equal(new Set(models.map((m) => m.id)).size, models.length, 'model IDs are unique');
 assert.equal(new Set(models.map((m) => m.name)).size, models.length, 'model names are unique');
 assert.equal(models.find((m) => m.id === 'claude-fable-5-1').alwaysThinks, true, 'Fable is always reasoning');
-assert.equal(models.find((m) => m.id === 'claude-haiku-4-5-20251001').maxOutput, 64000, 'Haiku output limit');
+assert.equal(models.find((m) => m.id === 'claude-haiku-5-5').maxOutput, 128000, 'Haiku output limit');
+assert.deepEqual(JSON.parse(JSON.stringify(models.find((m) => m.id === 'claude-haiku-5-5').tier)), { above: 100000, pin: 0.5, pout: 2.5 }, 'Haiku 5.5 long-context tier above 100K prompt tokens');
+assert.equal(models.find((m) => m.id === 'gemini-3.8-flash').maxOutput, 65536, 'Gemini output limit');
+assert.deepEqual(JSON.parse(JSON.stringify(models.filter((m) => m.tier).map((m) => m.id))), ['claude-haiku-5-5'], 'only Haiku 5.5 has a long-context tier (no GPT-6.x long-context price today)');
 assert.equal(models.find((m) => m.id === 'deepseek-flash').maxOutput, 393216, 'DeepSeek output limit (DeepSeek, via OpenRouter 2026-11-06)');
 assert.equal(models.find((m) => m.id === 'gpt-6-astra').maxOutput, 128000, 'Astra output limit');
 assert.equal(models.find((m) => m.id === 'gpt-6-astra').alwaysThinks, true, 'Astra always uses reasoning');
@@ -39,10 +42,10 @@ assert.equal(run('Object.entries(FIELD_SCHEMA).every(([id, rule]) => validateFie
 
 const baseline = run(`(() => {
   const s = { ...DEFAULTS };
-  const m = models.find((x) => x.id === 'gpt-5.6-terra');
+  const m = models.find((x) => x.id === 'gpt-6.1-terra');
   return { api: apiCost(m, s).monthly, cloud: cloudCost(s).monthly, own: ownCost(s).monthly, small: smallCost(s).monthly };
 })()`);
-assert.ok(Math.abs(baseline.api - 839.25) < 1e-9, `API baseline ${baseline.api}`);
+assert.ok(Math.abs(baseline.api - 404.0833333333334) < 1e-9, `API baseline ${baseline.api}`);
 assert.ok(Math.abs(baseline.cloud - 10000) < 1e-9, `cloud baseline ${baseline.cloud}`);
 assert.ok(Math.abs(baseline.own - 7601.084444444445) < 1e-9, `own baseline ${baseline.own}`);
 const smallBaseline = run(`(() => {
@@ -66,9 +69,9 @@ const smallRecommend = run(`(() => {
   const s = { ...DEFAULTS };
   const at = (users) => { const r = computeResults({ ...s, users }, models); return [r.winner, r.recommended]; };
   const custom = computeResults({ ...s, users: 60, smallRecommendFrom: 70 }, models);
-  return { u20: at(20), u49: at(49), u50: at(50), u100: at(100), u101: at(101), custom: [custom.winner, custom.recommended] };
+  return { u20: at(20), u49: at(49), u50: at(50), u90: at(90), u100: at(100), u101: at(101), custom: [custom.winner, custom.recommended] };
 })()`);
-assert.deepEqual(JSON.parse(JSON.stringify(smallRecommend)), { u20: ['api', null], u49: ['small', null], u50: ['small', 'api'], u100: ['small', 'api'], u101: ['api', null], custom: ['small', null] }, 'next cheapest option is recommended from 50 users while GB10 wins');
+assert.deepEqual(JSON.parse(JSON.stringify(smallRecommend)), { u20: ['api', null], u49: ['small', null], u50: ['small', 'api'], u90: ['small', 'api'], u100: ['api', null], u101: ['api', null], custom: ['small', null] }, 'next cheapest option is recommended from 50 users while GB10 wins (at 100 users GB10 needs a second unit and the API wins)');
 
 const resultShape = run(`(() => {
   const result = computeResults({ ...DEFAULTS }, models);
@@ -77,15 +80,16 @@ const resultShape = run(`(() => {
 assert.deepEqual(JSON.parse(JSON.stringify(resultShape.keys)), ['api', 'base', 'breakEvenCloud', 'breakEvenOwn', 'breakEvenSmall', 'cloud', 'model', 'modelRows', 'own', 'payback', 'paybackSmall', 'recommended', 'small', 'winner', 'workload'], 'computeResults shape');
 assert.equal(resultShape.rows, models.length, 'computeResults returns all model rows');
 const steps = run(`(() => {
-  const s = { ...DEFAULTS }, m = models.find((model) => model.id === 'gpt-5.6-terra');
+  const s = { ...DEFAULTS }, m = models.find((model) => model.id === 'gpt-6.1-terra');
   const result = computeResults(s, models);
-  const be = result.breakEvenCloud;
+  // With GPT-6.1 Terra the API stays cheaper than cloud GPUs up to the 20 000-user cap, so the interval is checked on the own server.
+  const be = result.breakEvenOwn;
   const at = (path, users) => totalCost(path, s, users, m).monthly;
-  return [be > 0 && be < 20000, at('api', be) <= at('cloud', be), at('api', be + 1) > at('cloud', be + 1)];
+  return [be > 0 && be < 20000, at('api', be) <= at('own', be), at('api', be + 1) > at('own', be + 1), result.breakEvenCloud];
 })()`);
-assert.deepEqual(JSON.parse(JSON.stringify(steps)), [true, true, true], 'break-even is the end of the first API-over-cloud interval');
+assert.deepEqual(JSON.parse(JSON.stringify(steps)), [true, true, true, 20000], 'break-even is the end of the first API-over-own-server interval; API vs cloud runs to the cap');
 const software = run(`(() => {
-  const s = { ...DEFAULTS }, m = models.find((model) => model.id === 'gpt-5.6-terra');
+  const s = { ...DEFAULTS }, m = models.find((model) => model.id === 'gpt-6.1-terra');
   const r = computeResults(s, models);
   return { api: r.api.monthly - apiCost(m, s).monthly - s.apiOps, cloud: r.cloud.monthly - cloudCost(s).monthly, own: r.own.monthly - ownCost(s).monthly, small: r.small.monthly - smallCost(s).monthly,
     small0: cumulativeCost('small', r.small, 0), small12: cumulativeCost('small', r.small, 12), rowSoft: r.modelRows[0].c.software.saas };
@@ -98,14 +102,15 @@ assert.equal(software.rowSoft, 5000, 'model table rows include the SaaS fee');
 assert.throws(() => run('computeResults({ ...DEFAULTS, users: 0 }, models)'), /invalid|state/i, 'invalid state blocks results');
 
 const tierRates = run(`(() => {
-  const s = { ...DEFAULTS, chunks: 1, chunkTok: 272000, promptTok: 0, outTok: 0 };
-  const m = models.find((x) => x.id === 'gpt-5.6-terra');
+  // 100 000 Claude tokens of Polish text = 76 821.2 o200k tokens (3.02 / 2.32), so 76 821 stays below the tier.
+  const s = { ...DEFAULTS, chunks: 1, chunkTok: 76821, promptTok: 0, outTok: 0 };
+  const m = models.find((x) => x.id === 'claude-haiku-5-5');
   const exact = apiCost(m, s);
-  const above = apiCost(m, { ...s, chunkTok: 272001 });
+  const above = apiCost(m, { ...s, chunkTok: 76822 });
   return { exact: [exact.pin, exact.pout, exact.tiered], above: [above.pin, above.pout, above.tiered] };
 })()`);
-assert.deepEqual(JSON.parse(JSON.stringify(tierRates.exact)), [2, 12, false], '272K uses standard tier');
-assert.deepEqual(JSON.parse(JSON.stringify(tierRates.above)), [4, 18, true], '272001 uses long-context tier');
+assert.deepEqual(JSON.parse(JSON.stringify(tierRates.exact)), [0.1, 0.5, false], '100K Claude tokens use the standard tier');
+assert.deepEqual(JSON.parse(JSON.stringify(tierRates.above)), [0.5, 2.5, true], 'above 100K Claude tokens uses the long-context tier');
 
 const fableThinking = run(`(() => {
   const s = { ...DEFAULTS, thinking: false, thinkMult: 3 };
@@ -116,9 +121,9 @@ const fableThinking = run(`(() => {
 assert.ok(Math.abs(fableThinking[0] - (1500 * 3.02 / 2.32)) < 1e-9 && fableThinking[1] === false && fableThinking[2] === true, 'Fable forces reasoning without output overflow');
 
 const invalidApi = run(`(() => {
-  const m = models.find((x) => x.id === 'claude-haiku-4-5-20251001');
-  const ctx = apiCost(m, { ...DEFAULTS, chunks: 1, chunkTok: 200001, promptTok: 0, outTok: 0 });
-  const out = apiCost(m, { ...DEFAULTS, chunks: 1, chunkTok: 0, promptTok: 0, outTok: 64001 });
+  const m = models.find((x) => x.id === 'gpt-6-luna');
+  const ctx = apiCost(m, { ...DEFAULTS, chunks: 1, chunkTok: 1050001, promptTok: 0, outTok: 0 });
+  const out = apiCost(m, { ...DEFAULTS, chunks: 1, chunkTok: 0, promptTok: 0, outTok: 128001 });
   return { ctx: [ctx.ctxOver, ctx.reason, ctx.eligible], out: [out.outputOver, out.reason, out.eligible] };
 })()`);
 assert.deepEqual(JSON.parse(JSON.stringify(invalidApi.ctx)), [true, 'ctxOver', false], 'context overflow excludes API');
@@ -366,8 +371,8 @@ assert.ok(run('totalCost("cloud", { ...DEFAULTS, softwareOn: false }).monthly') 
 // Task 4: verdict
 const verdict20 = run('(() => { const r = computeResults({ ...DEFAULTS, lang: "en" }, models); return { v: verdict(r), r }; })()');
 assert.equal(verdict20.v.winner, verdict20.r.winner, 'verdict winner is the cheapest eligible path');
-const verdict100 = run('(() => { const r = computeResults({ ...DEFAULTS, users: 100 }, models); return { v: verdict(r), r }; })()');
-assert.equal(verdict100.r.recommended, 'api', 'fixture: API recommended at 100 users');
+const verdict100 = run('(() => { const r = computeResults({ ...DEFAULTS, users: 90 }, models); return { v: verdict(r), r }; })()');
+assert.equal(verdict100.r.recommended, 'api', 'fixture: API recommended at 90 users');
 assert.equal(verdict100.v.winner, 'small', 'cheapest stays the winner');
 assert.equal(verdict100.v.recommended, 'api', 'verdict carries the recommendation');
 assert.ok(verdict100.v.savingsPct >= 0, 'savings never negative');
@@ -384,7 +389,8 @@ for (const lang of ['pl', 'en']) assert.equal(run(`T.${lang}.aMinute`), undefine
 assert.ok(!/MINUTE_OF_WORK|Minuta pracy|Minute of work/.test(html), 'index.html has no minute-of-work comparison');
 
 // Task 10: price-check metadata is exposed per model
-assert.equal(models[0].checkedAt, '2026-09-13', 'checkedAt parsed from CSV');
+assert.equal(models[0].checkedAt, '2026-11-06', 'checkedAt parsed from CSV');
+assert.ok(models.every((m) => m.checkedAt === '2026-11-06'), 'every built-in price checked 2026-11-06');
 assert.ok(String(models[0].source).startsWith('https://'), 'source URL parsed from CSV');
 for (const lang of ['pl', 'en']) { assert.equal(typeof run(`T.${lang}.thSource`), 'string'); assert.equal(typeof run(`T.${lang}.sourceLink`), 'string'); }
 
