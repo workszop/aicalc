@@ -178,11 +178,66 @@ AGENT_FLOW = r"""
     expect(leadNode && !/\bN\b/.test(leadNode.textContent) && /powtarza się/.test(leadNode.textContent), `agent lead still has a literal N: ${leadNode && leadNode.textContent}`);
     expect(!/ręczn|człowiek|ludzi|godzin/i.test(leadNode.textContent), `agent lead mentions manual work or people's time: ${leadNode.textContent}`);
     expect(document.body.dataset.state === 'ready', 'body[data-state] is not ready on load');
-    expect(card && near(card.dataset.monthly, 463.02), `monthly ${card && card.dataset.monthly}`);
-    expect(card.dataset.perRun === '0.0815', `per run ${card.dataset.perRun}`);
+    expect(card && near(card.dataset.monthly, 487.64), `monthly ${card && card.dataset.monthly}`);
+    expect(card.dataset.perRun === '0.0938', `per run ${card.dataset.perRun}`);
     expect(card.dataset.eligible === 'true', 'default model not eligible');
     const defaults = core.defaultsOf(core.SHARED_FIELDS, core.AGENT_FIELDS);
     const want = core.computeAgentResults(defaults, core.MODELS);
+    // ─── details: DOM contract at the defaults (growing context) ───
+    const range = core.agentRange(defaults, core.MODELS);
+    expect(card.dataset.annual === SubUI.dataNum(want.annual) && card.dataset.annual === '5851.68', `annual ${card.dataset.annual}`);
+    expect(card.dataset.low === SubUI.dataNum(range.low) && card.dataset.high === SubUI.dataNum(range.high), `range ${card.dataset.low}-${card.dataset.high}`);
+    expect(Number(card.dataset.low) <= Number(card.dataset.monthly) && Number(card.dataset.monthly) <= Number(card.dataset.high), 'range order');
+    expect(/Zwykle od .* do .* \/ mies\./.test($('#rangeLine').textContent) && /od połowy do 1,5 raza kroków/.test(card.textContent), `range line: ${$('#rangeLine').textContent}`);
+    expect(/Rocznie/.test(card.textContent), 'per-year block missing');
+    const bd = $('#costBreakdown');
+    expect(!bd.hidden && ['input', 'output', 'retries', 'tools', 'platform'].every((k) => bd.dataset[k] === SubUI.dataNum(want.breakdown[k])), `breakdown ${JSON.stringify(bd.dataset)}`);
+    expect(bd.querySelectorAll('.bd-seg').length === 5 && bd.querySelectorAll('.bd-legend li').length === 5, 'breakdown bar or legend incomplete');
+    expect(/Najwięcej kosztuje platforma: 61,5% kosztu miesięcznego\./.test(bd.textContent), `largest-part sentence: ${bd.querySelector('.bd-largest').textContent}`);
+    const segBorders = [...bd.querySelectorAll('.bd-seg')].map((n) => { const cs = getComputedStyle(n); return [cs.borderTopWidth, cs.borderRightWidth, cs.borderBottomWidth, cs.borderLeftWidth]; });
+    expect(segBorders.every((b) => b.every((w) => w === b[0] && parseFloat(w) > 0)), `segments are not outlined on all sides: ${JSON.stringify(segBorders)}`);
+    const st = $('#stepTable');
+    expect(st.dataset.steps === '6' && st.dataset.sum === SubUI.dataNum(want.inPerRun + want.outPerRun, 6), `step table ${st.dataset.steps} / ${st.dataset.sum}`);
+    expect([...st.querySelectorAll('tbody tr[data-step] td:nth-child(2)')].map((n) => n.textContent).join('|') === '4000|5000|6000|7000|8000|9000'.split('|').map((v) => SubUI.fmtNum(Number(v))).join('|'), 'step inputs are not 4000..9000');
+    expect(st.querySelector('tfoot [data-row="total"] td:last-child').textContent === SubUI.money(want.perRun, 4), 'step total differs from the card');
+    expect(/ponowienia \(\+10%\)/.test(st.querySelector('tfoot [data-row="retries"]').textContent), 'retries row label');
+    expect($('#stepSection').compareDocumentPosition($('#agentSteps')) & Node.DOCUMENT_POSITION_PRECEDING, 'step table is not after the explanation');
+    const mt = $('#modelTable');
+    const table = core.agentModelTable(defaults, core.MODELS);
+    expect(mt.dataset.cheapest === table[0].name && mt.dataset.current === defaults.model, `model table ${mt.dataset.cheapest} / ${mt.dataset.current}`);
+    expect(mt.querySelectorAll('tbody tr').length === core.MODELS.length && mt.querySelectorAll('tbody tr[aria-current="true"]').length === 1, 'model table rows or current marker');
+    expect(mt.querySelector('tbody tr[aria-current="true"]').dataset.model === defaults.model && /wybrany/.test(mt.querySelector('tbody tr[aria-current="true"]').textContent), 'current model not marked');
+    expect($('#scaleTable').dataset.rows === '4' && $('#scaleTable').querySelectorAll('tbody tr').length === 4, 'scale rows');
+    expect($('#scaleTable tbody tr').dataset.runs === '100' && $('#scaleTable tbody tr:last-child').dataset.runs === '100000', 'scale runs');
+    expect($('#budgetLine').dataset.runs === '7461' && /Za 1\s000 PLN miesięcznie zmieścisz ok\. 7\s461 uruchomień\./.test($('#budgetLine').textContent), `budget line: ${$('#budgetLine').textContent}`);
+    setField('budget', 300);
+    expect($('#budgetLine').dataset.runs === '0' && /Budżet nie pokrywa nawet platformy/.test($('#budgetLine').textContent), 'budget below platform');
+    setField('budget', 1000);
+    // Wybierz picks another model
+    click('#modelTable button[data-pick="DeepSeek V4.1 Flash"]');
+    expect($('[data-field="model"]').value === 'DeepSeek V4.1 Flash' && mt.dataset.current === 'DeepSeek V4.1 Flash', 'Wybierz did not change the model');
+    const ds = core.computeAgentResults(Object.assign({}, defaults, { model: 'DeepSeek V4.1 Flash' }), core.MODELS);
+    expect(card.dataset.monthly === SubUI.dataNum(ds.monthly) && mt.querySelector('tbody tr[aria-current="true"]').dataset.model === 'DeepSeek V4.1 Flash', 'card not updated after Wybierz');
+    expect(JSON.parse(localStorage.getItem('edulab-aicalc-agent-v1')).model === 'DeepSeek V4.1 Flash', 'Wybierz did not persist');
+    setField('model', defaults.model);
+    // flat <-> growing
+    expect(!$('#toolOutTokField').hidden, 'toolOutTok hidden in growing mode');
+    const growingMonthly = card.dataset.monthly;
+    click('[data-field="contextMode"] button[data-value="flat"]');
+    expect(card.dataset.monthly === '463.02' && card.dataset.monthly !== growingMonthly, `flat monthly ${card.dataset.monthly}`);
+    expect($('#toolOutTokField').hidden, 'toolOutTok visible in flat mode');
+    setField('toolOutTok', -5);
+    expect(document.body.dataset.state === 'ready', 'inactive toolOutTok blocks in flat mode');
+    click('[data-field="contextMode"] button[data-value="growing"]');
+    expect(document.body.dataset.state === 'invalid', 'bad toolOutTok must block in growing mode');
+    setField('toolOutTok', 600);
+    expect(card.dataset.monthly === growingMonthly && document.body.dataset.state === 'ready', 'back to growing did not restore');
+    // many steps fold the table but the sum covers all of them
+    setField('steps', 20);
+    const many = core.computeAgentResults(Object.assign({}, defaults, { steps: 20 }), core.MODELS);
+    expect(st.dataset.steps === '20' && st.querySelectorAll('tbody tr').length === 9 && st.querySelector('tbody tr.gap-row') && st.querySelector('tbody tr:last-child').dataset.step === '20', 'step table did not fold at 20 steps');
+    expect(st.dataset.sum === SubUI.dataNum(many.inPerRun + many.outPerRun, 6), 'folded sum does not cover every step');
+    setField('steps', 6);
     // no manual-work comparison, no human review, no hourly rate
     ['manualMonthly', 'savedHours'].forEach((k) => expect(!(k in card.dataset), `card still publishes ${k}`));
     ['manualMin', 'reviewPct', 'reviewMin', 'hourlyRate'].forEach((id) => expect(!$(`[data-field="${id}"]`), `agent still has the ${id} field`));
@@ -220,6 +275,11 @@ AGENT_FLOW = r"""
     expect(/Niedostępne/.test(card.textContent) && /Za długi kontekst/.test(card.textContent), 'ineligible copy missing');
     expect(visibleOn(card.querySelector('.agent-warn')), 'ineligible reason has the same colour as its card background');
     expect(!/NaN|Infinity/.test($('#resultsPanel').textContent), 'NaN in ineligible state');
+    expect($('#costBreakdown').hidden && $('#stepSection').hidden && $('#scaleSection').hidden && $('#budgetLine').hidden && $('#budgetLine').dataset.runs === '', 'ineligible: details still visible');
+    expect(card.dataset.annual === '' && card.dataset.low === '' && !$('#modelSection').hidden, 'ineligible: card range not cleared or model table hidden');
+    const badRow = $('#modelTable tbody tr[aria-current="true"]');
+    expect(badRow.dataset.eligible === 'false' && /niedostępny: za długi kontekst/.test(badRow.textContent) && !badRow.querySelector('button'), 'ineligible current row');
+    expect($('#modelTable tbody tr:last-child').dataset.eligible === 'false' && $('#modelTable tbody tr').dataset.eligible === 'true', 'ineligible rows are not last');
     setField('model', core.defaultsOf(core.AGENT_FIELDS).model);
     setField('inTok', 4000);
     setField('outTok', 200000);
@@ -238,6 +298,8 @@ AGENT_FLOW = r"""
     const stepsEn = stepTexts();
     expect(stepsEn.length === 5 && stepsEn.every((x) => x.length > 0) && stepsEn.join('|') !== stepsPl.join('|'), `agent steps (EN): ${stepsEn.length} items`);
     expect($('#agentSteps h2').textContent.trim() === 'What the agent does in one run', 'agent steps title missing (EN)');
+    expect($('#stepTable thead th').textContent === 'step' && $('#modelTable thead th:nth-child(2)').textContent === 'per run' && /Usually from/.test(card.textContent) && /The largest part is/.test($('#costBreakdown').textContent), 'EN switch did not re-render the details');
+    expect($('#scaleTable thead th').textContent === 'runs' && /A budget of/.test($('#budgetLine').textContent), 'EN scale / budget not re-rendered');
     expect($('nav a[aria-current="page"]').getAttribute('href') === 'agent.html', 'nav current link wrong');
     click('[data-lang="pl"]');
     if (window.matchMedia('(max-width: 768px)').matches) {
@@ -247,9 +309,15 @@ AGENT_FLOW = r"""
       expect($('#app').dataset.settings === 'closed', 'backdrop did not close the drawer');
     }
     const vp = viewport();
+    const rp = $('#resultsPanel');
+    expect(rp.scrollWidth <= rp.clientWidth + 1, `results panel scrolls sideways: ${rp.scrollWidth} > ${rp.clientWidth}`);
     setField('steps', 7);
+    click('[data-field="contextMode"] button[data-value="flat"]');
+    setField('budget', 5);
+    setField('toolOutTok', 1);
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'r', code: 'KeyR', altKey: true, bubbles: true }));
-    expect($('[data-field="steps"]').value === '6' && card.dataset.perRun === '0.0815', 'Alt+R did not reset');
+    expect($('[data-field="steps"]').value === '6' && card.dataset.perRun === '0.0938', 'Alt+R did not reset');
+    expect($('[data-field="budget"]').value === '1000' && $('[data-field="toolOutTok"]').value === '600' && $('[data-field="contextMode"] button[data-value="growing"]').getAttribute('aria-pressed') === 'true', 'Alt+R did not reset the new fields');
     finish({ ok: true, assertions: assertions.n, viewport: vp });
   } catch (error) {
     finish({ ok: false, error: String(error && error.message || error), assertions: assertions.n });
@@ -299,6 +367,54 @@ AGENT_PLANT_FLOW = r"""
 })();
 </script>
 """
+
+# Narrow phones: the agent page in an iframe 360 / 320 px wide. Tables may scroll inside .table-wrap, the page may not.
+NARROW_VIEWPORTS = ((360, 800), (320, 700))
+NARROW_FRAME_PAGE = """<!doctype html><html><head><meta charset="utf-8"></head><body style="margin:0">
+<div id="probe"></div><iframe src="{page}" width="{w}" height="{h}" style="border:0;display:block"></iframe>
+</body></html>"""
+NARROW_SCRIPT = r"""
+<script>
+window.addEventListener('load', () => {
+  const failures = [];
+  const rp = document.querySelector('#resultsPanel');
+  const de = document.documentElement;
+  if (de.scrollWidth > window.innerWidth) failures.push(`page scrolls sideways: ${de.scrollWidth} > ${window.innerWidth}`);
+  if (rp.scrollWidth > rp.clientWidth + 1) failures.push(`#resultsPanel scrolls sideways: ${rp.scrollWidth} > ${rp.clientWidth}`);
+  const edge = rp.getBoundingClientRect().right;
+  const outside = [...rp.querySelectorAll('*')].filter((n) => !n.closest('.table-wrap') && n.getClientRects().length && n.getBoundingClientRect().right > edge + 0.5);
+  outside.slice(0, 5).forEach((n) => failures.push(`${n.tagName.toLowerCase()}#${n.id || n.className} runs past the panel edge`));
+  const wraps = [...rp.querySelectorAll('.table-wrap')];
+  if (wraps.length !== 3) failures.push(`expected 3 table wrappers, found ${wraps.length}`);
+  wraps.forEach((w) => { if (getComputedStyle(w).overflowX !== 'auto') failures.push('a table wrapper does not scroll'); if (w.getBoundingClientRect().right > edge + 0.5) failures.push('a table wrapper is wider than the panel'); });
+  window.parent.document.getElementById('probe').setAttribute('data-narrow-smoke', encodeURIComponent(JSON.stringify({
+    ok: failures.length === 0, failures, width: window.innerWidth,
+    scrolling: wraps.filter((w) => w.scrollWidth > w.clientWidth).length,
+  })));
+});
+</script>
+"""
+
+
+def run_narrow(browser, page: str, lines: list[str]) -> None:
+    with page_fixture(page, NARROW_SCRIPT) as root:
+        for w, h in NARROW_VIEWPORTS:
+            (root / f"frame-{w}.html").write_text(NARROW_FRAME_PAGE.format(page=page, w=w, h=h), encoding="utf-8")
+        with bs.local_server(root) as server:
+            for width, height in NARROW_VIEWPORTS:
+                label = f"{page} narrow {width}px"
+                url = f"http://127.0.0.1:{server.server_port}/frame-{width}.html"
+                bs.probe_http(url)
+                probe = parse(bs.run_browser(browser, url, label, window_size=(max(width, 500), height + 100)), label).get("#probe", {})
+                encoded = probe.get("data-narrow-smoke", "")
+                if not encoded:
+                    raise SmokeFailure(f"{label}: the narrow probe emitted nothing")
+                payload = json.loads(unquote(encoded))
+                if int(payload.get("width", 0)) != width:
+                    raise SmokeFailure(f"{label}: viewport is {payload.get('width')}px, expected {width}px")
+                if payload.get("ok") is not True:
+                    raise SmokeFailure(f"{label}: " + "; ".join(payload.get("failures") or ["unknown failure"]))
+                lines.append(f"{label}: no sideways scroll ({payload.get('scrolling')} tables scroll inside their wrapper)")
 
 
 # ─── DOM parsing ───
@@ -420,6 +536,7 @@ def run() -> list[str]:
     lines: list[str] = []
     run_page(browser, "seats.html", "seats", SEATS_FLOW, "", lines, head_flows=[("stale-state", SEATS_PLANT_FLOW, SEATS_PLANT_HEAD)])
     run_page(browser, "agent.html", "agent", AGENT_FLOW, "", lines, head_flows=[("old-save", AGENT_PLANT_FLOW, AGENT_PLANT_HEAD)])
+    run_narrow(browser, "agent.html", lines)
     return lines
 
 

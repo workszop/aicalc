@@ -36,8 +36,18 @@
         <h3 class="group-title" data-t="groupAgent"></h3>
         <div class="field"><label for="f-model" data-t="model"></label><select id="f-model" data-field="model"></select></div>
         <div class="field"><label for="f-steps" data-t="steps"></label><input id="f-steps" type="number" data-field="steps"></div>
+        <div class="field"><span class="field-label" id="contextModeLabel" data-t="contextMode"></span>
+          <div class="edu-seg" role="group" aria-labelledby="contextModeLabel" aria-describedby="contextModeHint" data-field="contextMode">
+            <button type="button" data-value="growing" data-t="ctxGrowing"></button>
+            <button type="button" data-value="flat" data-t="ctxFlat"></button>
+          </div>
+        </div>
+        <p class="hint" id="contextModeHint" data-t="contextModeHint"></p>
         <div class="field"><label for="f-inTok" data-t="agentInTok"></label><input id="f-inTok" type="number" data-field="inTok"></div>
         <div class="field"><label for="f-outTok" data-t="agentOutTok"></label><input id="f-outTok" type="number" data-field="outTok"></div>
+        <div id="toolOutTokField">
+        <div class="field"><label for="f-toolOutTok" data-t="toolOutTok"></label><input id="f-toolOutTok" type="number" data-field="toolOutTok"></div>
+        </div>
         <div class="field"><label for="f-retryPct" data-t="retryPct"></label><input id="f-retryPct" type="number" data-field="retryPct"></div>
         <div class="field"><span class="field-label" id="docLangLabel" data-t="agentDocLang"></span>
           <div class="edu-seg" role="group" aria-labelledby="docLangLabel" data-field="docLang">
@@ -51,6 +61,7 @@
         <h3 class="group-title" data-t="groupTools"></h3>
         <div class="field"><label for="f-toolPln" data-t="toolPln"></label><input id="f-toolPln" type="number" data-field="toolPln"></div>
         <div class="field"><label for="f-platform" data-t="platform"></label><input id="f-platform" type="number" data-field="platform"></div>
+        <div class="field"><label for="f-budget" data-t="budget"></label><input id="f-budget" type="number" data-field="budget"></div>
         <div class="field"><label for="f-fx" data-t="fx"></label><input id="f-fx" type="number" data-field="fx"></div>
       </section>
     </div>
@@ -64,6 +75,10 @@
     <p class="invalid-note" data-t="invalidNote"></p>
     <div data-results>
       <article id="agentCard" class="card agent-card" data-accent="agent" aria-live="polite"></article>
+      <section class="card detail-card" id="costBreakdown" aria-labelledby="breakdownTitle">
+        <h2 class="sec-title" id="breakdownTitle" data-t="breakdownTitle"></h2>
+        <div id="breakdownBody"></div>
+      </section>
     </div>
     <section class="card" id="agentSteps" data-accent="agent" aria-labelledby="agentStepsTitle">
       <h2 class="sec-title" id="agentStepsTitle" data-t="agentStepsTitle"></h2>
@@ -75,6 +90,20 @@
         <li data-t="agentStep5"></li>
       </ol>
       <p class="hint" data-t="agentStepsNote"></p>
+    </section>
+    <section class="card detail-card" id="stepSection" data-results aria-labelledby="stepTitle">
+      <h2 class="sec-title" id="stepTitle" data-t="stepTitle"></h2>
+      <p class="hint" id="stepCaption" data-t="stepCaption"></p>
+      <div class="table-wrap" tabindex="0" role="region" aria-labelledby="stepTitle"><table class="data-tbl" id="stepTable"></table></div>
+    </section>
+    <section class="card detail-card" id="modelSection" data-results aria-labelledby="modelTitle">
+      <h2 class="sec-title" id="modelTitle" data-t="modelTitle"></h2>
+      <div class="table-wrap" id="modelTableWrap" tabindex="0" role="region" aria-labelledby="modelTitle"><table class="data-tbl" id="modelTable"></table></div>
+    </section>
+    <section class="card detail-card" id="scaleSection" data-results aria-labelledby="scaleTitle">
+      <h2 class="sec-title" id="scaleTitle" data-t="scaleTitle"></h2>
+      <div class="table-wrap" tabindex="0" role="region" aria-labelledby="scaleTitle"><table class="data-tbl" id="scaleTable"></table></div>
+      <p class="hint" data-t="scaleNote"></p>
     </section>
     <p class="hint" data-t="estimateNote"></p>
     <details class="panel" id="checksPanel" hidden></details>

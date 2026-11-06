@@ -308,3 +308,58 @@ details.panel[open] { padding-bottom: 16px; }
 .steps-list li::marker { color: var(--ink); font-weight: 700; }
 #agentSteps { margin-bottom: var(--sp-5); min-width: 0; }
 #agentSteps .hint { margin: 0; }
+
+/* ─── Agent details: cards, tables, cost split ─── */
+.detail-card { margin-bottom: var(--sp-5); min-width: 0; }
+.detail-card > .sec-title { margin-bottom: var(--sp-2); }
+.detail-card > .hint { margin: 0 0 var(--sp-3); }
+.detail-card > .hint:last-child { margin: var(--sp-3) 0 0; }
+.agent-range { font-family: var(--font-display); font-weight: 600; font-size: var(--body); color: var(--ink); }
+.agent-budget { font-weight: 600; font-size: var(--body-sm); color: var(--ink); }
+#toolOutTokField[hidden] { display: none; }
+
+/* Tables scroll inside their wrapper; the page never scrolls sideways. */
+.table-wrap { overflow-x: auto; max-width: 100%; border: 1px solid var(--line-2); border-radius: var(--r-md); background: var(--surface); }
+.table-wrap:focus-visible { outline: 3px solid var(--transparent); box-shadow: var(--focus-ring); }
+.data-tbl { width: 100%; border-collapse: collapse; font-size: var(--body-sm); }
+.data-tbl th { font-family: var(--font-sans); font-weight: 600; font-size: var(--label-size); color: var(--ink); text-align: var(--align-start);
+  padding: 10px 12px; border-bottom: 1px solid var(--line-2); background: var(--paper-3); white-space: nowrap; }
+.data-tbl td { padding: 8px 12px; border-bottom: 1px solid var(--line); color: var(--ink-2); white-space: nowrap; }
+.data-tbl th::first-letter, .data-tbl td.unavail::first-letter { text-transform: uppercase; }
+.data-tbl .num { text-align: var(--align-end); font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.data-tbl td.num { color: var(--ink); }
+.data-tbl tbody tr:nth-child(even) > * { background: var(--paper-2); }
+.data-tbl tbody th, .data-tbl tfoot th { font-size: var(--body-sm); }
+.data-tbl tbody th, .data-tbl tfoot th { background: var(--surface); }
+.data-tbl tfoot th, .data-tbl tfoot td { border-top: 1px solid var(--line-2); border-bottom: none; }
+.data-tbl tfoot tr.total-row > * { font-weight: 700; color: var(--ink); background: var(--paper-2); border-top: 1.5px solid var(--line-strong); }
+.data-tbl td.gap { text-align: var(--align-center); color: var(--ink-3); }
+.data-tbl tbody tr.current > * { background: var(--yellow); color: var(--yellow-ink); }
+.data-tbl td.unavail { color: var(--ink-3); white-space: normal; min-width: 180px; }
+.data-tbl td.act { text-align: var(--align-end); }
+.pick-btn { padding: 5px 12px; font-size: var(--small-size); }
+.chip-current { background: var(--ink); color: var(--paper); }
+.share-pct { display: inline-block; min-width: 4.5em; font-family: var(--font-mono); color: var(--ink); }
+.share-track { display: inline-block; vertical-align: middle; width: 90px; height: 10px; border: 1px solid var(--line-strong); border-radius: var(--r-pill); background: var(--paper-2); overflow: hidden; }
+.share-fill { display: block; height: 100%; background: var(--yellow); }
+
+/* Monthly split: every segment and swatch is outlined on all sides. */
+.bd-bar { display: flex; gap: 3px; height: 26px; margin: 0 0 var(--sp-3); }
+.bd-seg { flex: 1 1 0; min-width: 3px; border: 1.5px solid var(--ink); border-radius: var(--r-xs); }
+.bd-legend { list-style: none; margin: 0 0 var(--sp-3); padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: var(--sp-2) var(--sp-4); font-size: var(--body-sm); }
+.bd-legend li { display: grid; grid-template-columns: 16px minmax(0, 1fr); column-gap: var(--sp-2); align-items: center; }
+.bd-swatch { width: 16px; height: 16px; border: 1.5px solid var(--ink); border-radius: var(--r-xs); }
+.bd-label { font-weight: 600; color: var(--ink); }
+.bd-amount { grid-column: 2; font-family: var(--font-mono); color: var(--ink-2); }
+.bd-largest { margin: 0; font-weight: 600; color: var(--ink); font-size: var(--body-sm); }
+[data-part="input"] { --part: var(--blue); }
+[data-part="output"] { --part: var(--green); }
+[data-part="retries"] { --part: var(--play-berry); }
+[data-part="tools"] { --part: var(--play-grape); }
+[data-part="platform"] { --part: var(--yellow); }
+.bd-seg, .bd-swatch { background: var(--part); }
+@media (max-width: 768px) {
+  .data-tbl th, .data-tbl td { padding: 7px 9px; }
+  .data-tbl th[scope="row"] { white-space: normal; min-width: 8.5em; }
+  .share-track { width: 60px; }
+}
