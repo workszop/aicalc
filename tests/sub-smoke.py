@@ -405,9 +405,11 @@ window.addEventListener('load', async () => {
     expect($('#priceMsg').getAttribute('aria-live') === 'polite' && /Pobieram/.test($('#priceMsg').textContent), 'loading message');
     await until(() => panel().dataset.state !== 'loading', 'fetch');
     expect(panel().dataset.state === 'ready', `state ${panel().dataset.state}: ${$('#priceMsg').textContent}`);
-    expect(panel().dataset.changes === '6' && panel().dataset.new === '15' && panel().dataset.missing === '0', `counts ${panel().dataset.changes}/${panel().dataset.new}/${panel().dataset.missing}`);
+    expect(panel().dataset.changes === '7' && panel().dataset.new === '15' && panel().dataset.missing === '0', `counts ${panel().dataset.changes}/${panel().dataset.new}/${panel().dataset.missing}`);
     const bigRow = $('#priceChanges tr[data-model-id="deepseek-v4-pro"][data-field="pin"]');
     expect(bigRow && !bigRow.querySelector('input').checked && /duża zmiana, sprawdź u dostawcy/.test(bigRow.textContent), 'big change is not unchecked and badged');
+    expect(!$('#priceChanges tr[data-model-id="deepseek-v4-pro"][data-field="pout"] input').checked, 'other changes of a doubtful model are pre-checked');
+    expect($('#priceChanges tr[data-model-id="claude-haiku-4-5-20251001"][data-field="pout"] input').checked, 'a normal change is not pre-checked');
     expect([...document.querySelectorAll('#priceNew input')].every((b) => !b.checked), 'new models are pre-checked');
     expect(/OpenAI GPT-6\.1 Terra/.test($('#priceNew').textContent), 'candidate names missing');
     expect(panel().getBoundingClientRect().right <= window.innerWidth + 0.5, 'panel wider than the viewport');
@@ -524,7 +526,7 @@ window.addEventListener('load', async () => {
     click('#pricesBtn');
     click('#priceFetch');
     await until(() => panel().dataset.state !== 'loading', 'fetch');
-    expect(panel().dataset.state === 'ready' && panel().dataset.changes === '6', `state ${panel().dataset.state}`);
+    expect(panel().dataset.state === 'ready' && panel().dataset.changes === '7', `state ${panel().dataset.state}`);
     const box = [...document.querySelectorAll('#priceNew input')].find((b) => b.closest('tr').dataset.openrouter === 'openai/gpt-6-luna');
     box.checked = true; box.dispatchEvent(new Event('change', { bubbles: true }));
     click('#priceApply');

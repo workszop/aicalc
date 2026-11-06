@@ -950,7 +950,7 @@ window.addEventListener('load', async () => {
     expect(panel().open, 'panel did not open');
     click('#priceFetch');
     await until(() => panel().dataset.state !== 'loading', 'fetch');
-    expect(panel().dataset.state === 'ready' && panel().dataset.changes === '6' && panel().dataset.new === '15', `ready ${panel().dataset.state} ${panel().dataset.changes}/${panel().dataset.new}`);
+    expect(panel().dataset.state === 'ready' && panel().dataset.changes === '7' && panel().dataset.new === '15', `ready ${panel().dataset.state} ${panel().dataset.changes}/${panel().dataset.new}`);
     document.querySelectorAll('#priceChanges input:checked').forEach((b) => { b.checked = false; b.dispatchEvent(new Event('change', { bubbles: true })); });
     const box = $('#priceChanges tr[data-model-id="deepseek-v4-pro"][data-field="pout"] input');
     box.checked = true; box.dispatchEvent(new Event('change', { bubbles: true }));

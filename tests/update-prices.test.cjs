@@ -62,8 +62,10 @@ const after = load(dir);
 assertInSync(after, 'after --write');
 const pro = after.index.find((m) => m.id === 'deepseek-v4-pro');
 assert.equal(pro.pin, 1.32, 'big change (1.32 -> 0.111) not written without --include-big');
-assert.equal(pro.pout, 4.44, 'normal change written');
-assert.equal(pro.checkedAt, TODAY);
+assert.equal(pro.pout, 3.96, 'other changes of a doubtful model are not written either');
+const haiku = after.index.find((m) => m.id === 'claude-haiku-4-5-20251001');
+assert.equal(haiku.pout, 5.5, 'normal change written');
+assert.equal(haiku.checkedAt, TODAY);
 assert.equal(pro.offPeak.pin, 0.66, 'off-peak prices kept');
 assert.equal(after.index.find((m) => m.id === 'deepseek-flash').ctx, 1048576);
 assert.equal(after.index.length, before.index.length, 'no new models added');
@@ -74,7 +76,7 @@ assert.equal(after.html.replace(after.csv, ''), before.html.replace(before.csv, 
 // second run: nothing left but the big change
 const again = run(dir, '--write');
 assert.equal((again.match(/\| zapisano \|/g) || []).length, 0, 'second run writes nothing');
-assert.equal((again.match(/\| do decyzji \|/g) || []).length, 1, 'only the big change remains');
+assert.equal((again.match(/\| do decyzji \|/g) || []).length, 4, 'only the doubtful model (4 fields) remains');
 assert.deepEqual(load(dir).csv, after.csv, 'second run leaves the files as they were');
 
 // --include-big and --only

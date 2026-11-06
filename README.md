@@ -314,8 +314,12 @@ publikują przez API listy modeli, ale nie ceny, dlatego źródłem jest OpenRou
 - **Uwaga na hosta:** OpenRouter może pokazywać cenę zewnętrznego hosta, a nie
   dostawcy. Przykład: DeepSeek V4 Pro 0813 ma tam 0,111 / 4,44 USD, a cena
   u DeepSeek to 1,32 / 3,96 USD. Dlatego nic nie zmienia się samo: każda zmiana
-  jest pokazana jako „było → jest” i wymaga zatwierdzenia, a zmiana ceny o więcej
-  niż 30% jest oznaczona „duża zmiana, sprawdź u dostawcy”.
+  jest pokazana jako „było → jest” i wymaga zatwierdzenia, a zmiana o więcej
+  niż 30% (ceny, okna kontekstu albo limitu wyjścia) jest oznaczona „duża zmiana,
+  sprawdź u dostawcy”. Gdy duża zmiana dotyczy ceny, oznaczone są wszystkie zmiany
+  tego modelu, bo cały wpis pochodzi wtedy pewnie od innego hosta. Oznaczone zmiany
+  są domyślnie odznaczone, a skrypt z `--write` ich nie zapisuje (chyba że z
+  `--include-big`).
 - **Mapowanie** modeli jest jawne: kolumna `openrouter_id` w CSV i pole
   `openrouter` w `SubCore.MODELS`. Model bez mapowania nie jest porównywany.
   Model, którego nie ma już w OpenRouter, trafia na listę „Brak w OpenRouter”.
@@ -532,7 +536,7 @@ OpenRouter" panel, where every change is shown old → new and must be approved
 ceny wbudowane"), or in the repo with `node scripts/update-prices.mjs [--write]`
 and a weekly workflow that opens a PR (enable "Allow GitHub Actions to create
 and approve pull requests"). OpenRouter may list a third-party host's price,
-so changes above 30% are flagged and not applied by default; long-context and
+so changes above 30% (price, context or max output) are flagged and not applied by default, and a big price change flags every change of that model; long-context and
 off-peak prices are never updated. They will be online at <https://workszop.github.io/aicalc/seats.html>,
 and `agent.html` after deployment. Run all nine checks listed under
 "Weryfikacja"; CI runs the same commands.

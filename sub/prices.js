@@ -79,6 +79,7 @@ function diffModels(models, orMap) {
     if (!m.openrouter) return;
     const feed = orMap.get(m.openrouter);
     if (!feed) { out.push({ id: m.id, name: m.name, openrouter: m.openrouter, missing: true }); return; }
+    const rows = [];
     FIELDS.forEach((field) => {
       const next = feed[field];
       const old = m[field];
@@ -86,12 +87,15 @@ function diffModels(models, orMap) {
       if (relDiff(old, next) < EPSILON) return;
       const pctChange = old === 0 ? null : (next - old) / old * 100;
       const flags = [];
-      if (PRICE_FIELDS.includes(field)) {
-        if (pctChange === null || Math.abs(pctChange) > BIG_CHANGE * 100) flags.push('big');
-        if (hasTiers(m)) flags.push('tiersKept');
-      }
-      out.push({ id: m.id, name: m.name, openrouter: m.openrouter, field, old, next, pctChange, flags });
+      // Any field (price, context, max output) that moves by more than BIG_CHANGE needs a look at the provider.
+      if (pctChange === null || Math.abs(pctChange) > BIG_CHANGE * 100) flags.push('big');
+      if (PRICE_FIELDS.includes(field) && hasTiers(m)) flags.push('tiersKept');
+      rows.push({ id: m.id, name: m.name, openrouter: m.openrouter, field, old, next, pctChange, flags });
     });
+    // A big price jump usually means OpenRouter lists another host for this model (e.g. DeepSeek V4 Pro),
+    // so the model's other changes come from the same doubtful source: flag them all.
+    if (rows.some((r) => PRICE_FIELDS.includes(r.field) && r.flags.includes('big'))) rows.forEach((r) => { if (!r.flags.includes('big')) r.flags.unshift('big'); });
+    out.push(...rows);
   });
   return out;
 }
