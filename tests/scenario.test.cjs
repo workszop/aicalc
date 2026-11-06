@@ -9,7 +9,9 @@ assert.ok(section, 'Scenario serialization and validation helpers must exist');
 const constants = js.slice(0, js.indexOf('// ─── State'));
 const core = js.slice(js.indexOf('// CSV parser'), js.indexOf('// ─── Render'));
 const csv = html.match(/<script id="csvData"[^>]*>([\s\S]*?)<\/script>/)[1];
-const context = vm.createContext({ console, csv });
+// The built-in list before 2026-11-06 (GPT-5.6, Claude Haiku 4.5 / Sonnet 5 / Opus 5), as an old autosave carries it.
+const oldCsv = fs.readFileSync(path.join(__dirname, 'fixtures/baseline/models.csv'), 'utf8');
+const context = vm.createContext({ console, csv, oldCsv });
 vm.runInContext(constants + core + section, context);
 vm.runInContext(`
   const original = { ...DEFAULTS, lang: 'en', models: modelsFromCsv(csv), csvText: csv, csvSource: null };
@@ -48,6 +50,19 @@ vm.runInContext(`
   delete legacyMissingOther.values.users;
   mustReject(legacyMissingOther);
   if ('models' in saved.values || 'csvText' in saved.values) throw Error('unexpected serialized state');
+  // An old autosave on the built-in list names a removed model: it reopens on today's list with the default model.
+  const oldSaved = serializeScenario({ ...original, model: 'OpenAI GPT-5.6 Terra', users: 37, csvText: oldCsv, csvSource: null });
+  const oldRestored = restoreScenario(parseScenario(JSON.stringify(oldSaved)), csv);
+  if (oldRestored.csvText !== csv || oldRestored.values.model !== DEFAULTS.model || oldRestored.values.users !== 37 || oldRestored.csvSource !== null) throw Error('old built-in autosave restore');
+  computeResults(oldRestored.values, modelsFromCsv(oldRestored.csvText));
+  // An imported list is kept as saved, with its model.
+  const imported = restoreScenario(parseScenario(JSON.stringify({ ...oldSaved, csvSource: 'moje-ceny.csv' })), csv);
+  if (imported.csvText !== oldCsv || imported.values.model !== 'OpenAI GPT-5.6 Terra') throw Error('imported list restore');
+  // A current autosave keeps its model.
+  if (restoreScenario(parseScenario(JSON.stringify({ ...saved, values: { ...saved.values, model: 'Anthropic Claude Haiku 5.5' } })), csv).values.model !== 'Anthropic Claude Haiku 5.5') throw Error('current model restore');
+  // Without the default on the list the first model is used.
+  const noDefault = restoreScenario({ values: { ...saved.values, model: 'gone' }, csvText: oldCsv, csvSource: 'x.csv' }, csv);
+  if (noDefault.values.model !== 'OpenAI GPT-5.6 Luna') throw Error('first-model fallback');
   const state = original;
   const before = JSON.stringify(original);
   const missingDom = { querySelector: () => null, querySelectorAll: () => [] };

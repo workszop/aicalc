@@ -2428,6 +2428,16 @@ function parseScenario(text) {
   computeResults(values, models);
   return { values, models, csvText: parsed.csvText, csvSource: parsed.csvSource };
 }
+// A scenario saved on the built-in price list (csvSource null) reopens on today's built-in list, and a model that
+// is no longer listed falls back to the default model (or the first one). An imported list is kept as saved.
+function restoreScenario(loaded, builtinCsv) {
+  const csvText = loaded.csvSource === null ? builtinCsv : loaded.csvText;
+  const models = modelsFromCsv(csvText);
+  const values = { ...loaded.values };
+  if (!models.some((m) => m.name === values.model)) values.model = models.some((m) => m.name === DEFAULTS.model) ? DEFAULTS.model : models[0].name;
+  return { values, csvText, csvSource: loaded.csvSource };
+}
+
 function persistScenario() {
   if (Object.keys(validateState(state)).length || App.invalidFields.size) return false;
   try { localStorage.setItem(LS_SCENARIO, JSON.stringify(serializeScenario(state))); return true; } catch (_) { return false; }
@@ -2719,7 +2729,7 @@ window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer
   try {
     const saved = localStorage.getItem(LS_SCENARIO);
     if (saved) {
-      const loaded = parseScenario(saved);
+      const loaded = restoreScenario(parseScenario(saved), $('csvData').textContent);
       const csvText = withStoredPrices(loaded.csvText);
       Object.assign(state, loaded.values, { models: modelsFromCsv(csvText), csvText, csvSource: loaded.csvSource });
     }
