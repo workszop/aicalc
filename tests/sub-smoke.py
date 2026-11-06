@@ -780,6 +780,24 @@ def run_page(browser, page: str, key: str, flow: str, query: str, lines: list[st
             lines.append(f"{label}: {n} assertions")
 
 
+
+# ─── Price flows run on the frozen built-in list the OpenRouter fixtures were captured against ───
+BASELINE = Path(__file__).resolve().parent / "fixtures" / "baseline"
+
+
+def baseline_core(core_js: str) -> str:
+    models = (BASELINE / "core-models.js").read_text(encoding="utf-8").split("\n", 1)[1].rstrip()
+    i = core_js.index("const MODELS = [")
+    j = core_js.index("];", i) + 2
+    return core_js[:i] + models + core_js[j:]
+
+
+def baseline_index(html: str) -> str:
+    import re
+    csv = (BASELINE / "models.csv").read_text(encoding="utf-8")
+    return re.sub(r'(<script id="csvData"[^>]*>)[\s\S]*?(</script>)', lambda m: m.group(1) + csv + m.group(2), html, count=1)
+
+
 def run_prices(browser, lines: list[str]) -> None:
     """Price panel flows over http (the fetch needs a server); async flows get a virtual-time budget."""
 
@@ -792,6 +810,8 @@ def run_prices(browser, lines: list[str]) -> None:
     ]
     for page, tag, flow, head, query in cases:
         with page_fixture(page, flow, head) as root:
+            core = root / "sub" / "core.js"
+            core.write_text(baseline_core(core.read_text(encoding="utf-8")), encoding="utf-8")
             with bs.local_server(root) as server:
                 for name, size in VIEWPORTS.items():
                     label = f"{page} {tag} http {name}"

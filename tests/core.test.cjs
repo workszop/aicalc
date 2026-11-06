@@ -22,7 +22,7 @@ assert.equal(new Set(models.map((m) => m.id)).size, models.length, 'model IDs ar
 assert.equal(new Set(models.map((m) => m.name)).size, models.length, 'model names are unique');
 assert.equal(models.find((m) => m.id === 'claude-fable-5-1').alwaysThinks, true, 'Fable is always reasoning');
 assert.equal(models.find((m) => m.id === 'claude-haiku-4-5-20251001').maxOutput, 64000, 'Haiku output limit');
-assert.equal(models.find((m) => m.id === 'deepseek-flash').maxOutput, 384000, 'DeepSeek output limit');
+assert.equal(models.find((m) => m.id === 'deepseek-flash').maxOutput, 393216, 'DeepSeek output limit (DeepSeek, via OpenRouter 2026-11-06)');
 assert.equal(models.find((m) => m.id === 'gpt-6-astra').maxOutput, 128000, 'Astra output limit');
 assert.equal(models.find((m) => m.id === 'gpt-6-astra').alwaysThinks, true, 'Astra always uses reasoning');
 

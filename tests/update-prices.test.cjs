@@ -13,11 +13,20 @@ const FIXTURE = path.join(__dirname, 'fixtures/openrouter-models.json');
 const ENDPOINTS = path.join(__dirname, 'fixtures/endpoints');
 const TODAY = '2026-11-06';
 
+// The copy carries the built-in prices of 2026-11-06 (tests/fixtures/baseline/), the list the OpenRouter
+// fixtures were captured against, so a later accepted price update in the real files does not break this test.
+const BASELINE = path.join(__dirname, 'fixtures/baseline');
 function copyRepo() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'aicalc-prices-'));
   fs.mkdirSync(path.join(dir, 'sub'));
-  fs.copyFileSync(path.join(ROOT, 'index.html'), path.join(dir, 'index.html'));
-  fs.copyFileSync(path.join(ROOT, 'sub/core.js'), path.join(dir, 'sub/core.js'));
+  const baseCsv = fs.readFileSync(path.join(BASELINE, 'models.csv'), 'utf8');
+  const baseModels = fs.readFileSync(path.join(BASELINE, 'core-models.js'), 'utf8').replace(/^\/\/.*\n/, '').trimEnd();
+  const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8').replace(/(<script id="csvData"[^>]*>)[\s\S]*?(<\/script>)/, (_, a, b) => a + baseCsv + b);
+  const core = fs.readFileSync(path.join(ROOT, 'sub/core.js'), 'utf8');
+  const i = core.indexOf('const MODELS = [');
+  const j = core.indexOf('];', i) + 2;
+  fs.writeFileSync(path.join(dir, 'index.html'), html);
+  fs.writeFileSync(path.join(dir, 'sub/core.js'), core.slice(0, i) + baseModels + core.slice(j));
   return dir;
 }
 // A copy of the endpoint fixtures with edit(json by id) applied, for the off-the-happy-path cases.
@@ -69,7 +78,7 @@ assert.match(dryOut, /\| `anthropic\/claude-haiku-5\.5` \| Anthropic Claude Haik
 assert.ok(!/\| `google\/gemini-3\.8-flash` \|/.test(dryOut.split('## Nowe modele')[1] || ''), 'Gemini 3.8 Flash is a built-in model now, not a candidate');
 assert.ok(!/qwen\//.test(dryOut.split('## Nowe modele')[1]), 'no qwen candidates');
 assert.ok(!/gpt-6-luna/.test(dryOut), 'a candidate without a creator endpoint is not listed');
-assert.equal(fs.readFileSync(path.join(dry, 'index.html'), 'utf8'), realIndex, 'dry run leaves index.html alone');
+assert.equal(fs.readFileSync(path.join(dry, 'index.html'), 'utf8'), fs.readFileSync(path.join(copyRepo(), 'index.html'), 'utf8'), 'dry run leaves index.html alone');
 assert.ok(!/\u2014/.test(dryOut), 'no em-dash in the report');
 
 // --write writes the normal changes
@@ -128,8 +137,9 @@ assert.match(run(inc), /deepseek-flash/, 'dry run after a scoped write still run
 
 // a list that cannot be read is a total failure (exit 1, nothing written)
 const fail = copyRepo();
+const failBefore = fs.readFileSync(path.join(fail, 'index.html'), 'utf8');
 assert.throws(() => execFileSync(process.execPath, [SCRIPT, '--root', fail, '--fixture', path.join(fail, 'nope.json'), '--write'], { encoding: 'utf8', stdio: 'pipe' }), /update-prices:/);
-assert.equal(fs.readFileSync(path.join(fail, 'index.html'), 'utf8'), realIndex, 'total failure writes nothing');
+assert.equal(failBefore, fs.readFileSync(path.join(fail, 'index.html'), 'utf8'), 'total failure writes nothing');
 
 // the real repository files were never touched
 assert.equal(fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8'), realIndex);
