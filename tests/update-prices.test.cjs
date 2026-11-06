@@ -70,7 +70,7 @@ assert.match(dryOut, /\| `google\/gemini-3\.8-flash` \| Google Gemini 3\.8 Flash
 assert.ok(!/qwen\//.test(dryOut.split('## Nowe modele')[1]), 'no qwen candidates');
 assert.ok(!/gpt-6-luna/.test(dryOut), 'a candidate without a creator endpoint is not listed');
 assert.equal(fs.readFileSync(path.join(dry, 'index.html'), 'utf8'), realIndex, 'dry run leaves index.html alone');
-assert.ok(!/—/.test(dryOut), 'no em-dash in the report');
+assert.ok(!/\u2014/.test(dryOut), 'no em-dash in the report');
 
 // --write writes the normal changes
 const dir = copyRepo();
