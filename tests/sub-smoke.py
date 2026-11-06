@@ -387,6 +387,12 @@ window.addEventListener('load', () => {
   const wraps = [...rp.querySelectorAll('.table-wrap')];
   if (wraps.length !== 3) failures.push(`expected 3 table wrappers, found ${wraps.length}`);
   wraps.forEach((w) => { if (getComputedStyle(w).overflowX !== 'auto') failures.push('a table wrapper does not scroll'); if (w.getBoundingClientRect().right > edge + 0.5) failures.push('a table wrapper is wider than the panel'); });
+  // On a phone the model table is stacked, so every pick button is visible without scrolling the table sideways.
+  const picks = [...rp.querySelectorAll('#modelTable button[data-pick]')];
+  if (!picks.length) failures.push('no Wybierz buttons in the model table');
+  picks.forEach((btn) => { if (btn.getBoundingClientRect().right > edge + 0.5) failures.push(`Wybierz for ${btn.dataset.pick} is off-screen`); });
+  const mtWrap = rp.querySelector('#modelTable').closest('.table-wrap');
+  if (mtWrap && mtWrap.scrollWidth > mtWrap.clientWidth + 1) failures.push('the model table still scrolls sideways on a phone');
   window.parent.document.getElementById('probe').setAttribute('data-narrow-smoke', encodeURIComponent(JSON.stringify({
     ok: failures.length === 0, failures, width: window.innerWidth,
     scrolling: wraps.filter((w) => w.scrollWidth > w.clientWidth).length,

@@ -180,7 +180,7 @@ Kontrakt DOM (`?verify=1` sprawdza go razem z rdzeniem):
 
 | Element | Atrybuty |
 | --- | --- |
-| `#agentCard` | `data-per-run`, `data-monthly`, `data-eligible`, `data-annual`, `data-low`, `data-high` |
+| `#agentCard` | `data-per-run`, `data-monthly`, `data-eligible`, `data-annual`, `data-low`, `data-high`, `data-high-eligible` (false, gdy górna granica nie mieści się w oknie kontekstu modelu; wtedy pod widełkami pojawia się ostrzeżenie `#rangeWarn`) |
 | `#costBreakdown` | `data-input`, `data-output`, `data-retries`, `data-tools`, `data-platform` |
 | `#stepTable` | `data-steps` (liczba kroków), `data-sum` (koszt LLM na uruchomienie bez ponowień, 6 miejsc) |
 | `#modelTable` | `data-cheapest`, `data-current`; wiersze `data-model`, `data-eligible`, `data-monthly`, wybrany ma `aria-current="true"` |

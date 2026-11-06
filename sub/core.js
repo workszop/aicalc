@@ -220,10 +220,12 @@ function computeAgentResults(s, models) {
 }
 
 // Monthly cost when the agent needs fewer or more steps and retries than typed. Everything else stays the same.
+// highEligible is false when the pessimistic run (more steps, so a longer context) no longer fits the model.
 function agentRange(s, models) {
+  const highSteps = Math.max(1, Math.round(s.steps * 1.5));
   const low = computeAgentResults({ ...s, steps: Math.max(1, Math.round(s.steps * 0.5)), retryPct: s.retryPct * 0.5 }, models).monthly;
-  const high = computeAgentResults({ ...s, steps: Math.max(1, Math.round(s.steps * 1.5)), retryPct: s.retryPct * 2 }, models).monthly;
-  return { low, typical: computeAgentResults(s, models).monthly, high };
+  const highRun = computeAgentResults({ ...s, steps: highSteps, retryPct: s.retryPct * 2 }, models);
+  return { low, typical: computeAgentResults(s, models).monthly, high: highRun.monthly, highSteps, highEligible: highRun.eligible, highReason: highRun.reason };
 }
 
 // The same agent on every model: eligible models by monthly cost (cheapest first), then the ineligible ones.

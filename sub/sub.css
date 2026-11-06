@@ -372,4 +372,16 @@ details.panel[open] { padding-bottom: 16px; }
   .data-tbl th, .data-tbl td { padding: 7px 9px; }
   .data-tbl th[scope="row"] { white-space: normal; min-width: 8.5em; }
   .share-track { width: 60px; }
+  /* On a phone each model row is a small card: name and action on top, both prices below, so "Wybierz" is always in view. */
+  #modelTable, #modelTable tbody { display: block; }
+  #modelTable thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  #modelTable tbody tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: var(--sp-3); align-items: center; padding: var(--sp-2) var(--sp-3); border-bottom: 1px solid var(--line); }
+  #modelTable tbody tr > * { padding: 0; border: none; background: var(--transparent); }
+  #modelTable tbody tr:nth-child(even) { background: var(--paper-2); }
+  #modelTable tbody tr.current { background: var(--yellow); }
+  #modelTable tbody th.name { grid-column: 1; grid-row: 1; min-width: 0; }
+  #modelTable tbody td.act { grid-column: 2; grid-row: 1; }
+  #modelTable tbody td.num, #modelTable tbody td.unavail { grid-column: 1 / -1; text-align: var(--align-start); white-space: normal; min-width: 0; }
+  #modelTable tbody td.num::before { content: attr(data-label) ": "; font-family: var(--font-sans); color: var(--ink-3); }
+  #modelTable tbody tr.current td.num::before { color: var(--yellow-ink); }
 }

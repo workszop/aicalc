@@ -246,7 +246,16 @@ const flatBase = () => ({ ...agentBase(), contextMode: 'flat' });
 
   // range: low <= typical <= high, monthly only, steps floor at 1
   const rg = C.agentRange(agentBase(), MODELS);
-  assert.deepEqual([...Object.keys(rg)], ['low', 'typical', 'high']);
+  assert.deepEqual([...Object.keys(rg)], ['low', 'typical', 'high', 'highSteps', 'highEligible', 'highReason']);
+  assert.equal(rg.highSteps, 9);
+  assert.equal(rg.highEligible, true);
+  // the pessimistic run can outgrow the context window while the typical run still fits
+  const tight = { ...agentBase(), model: 'Anthropic Claude Haiku 4.5', contextMode: 'growing', inTok: 150000, outTok: 400, toolOutTok: 30000, steps: 2 };
+  assert.equal(C.computeAgentResults(tight, MODELS).eligible, true);
+  const tightRange = C.agentRange(tight, MODELS);
+  assert.equal(tightRange.highSteps, 3);
+  assert.equal(tightRange.highEligible, false);
+  assert.equal(tightRange.highReason, 'ctxOver');
   assert.equal(rg.typical, g.monthly);
   assert.ok(rg.low <= rg.typical && rg.typical <= rg.high);
   const lowS = { ...agentBase(), steps: 3, retryPct: 5 };

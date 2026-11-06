@@ -33,6 +33,9 @@ SubUI.addStrings({
     agentCheckCore: 'Agent: karta zgadza się z rdzeniem',
     perYear: 'Rocznie', rangeLine: 'Zwykle od {low} do {high} / mies.',
     rangeHint: 'Agent nie ma stałej liczby kroków: przyjęto od połowy do 1,5 raza kroków i od połowy do dwukrotności ponowień.',
+    rangeWarn: 'Uwaga: przy {steps} krokach kontekst nie mieści się w oknie modelu, więc górna granica jest tylko orientacyjna. Taki przebieg zakończy się błędem albo wymaga modelu z większym oknem kontekstu.',
+    rangeWarnOutput: 'Uwaga: przy {steps} krokach odpowiedź przekracza limit wyjścia modelu, więc górna granica jest tylko orientacyjna.',
+    mPerRun: 'Za uruchomienie', mMonthly: 'Miesięcznie',
     budgetLine: 'Za {budget} miesięcznie zmieścisz ok. {n} {runsWord}.', budgetShort: 'Budżet nie pokrywa nawet platformy ({platform}).',
     runOne: 'uruchomienie', runFew: 'uruchomienia', runMany: 'uruchomień',
     breakdownTitle: 'Na co idą pieniądze', breakdownCaption: 'Koszt miesięczny w podziale na części.',
@@ -79,6 +82,9 @@ SubUI.addStrings({
     agentCheckCore: 'Agent: card matches the core',
     perYear: 'Per year', rangeLine: 'Usually from {low} to {high} / month',
     rangeHint: 'An agent has no fixed number of steps: the range assumes half to 1.5 times the steps and half to twice the retries.',
+    rangeWarn: 'Note: at {steps} steps the context no longer fits the model window, so the upper end is only indicative. Such a run would fail or needs a model with a larger context window.',
+    rangeWarnOutput: 'Note: at {steps} steps the reply exceeds the model output limit, so the upper end is only indicative.',
+    mPerRun: 'Per run', mMonthly: 'Per month',
     budgetLine: 'A budget of {budget} a month fits about {n} {runsWord}.', budgetShort: 'The budget does not even cover the platform ({platform}).',
     runOne: 'run', runFew: 'runs', runMany: 'runs',
     breakdownTitle: 'Where the money goes', breakdownCaption: 'Monthly cost split into parts.',
@@ -180,6 +186,7 @@ function renderCard(r, range) {
   Object.assign(agentCard.dataset, {
     perRun: SubUI.dataNum(r.perRun, 4), monthly: SubUI.dataNum(r.monthly), eligible: String(ok),
     annual: ok ? SubUI.dataNum(r.annual) : '', low: ok ? SubUI.dataNum(range.low) : '', high: ok ? SubUI.dataNum(range.high) : '',
+    highEligible: ok ? String(range.highEligible) : '',
   });
   const main = el('div', { class: 'agent-main' });
   const block = (caption, value) => {
@@ -198,6 +205,7 @@ function renderCard(r, range) {
     agentCard.replaceChildren(main,
       el('p', { class: 'agent-range', id: 'rangeLine' }, t('rangeLine', { low: SubUI.money(range.low), high: SubUI.money(range.high) })),
       el('p', { class: 'hint' }, t('rangeHint')),
+      ...(range.highEligible ? [] : [el('p', { class: 'agent-warn', id: 'rangeWarn' }, t(range.highReason === 'outputOver' ? 'rangeWarnOutput' : 'rangeWarn', { steps: SubUI.fmtNum(range.highSteps) }))]),
       el('p', { class: 'hint' }, t('runBreakdown', { llm: SubUI.money(r.llmPerRun, 4), tools: SubUI.money(r.toolsPerRun, 4), platform: SubUI.money(state.platform) })),
       budget);
   } else {
@@ -274,7 +282,8 @@ function renderModels() {
     if (isCurrent) action.append(el('span', { class: 'edu-chip chip-current' }, t('modelCurrent')));
     else if (x.eligible) action.append(el('button', { type: 'button', class: 'ghost-btn pick-btn', 'data-pick': x.name, 'aria-label': t('modelPickAria', { model: x.name }) }, t('modelPick')));
     const cells = [el('th', { scope: 'row', class: 'name' }, x.name)];
-    if (x.eligible) cells.push(td(SubUI.money(x.perRun, 4), 'num'), td(SubUI.money(x.monthly), 'num'));
+    // data-label names each number when the row turns into a stacked card on a phone.
+    if (x.eligible) cells.push(el('td', { class: 'num', 'data-label': t('mPerRun') }, SubUI.money(x.perRun, 4)), el('td', { class: 'num', 'data-label': t('mMonthly') }, SubUI.money(x.monthly)));
     else cells.push(el('td', { colspan: '2', class: 'unavail' }, t('modelUnavailable', { reason: reasonText(x.reason) })));
     cells.push(action);
     tbody.append(row(cells, attrs));
