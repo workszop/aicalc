@@ -125,13 +125,39 @@ Strona `agent.html`: koszt agenta, który wykonuje zadania w kilku krokach
 
 Wzory:
 
-- koszt modelu na zadanie: `kroki × koszt_jednego_kroku × (1 + retryPct / 100)`,
-- narzędzia na zadanie: `toolPln`,
-- koszt zadania = model + narzędzia; miesięcznie: `runs × koszt_zadania + platform`
-  (domyślnie 0,0815 PLN na zadanie i 463,02 PLN / mies.),
-- pod wynikiem strona opisuje w pięciu krokach, co agent robi w jednym
-  uruchomieniu (zadanie, decyzja modelu, narzędzie, wynik, pętla); to
-  ogólny opis pętli, nie konkretnego zadania.
+- tryb kontekstu `contextMode`: `growing` (domyślnie, „Rośnie z każdym krokiem”)
+  albo `flat` („Stały”); wejście kroku k (od 1):
+  `growing`: `inTok + (k − 1) × (outTok + toolOutTok)`, `flat`: `inTok`,
+- każdy krok liczy się osobno funkcją `chatCost` (współczynnik tokenizera i
+  języka, ceny długiego kontekstu powyżej `tierAbove` dla danego kroku);
+  model jest dostępny tylko wtedy, gdy mieści się każdy krok (pierwszy
+  niepasujący krok daje powód: `ctxOver` / `outputOver`),
+- `inPerRun` i `outPerRun` to sumy kosztów wejścia i wyjścia po krokach,
+  `retryPerRun = (inPerRun + outPerRun) × retryPct / 100`,
+  `llmPerRun = (inPerRun + outPerRun) × (1 + retryPct / 100)`,
+  `perRun = llmPerRun + toolPln`, miesięcznie `runs × perRun + platform`,
+  rocznie `miesięcznie × 12`,
+- podział miesięczny (`breakdown`): wejście `runs × inPerRun`, wyjście
+  `runs × outPerRun`, ponowienia `runs × retryPerRun`, narzędzia
+  `runs × toolPln`, platforma `platform`; części sumują się do kosztu
+  miesięcznego,
+- zakres (`agentRange`, tylko miesięcznie): niski przy
+  `max(1, round(steps × 0,5))` kroków i `retryPct × 0,5`, wysoki przy
+  `round(steps × 1,5)` kroków i `retryPct × 2`; reszta bez zmian,
+- inne modele (`agentModelTable`): ten sam scenariusz na każdym modelu,
+  dostępne od najtańszego miesięcznie, niedostępne na końcu,
+- skala (`agentScale`) dla 100, 1 000, 10 000 i 100 000 uruchomień:
+  `runs × perRun + platform`, koszt jednego uruchomienia z platformą
+  `miesięcznie / runs`, udział platformy `platform / miesięcznie`,
+- budżet (`agentBudgetRuns`): `floor((budget − platform) / perRun)`; 0, gdy
+  budżet nie przekracza platformy; brak wyniku, gdy model jest niedostępny,
+- domyślnie (tryb `growing`): wejścia kroków 4 000, 5 000, …, 9 000 tokenów,
+  0,0938 PLN na uruchomienie, 487,64 PLN / mies., 5 851,68 PLN / rok, zakres
+  434,78–567,58 PLN / mies., budżet 1 000 PLN mieści 7 461 uruchomień;
+  w trybie `flat` jak dawniej 0,0815 PLN i 463,02 PLN / mies.,
+- strona opisuje w pięciu krokach, co agent robi w jednym uruchomieniu, a
+  zaraz potem tabela „Kroki jednego uruchomienia” podaje liczby (przy
+  ponad 12 krokach widać kroki 1–5, „…” i ostatnie 3; suma obejmuje wszystkie).
 
 Gotowe scenariusze ustawiają tylko `runs` i `steps`: obsługa maili 3 000 / 4,
 raport sprzedaży 20 / 12, faktury 800 / 5.
@@ -141,10 +167,28 @@ raport sprzedaży 20 / 12, faktury 800 / 5.
 | `model` | OpenAI GPT-5.6 Luna |
 | `runs` | 2 000 zadań / mies. |
 | `steps` | 6 kroków na zadanie |
-| `inTok` / `outTok` | 4 000 / 400 tokenów na krok |
+| `contextMode` | `growing` |
+| `inTok` | 4 000 tokenów w 1. kroku (instrukcja i dane) |
+| `outTok` | 400 tokenów na krok |
+| `toolOutTok` | 600 tokenów wyniku narzędzia na krok (tylko `growing`) |
 | `retryPct` | 10% (powtórzenia) |
 | `toolPln` | 0,05 PLN na zadanie |
 | `platform` | 300 PLN / mies. |
+| `budget` | 1 000 PLN / mies. |
+
+Kontrakt DOM (`?verify=1` sprawdza go razem z rdzeniem):
+
+| Element | Atrybuty |
+| --- | --- |
+| `#agentCard` | `data-per-run`, `data-monthly`, `data-eligible`, `data-annual`, `data-low`, `data-high` |
+| `#costBreakdown` | `data-input`, `data-output`, `data-retries`, `data-tools`, `data-platform` |
+| `#stepTable` | `data-steps` (liczba kroków), `data-sum` (koszt LLM na uruchomienie bez ponowień, 6 miejsc) |
+| `#modelTable` | `data-cheapest`, `data-current`; wiersze `data-model`, `data-eligible`, `data-monthly`, wybrany ma `aria-current="true"` |
+| `#scaleTable` | `data-rows`; wiersze `data-runs`, `data-monthly`, `data-share` |
+| `#budgetLine` | `data-runs` (pusty, gdy ukryty) |
+
+Gdy model jest niedostępny, podział, tabela kroków, skala, zakres i budżet są
+ukryte; tabela modeli zostaje, żeby można było wybrać działający model.
 
 Zastrzeżenia: liczba kroków i tokenów mocno zależy od konkretnego agenta –
 wartości domyślne są ilustracyjne.
@@ -153,7 +197,7 @@ wartości domyślne są ilustracyjne.
 
 | Plik | Zawartość |
 | --- | --- |
-| `sub/core.js` | czysty rdzeń bez DOM: ceny modeli, plany miejsc (`SEAT_PLANS`), schematy pól, `computeSeatResults`, `computeAgentResults` |
+| `sub/core.js` | czysty rdzeń bez DOM: ceny modeli, plany miejsc (`SEAT_PLANS`), schematy pól, `computeSeatResults`, `computeAgentResults`, `agentRange`, `agentModelTable`, `agentScale`, `agentBudgetRuns` |
 | `sub/ui.js` | wspólna warstwa interfejsu: słownik PL/EN, nawigacja, panel ustawień, kontrakt DOM |
 | `sub/seats.js` | logika strony `seats.html` |
 | `sub/agent.js` | logika strony `agent.html` |
@@ -368,7 +412,9 @@ Co sprawdzają:
 - `sub-sync.test.cjs` – zgodność cen modeli i współczynników tokenów z
   `index.html`,
 - `sub-smoke.py` – przeglądarkowy test `seats.html` i `agent.html` przez `http://` (desktop i mobile) oraz `file://`: kontrakt DOM,
-  przepływy użytkownika i stan po zmianie ustawień.
+  przepływy użytkownika i stan po zmianie ustawień; na stronie agenta także
+  przycisk „Wybierz”, przełącznik kontekstu i brak przewijania w bok przy
+  szerokości 360 i 320 px.
 
 Jeśli przeglądarka nie jest zainstalowana, testy przeglądarkowe kończą się
 czytelnym komunikatem z instrukcją instalacji. Skrypty niczego nie instalują.
@@ -392,8 +438,11 @@ Two companion pages share the same header navigation, PL/EN toggle and
 no-build setup: `seats.html` (seat subscriptions vs API vs local hardware;
 seat prices verified 2026-11-05: ChatGPT Business 25 USD, Microsoft 365 Copilot
 25.2 USD, Claude Team 25 USD per seat per month), and `agent.html` (agent cost per
-run and per month: LLM, tools and platform, with a short step-by-step
-explanation of what the agent does in one run). On the seats page the break-even against the API
+run, per month and per year, with a typical range, a monthly split into input,
+output, retries, tools and platform, a per-step table, the same agent on every
+model, cost at 100 to 100 000 runs and how many runs fit a monthly budget; by
+default the context grows with every step because the agent rereads the
+history and tool results, and a "flat" mode keeps every step's input fixed). On the seats page the break-even against the API
 is one of three kinds: `from` a number of chats, `always` or `never`. All figures are estimates in net
 PLN; no page prices people's working time and none calculates a return on
 investment; GB10 throughput is not checked on the seats
