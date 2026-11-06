@@ -1,0 +1,31 @@
+{
+ "data": {
+  "id": "qwen/qwen3.7-plus",
+  "name": "Qwen: Qwen3.7 Plus",
+  "created": 1780491783,
+  "endpoints": [
+   {
+    "provider_name": "Alibaba",
+    "tag": "alibaba/us-east-1",
+    "pricing": {
+     "prompt": "0.00000032",
+     "completion": "0.00000128"
+    },
+    "context_length": 1000000,
+    "max_completion_tokens": 131072,
+    "quantization": "unknown"
+   },
+   {
+    "provider_name": "Alibaba",
+    "tag": "alibaba",
+    "pricing": {
+     "prompt": "0.00000032",
+     "completion": "0.00000128"
+    },
+    "context_length": 1000000,
+    "max_completion_tokens": 131072,
+    "quantization": "unknown"
+   }
+  ]
+ }
+}

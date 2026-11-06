@@ -1,20 +1,36 @@
-// Pure, DOM-free model price update from the OpenRouter model list. Classic script: works in the browser
+// Pure, DOM-free model price update from OpenRouter. Classic script: works in the browser
 // (globalThis.PriceSync), in node (module.exports) and in scripts/update-prices.mjs.
+// The model list (/api/v1/models) is used to discover models; prices, context and max output come from the
+// model creator's own endpoint (/api/v1/models/{id}/endpoints, tag = CREATOR_TAG), never from another host.
 (function () {
 // ─── Constants ───
 const FEED_URL = 'https://openrouter.ai/api/v1/models';
+// Exact endpoint tag of the model's creator. Tag variants (openai/flex, openai/fast, alibaba/us-east-1) are other tiers.
+const CREATOR_TAG = { openai: 'openai', anthropic: 'anthropic', deepseek: 'deepseek', qwen: 'alibaba', google: 'google-ai-studio' };
+const CONCURRENCY = 4;
 const STORE_KEY = 'edulab-aicalc-prices-v1';
 const STORE_VERSION = 1;
 const BIG_CHANGE = 0.30;
 const EPSILON = 1e-9;
 const FIELDS = ['pin', 'pout', 'ctx', 'maxOutput'];
 const PRICE_FIELDS = ['pin', 'pout'];
-const FAMILY_BY_PROVIDER = { openai: 'openai', anthropic: 'claudeNew', deepseek: 'deepseek', qwen: 'qwen' };
-const PROVIDER_LABEL = { openai: 'OpenAI', anthropic: 'Anthropic', deepseek: 'DeepSeek', qwen: 'Qwen' };
+const FAMILY_BY_PROVIDER = { openai: 'openai', anthropic: 'claudeNew', deepseek: 'deepseek', qwen: 'qwen', google: 'gemini' };
+const PROVIDER_LABEL = { openai: 'OpenAI', anthropic: 'Anthropic', deepseek: 'DeepSeek', qwen: 'Qwen', google: 'Google' };
 const KNOWN_FAMILIES = ['openai', 'deepseek', 'qwen', 'claude', 'claudeNew'];
 const SKIP_PATTERNS = ['-image', '-vl-', 'guard', '-pro', 'preview'];
-const NOTE_UPDATED = 'Wartości z OpenRouter, sprawdź u dostawcy.';
-const NOTE_ADDED = 'Dodany z OpenRouter, sprawdź cenę u dostawcy.';
+// New-model candidates per provider (qwen has a tokenizer family, but no candidates). `gemini` has no
+// tokenizer factor yet, so a Google candidate is listed but cannot be added (KNOWN_FAMILIES has no gemini).
+const OPENAI_TIER_RE = /(^|[-.])(luna|terra|sol)($|[-.])/;
+const DEEPSEEK_EXP_RE = /-exp|vision|experimental/;
+const GOOGLE_FLASH_RE = /^google\/gemini-[\d.]+-flash$/;
+const CANDIDATE_RULES = {
+  openai: (orId, id) => OPENAI_TIER_RE.test(id),
+  anthropic: () => true,
+  deepseek: (orId, id, mapped) => !DEEPSEEK_EXP_RE.test(id) && ![...mapped].some((m) => m.replace(/-\d+$/, '') === orId),
+  google: (orId) => GOOGLE_FLASH_RE.test(orId),
+};
+const NOTE_UPDATED = 'Cena twórcy modelu (z OpenRouter).';
+const NOTE_ADDED = 'Cena twórcy modelu (z OpenRouter).';
 const MAX_STORE_ITEMS = 100;
 const MAX_NUMBER = 1e9;
 const ID_RE = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,99}$/;
@@ -37,6 +53,10 @@ const hasTiers = (m) => Boolean(m.tier) || (m.tierAbove !== undefined && m.tierA
 const isPosInt = (v) => Number.isInteger(v) && v > 0 && v <= MAX_NUMBER;
 const isPrice = (v) => typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= MAX_NUMBER;
 const skipId = (id) => id.startsWith('~') || id.endsWith(':batch');
+const providerOf = (orId) => String(orId).slice(0, String(orId).indexOf('/'));
+// Where a model's endpoint list lives: the OpenRouter API, or a file name in a fixture directory.
+const endpointsUrl = (orId) => FEED_URL + '/' + orId.split('/').map(encodeURIComponent).join('/') + '/endpoints';
+const endpointsFile = (orId) => orId.replace(/\//g, '__') + '.json';
 
 // ─── Feed ───
 // Map(openrouterId -> { pin, pout, ctx, maxOutput, name, created }); prices in USD per 1M tokens.
@@ -62,6 +82,40 @@ function parseOpenRouter(json) {
       name: cleanText(e.name),
       created: Number.isFinite(Number(e.created)) ? Number(e.created) : 0,
     });
+  });
+  return out;
+}
+
+// ─── Creator endpoint ───
+// { pin, pout, ctx, maxOutput, provider, tag } from the endpoint whose tag is exactly the creator tag, or null
+// (unknown provider, no such endpoint, malformed answer, an answer for another model).
+function creatorEndpoint(openrouterId, endpointsJson) {
+  const tag = CREATOR_TAG[providerOf(openrouterId)];
+  if (!tag || !isObj(endpointsJson) || !isObj(endpointsJson.data)) return null;
+  const data = endpointsJson.data;
+  if (typeof data.id === 'string' && data.id !== openrouterId) return null;
+  if (!Array.isArray(data.endpoints)) return null;
+  const e = data.endpoints.find((x) => isObj(x) && x.tag === tag);
+  if (!e || !isObj(e.pricing)) return null;
+  const pin = Number(e.pricing.prompt);
+  const pout = Number(e.pricing.completion);
+  if (!Number.isFinite(pin) || !Number.isFinite(pout) || pin < 0 || pout < 0) return null;
+  const ctx = isPosInt(Number(e.context_length)) ? Number(e.context_length) : null;
+  const maxRaw = Number(e.max_completion_tokens);
+  return {
+    pin: round6(pin * 1e6), pout: round6(pout * 1e6), ctx,
+    maxOutput: isPosInt(maxRaw) ? maxRaw : ctx,
+    provider: cleanText(e.provider_name), tag,
+  };
+}
+// endpointsById: Map or object { openrouterId: endpoints JSON | null }. Returns the Map diffModels consumes;
+// a model without a creator endpoint is left out, so diffModels reports it as missing.
+function creatorMap(endpointsById) {
+  const out = new Map();
+  const entries = endpointsById instanceof Map ? [...endpointsById] : Object.entries(endpointsById || {});
+  entries.forEach(([id, json]) => {
+    const c = creatorEndpoint(id, json);
+    if (c) out.set(id, c);
   });
   return out;
 }
@@ -92,8 +146,8 @@ function diffModels(models, orMap) {
       if (PRICE_FIELDS.includes(field) && hasTiers(m)) flags.push('tiersKept');
       rows.push({ id: m.id, name: m.name, openrouter: m.openrouter, field, old, next, pctChange, flags });
     });
-    // A big price jump usually means OpenRouter lists another host for this model (e.g. DeepSeek V4 Pro),
-    // so the model's other changes come from the same doubtful source: flag them all.
+    // Safety net: prices come from the creator's endpoint, so a big price jump is rare and makes the whole
+    // entry doubtful (a wrong mapping, a new tier): flag every change of that model.
     if (rows.some((r) => PRICE_FIELDS.includes(r.field) && r.flags.includes('big'))) rows.forEach((r) => { if (!r.flags.includes('big')) r.flags.unshift('big'); });
     out.push(...rows);
   });
@@ -116,29 +170,86 @@ function cleanModel(m) {
     checkedAt: m.checkedAt, source: m.source, note: m.note,
   };
 }
-function newModelCandidates(models, json, limit = 15, day = today()) {
-  const map = parseOpenRouter(json);
+// Discovery from the list feed: up to `limit` new models, newest first (ids, names, created only).
+function discover(models, map, limit) {
   const mapped = new Set(models.map((m) => m.openrouter).filter(Boolean));
   const ids = new Set(models.map((m) => String(m.id).toLowerCase()));
-  const names = new Set(models.map((m) => String(m.name).toLowerCase()));
   const out = [];
   map.forEach((f, orId) => {
     const slash = orId.indexOf('/');
     const provider = orId.slice(0, slash);
     const id = orId.slice(slash + 1);
-    if (!FAMILY_BY_PROVIDER[provider] || mapped.has(orId) || !OR_ID_RE.test(orId)) return;
-    if (SKIP_PATTERNS.some((p) => orId.includes(p))) return;
+    if (!CANDIDATE_RULES[provider] || mapped.has(orId) || !OR_ID_RE.test(orId)) return;
+    if (SKIP_PATTERNS.some((p) => orId.includes(p)) || !CANDIDATE_RULES[provider](orId, id, mapped)) return;
     if (!ID_RE.test(id) || ids.has(id.toLowerCase()) || f.ctx === null) return;
-    let name = ourName(provider, f.name) || PROVIDER_LABEL[provider] + ' ' + id;
-    if (names.has(name.toLowerCase())) name += ' (OpenRouter)';
-    out.push(Object.assign(cleanModel({
-      id, name, openrouter: orId, family: FAMILY_BY_PROVIDER[provider], cls: 'standard', alwaysThinks: false,
-      pin: f.pin, pout: f.pout, ctx: f.ctx, maxOutput: f.maxOutput === null ? f.ctx : f.maxOutput,
-      checkedAt: day, source: 'https://openrouter.ai/' + orId, note: NOTE_ADDED,
-    }), { created: f.created }));
+    out.push({ orId, provider, id, name: f.name, created: f.created });
   });
   out.sort((a, b) => b.created - a.created);
   return out.slice(0, limit);
+}
+// OpenRouter ids whose endpoints are worth fetching: mapped models that are on the list, then the candidates.
+function creatorIds(models, json, limit = 15) {
+  const map = parseOpenRouter(json);
+  const mapped = models.map((m) => m.openrouter).filter((id) => id && OR_ID_RE.test(id) && map.has(id));
+  return [...new Set(mapped.concat(discover(models, map, limit).map((c) => c.orId)))];
+}
+// creators: creatorMap(...). A candidate without a creator endpoint (or its context) is dropped.
+// canAdd is false for a family without a tokenizer factor (gemini): listed, never added.
+function newModelCandidates(models, json, creators, limit = 15, day = today()) {
+  const map = parseOpenRouter(json);
+  const names = new Set(models.map((m) => String(m.name).toLowerCase()));
+  const out = [];
+  discover(models, map, limit).forEach((d) => {
+    const c = creators && creators.get(d.orId);
+    if (!c || c.ctx === null) return;
+    let name = ourName(d.provider, d.name) || PROVIDER_LABEL[d.provider] + ' ' + d.id;
+    if (names.has(name.toLowerCase())) name += ' (OpenRouter)';
+    out.push(Object.assign(cleanModel({
+      id: d.id, name, openrouter: d.orId, family: FAMILY_BY_PROVIDER[d.provider], cls: 'standard', alwaysThinks: false,
+      pin: c.pin, pout: c.pout, ctx: c.ctx, maxOutput: c.maxOutput,
+      checkedAt: day, source: 'https://openrouter.ai/' + d.orId + '/providers', note: NOTE_ADDED,
+    }), { created: d.created, canAdd: KNOWN_FAMILIES.includes(FAMILY_BY_PROVIDER[d.provider]) }));
+  });
+  return out;
+}
+
+// ─── Fetch (I/O injected) ───
+// io: { list() -> Promise<list JSON>, endpoints(openrouterId) -> Promise<endpoints JSON> }.
+// The list failing is a total failure (throws). An endpoints request failing only leaves that model
+// without a creator price. At most `concurrency` endpoints requests are in flight; onProgress(done, total).
+async function fetchCreatorData(models, io, { limit = 15, concurrency = CONCURRENCY, onProgress } = {}) {
+  const list = await io.list();
+  const listMap = parseOpenRouter(list);
+  const ids = creatorIds(models, list, limit);
+  const endpoints = new Map();
+  let next = 0;
+  let done = 0;
+  if (onProgress) onProgress(0, ids.length);
+  const worker = async () => {
+    while (next < ids.length) {
+      const id = ids[next++];
+      let json = null;
+      try { json = await io.endpoints(id); } catch (_) { json = null; }
+      endpoints.set(id, json);
+      done += 1;
+      if (onProgress) onProgress(done, ids.length);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.max(1, Math.min(concurrency, ids.length)) }, worker));
+  return { list, listMap, endpoints, ids };
+}
+// rows: diff rows; missing: mapped ids absent from the list; noCreator: on the list, but no creator endpoint
+// (or its request failed); candidates: new models priced from their creator endpoint.
+function creatorUpdate(models, data, limit = 15, day = today()) {
+  const creators = creatorMap(data.endpoints);
+  const diff = diffModels(models, creators);
+  const gone = diff.filter((r) => r.missing);
+  return {
+    rows: diff.filter((r) => !r.missing),
+    missing: gone.filter((r) => !data.listMap.has(r.openrouter)),
+    noCreator: gone.filter((r) => data.listMap.has(r.openrouter)).map((r) => ({ id: r.id, name: r.name, openrouter: r.openrouter, noCreator: true })),
+    candidates: newModelCandidates(models, data.list, creators, limit, day),
+  };
 }
 
 // ─── Apply ───
@@ -159,6 +270,7 @@ function appendAdded(list, added) {
   const ids = new Set(list.map((m) => String(m.id).toLowerCase()));
   const names = new Set(list.map((m) => String(m.name).toLowerCase()));
   added.forEach((a) => {
+    if (!a || !KNOWN_FAMILIES.includes(a.family)) return;
     const id = String(a.id).toLowerCase();
     const name = String(a.name).toLowerCase();
     if (ids.has(id) || names.has(name)) return;
@@ -312,8 +424,9 @@ function newRowValue(m, column) {
 
 // ─── Exports ───
 globalThis.PriceSync = {
-  FEED_URL, STORE_KEY, STORE_VERSION, BIG_CHANGE, FIELDS, FAMILY_BY_PROVIDER, NOTE_UPDATED, NOTE_ADDED,
-  today, round6, parseOpenRouter, diffModels, newModelCandidates, applyUpdate,
+  FEED_URL, STORE_KEY, STORE_VERSION, BIG_CHANGE, FIELDS, FAMILY_BY_PROVIDER, KNOWN_FAMILIES, CREATOR_TAG, CONCURRENCY, NOTE_UPDATED, NOTE_ADDED,
+  today, round6, parseOpenRouter, endpointsUrl, endpointsFile, creatorEndpoint, creatorMap, diffModels,
+  creatorIds, newModelCandidates, fetchCreatorData, creatorUpdate, applyUpdate,
   overridesFrom, parseStore, applyOverrides, csvRecords, updateCsvText,
 };
 if (typeof module !== 'undefined') module.exports = globalThis.PriceSync;

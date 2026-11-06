@@ -1,11 +1,15 @@
 #!/usr/bin/env node
-// Model price update from OpenRouter for index.html (#csvData) and sub/core.js (MODELS). Node 22, no dependencies.
+// Model price update for index.html (#csvData) and sub/core.js (MODELS). Node 22, no dependencies.
+// Prices are the model creator's own (DeepSeek, OpenAI, Anthropic, Alibaba for Qwen), read through OpenRouter:
+// the model list finds the models, /api/v1/models/{id}/endpoints gives the creator's endpoint.
 //
 //   node scripts/update-prices.mjs                       dry run: prints the markdown diff, changes nothing
 //   node scripts/update-prices.mjs --write               writes every change except those flagged "big"
 //   node scripts/update-prices.mjs --write --include-big also writes the big ones
 //   --only id1,id2      limit the run to these models (our ids)
 //   --fixture <path>    read the model list from a file instead of the API (tests)
+//   --endpoints-dir <d> read endpoints from <d>/<id with / as __>.json instead of the API
+//                       (default with --fixture: the "endpoints" directory next to the list file)
 //   --root <dir>        repository root to read and write (default: this script's repository)
 //   --today YYYY-MM-DD  date written to checked_at (default: today, UTC)
 //
@@ -23,10 +27,13 @@ const CSV_RE = /(<script id="csvData"[^>]*>)([\s\S]*?)(<\/script>)/;
 const FIELD_LABEL = { pin: 'wejście USD/1M', pout: 'wyjście USD/1M', ctx: 'okno kontekstu', maxOutput: 'maks. wyjście' };
 const FLAG_LABEL = { big: 'duża zmiana, sprawdź u dostawcy', tiersKept: 'ceny dla długiego kontekstu nie są aktualizowane' };
 const CORE_KEYS = { pin: 'pin', pout: 'pout', ctx: 'ctx', maxOutput: 'maxOutput' };
+const NO_TOKENIZER = 'Brak współczynnika tokenizera Gemini – dodanie po pomiarze';
+const LIST_TIMEOUT_MS = 30000;
+const ENDPOINTS_TIMEOUT_MS = 20000;
 
 // ─── Helpers ───
 function parseArgs(argv) {
-  const opts = { write: false, includeBig: false, only: null, fixture: null, root: resolve(HERE, '..'), today: PriceSync.today() };
+  const opts = { write: false, includeBig: false, only: null, fixture: null, endpointsDir: null, root: resolve(HERE, '..'), today: PriceSync.today() };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     const value = () => { if (i + 1 >= argv.length) throw new Error(`${a} needs a value`); return argv[++i]; };
@@ -34,18 +41,28 @@ function parseArgs(argv) {
     else if (a === '--include-big') opts.includeBig = true;
     else if (a === '--only') opts.only = new Set(value().split(',').map((s) => s.trim()).filter(Boolean));
     else if (a === '--fixture') opts.fixture = resolve(value());
+    else if (a === '--endpoints-dir') opts.endpointsDir = resolve(value());
     else if (a === '--root') opts.root = resolve(value());
     else if (a === '--today') { opts.today = value(); if (!/^\d{4}-\d{2}-\d{2}$/.test(opts.today)) throw new Error('--today must be YYYY-MM-DD'); }
-    else if (a === '--help' || a === '-h') { console.log(readFileSync(fileURLToPath(import.meta.url), 'utf8').split('\n').slice(1, 12).join('\n')); process.exit(0); }
+    else if (a === '--help' || a === '-h') { console.log(readFileSync(fileURLToPath(import.meta.url), 'utf8').split('\n').slice(1, 16).join('\n')); process.exit(0); }
     else throw new Error(`unknown option ${a}`);
   }
+  if (opts.fixture && !opts.endpointsDir) opts.endpointsDir = join(dirname(opts.fixture), 'endpoints');
   return opts;
 }
-async function loadFeed(opts) {
-  if (opts.fixture) return JSON.parse(readFileSync(opts.fixture, 'utf8'));
-  const res = await fetch(PriceSync.FEED_URL, { signal: AbortSignal.timeout(30000), headers: { accept: 'application/json' } });
-  if (!res.ok) throw new Error(`OpenRouter answered HTTP ${res.status}`);
+async function getJson(url, ms) {
+  const res = await fetch(url, { signal: AbortSignal.timeout(ms), headers: { accept: 'application/json' } });
+  if (!res.ok) throw new Error(`OpenRouter answered HTTP ${res.status} for ${url}`);
   return res.json();
+}
+// The list and each model's endpoints, from the API or from files (tests).
+function sources(opts) {
+  return {
+    list: async () => (opts.fixture ? JSON.parse(readFileSync(opts.fixture, 'utf8')) : getJson(PriceSync.FEED_URL, LIST_TIMEOUT_MS)),
+    endpoints: async (id) => (opts.endpointsDir
+      ? JSON.parse(readFileSync(join(opts.endpointsDir, PriceSync.endpointsFile(id)), 'utf8'))
+      : getJson(PriceSync.endpointsUrl(id), ENDPOINTS_TIMEOUT_MS)),
+  };
 }
 // Models from the CSV text, with the fields the diff needs (the full validation lives in index.html).
 function csvModels(text) {
@@ -93,10 +110,13 @@ const pct = (v) => (v === null ? 'nowa cena' : (v > 0 ? '+' : '') + v.toFixed(1)
 const cell = (s) => String(s).replace(/\|/g, '\\|');
 
 // ─── Report ───
-function markdown(opts, rows, missing, candidates, written) {
+function markdown(opts, rows, missing, noCreator, candidates, written) {
   const out = [];
+  const list = opts.fixture ? 'plik ' + opts.fixture : PriceSync.FEED_URL;
+  const endpoints = opts.endpointsDir ? 'katalog ' + opts.endpointsDir : PriceSync.FEED_URL + '/{id}/endpoints';
   out.push(`# Aktualizacja cen z OpenRouter (${opts.today})`, '');
-  out.push(`Źródło: ${opts.fixture ? 'plik ' + opts.fixture : PriceSync.FEED_URL}. OpenRouter może pokazywać cenę zewnętrznego hosta, a nie dostawcy modelu: przed scaleniem sprawdź ceny u dostawcy. Ceny dla długiego kontekstu (tier_*) i poza szczytem (offpeak_*) nie są aktualizowane.`, '');
+  out.push('Ceny pochodzą od twórcy modelu (np. DeepSeek, OpenAI, Anthropic), pobrane przez OpenRouter. Dla każdego modelu brany jest tylko endpoint twórcy (tag `' + Object.values(PriceSync.CREATOR_TAG).join('`, `') + '`), nigdy cena innego hosta. Ceny dla długiego kontekstu (tier_*) i poza szczytem (offpeak_*) nie są aktualizowane.', '');
+  out.push(`Źródła: lista modeli: ${list}; endpointy: ${endpoints}.`, '');
   out.push(opts.write ? 'Tryb: zapis (`--write`' + (opts.includeBig ? ' `--include-big`' : '') + ').' : 'Tryb: podgląd, nic nie zostało zapisane.', '');
   out.push('## Zmiany cen', '');
   if (!rows.length) out.push('Ceny są aktualne.', '');
@@ -111,12 +131,16 @@ function markdown(opts, rows, missing, candidates, written) {
   }
   out.push('## Brak w OpenRouter', '');
   out.push(missing.length ? missing.map((m) => `- ${cell(m.name)} (\`${m.id}\`): brak \`${m.openrouter}\``).join('\n') : 'Wszystkie zmapowane modele są w OpenRouter.', '');
+  out.push('## Brak ceny twórcy w OpenRouter', '');
+  out.push(noCreator.length
+    ? 'Te modele są w OpenRouter, ale bez endpointu twórcy albo zapytanie się nie udało. Ich ceny zostają bez zmian.\n\n' + noCreator.map((m) => `- ${cell(m.name)} (\`${m.id}\`): \`${m.openrouter}\``).join('\n')
+    : 'Wszystkie zmapowane modele mają cenę twórcy.', '');
   out.push('## Nowe modele (do decyzji)', '');
   if (!candidates.length) out.push('Brak nowych modeli.', '');
   else {
     out.push('Skrypt ich nie dodaje. Dodaj ręcznie do `#csvData` i `SubCore.MODELS`, jeśli są potrzebne.', '');
-    out.push('| OpenRouter id | Nazwa | Rodzina | Wejście USD/1M | Wyjście USD/1M | Kontekst |', '|---|---|---|---|---|---|');
-    candidates.forEach((c) => out.push(`| \`${c.openrouter}\` | ${cell(c.name)} | ${c.family} | ${c.pin} | ${c.pout} | ${c.ctx} |`));
+    out.push('| OpenRouter id | Nazwa | Rodzina | Wejście USD/1M | Wyjście USD/1M | Kontekst | Uwagi |', '|---|---|---|---|---|---|---|');
+    candidates.forEach((c) => out.push(`| \`${c.openrouter}\` | ${cell(c.name)} | ${c.family} | ${c.pin} | ${c.pout} | ${c.ctx} | ${c.canAdd ? '' : NO_TOKENIZER} |`));
     out.push('');
   }
   return out.join('\n');
@@ -134,14 +158,14 @@ async function main() {
   const before = selfCheck(match[2], coreSource);
   if (before.length) throw new Error('CSV and sub/core.js disagree before the update:\n' + before.join('\n'));
 
-  const feed = await loadFeed(opts);
-  const orMap = PriceSync.parseOpenRouter(feed);
   const models = csvModels(match[2]);
-  const inScope = (id) => !opts.only || opts.only.has(id);
-  const diff = PriceSync.diffModels(models, orMap).filter((r) => inScope(r.id));
-  const rows = diff.filter((r) => !r.missing);
-  const missing = diff.filter((r) => r.missing);
-  const candidates = PriceSync.newModelCandidates(coreModels(coreSource), feed, 15, opts.today);
+  const data = await PriceSync.fetchCreatorData(models, sources(opts));
+  const update = PriceSync.creatorUpdate(models, data, 15, opts.today);
+  const inScope = (r) => !opts.only || opts.only.has(r.id);
+  const rows = update.rows.filter(inScope);
+  const missing = update.missing.filter(inScope);
+  const noCreator = update.noCreator.filter(inScope);
+  const candidates = update.candidates;
   const accepted = rows.filter((r) => opts.includeBig || !r.flags.includes('big'));
   const written = new Set(accepted);
 
@@ -157,7 +181,7 @@ async function main() {
     writeFileSync(indexPath, html.replace(CSV_RE, (_, a, _b, c) => a + csvOut + c));
     writeFileSync(corePath, coreOut);
   }
-  console.log(markdown(opts, rows, missing, candidates, written));
+  console.log(markdown(opts, rows, missing, noCreator, candidates, written));
 }
 
 main().catch((error) => {
