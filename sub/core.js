@@ -48,7 +48,7 @@ const SEAT_FIELDS = {
   chatsPerDay:   num(15, 0, 1000, true),
   inTok:         num(3000, 0, 1000000, true),
   outTok:        num(700, 0, 1000000, true),
-  model:         { def: 'OpenAI GPT-6.1 Terra', type: 'model' },
+  model:         { def: 'OpenAI GPT-6.1 Sol', type: 'model' },
   uiOps:         num(500, 0, 1e8, false),
   localCapex:    num(35000, 0, 1e8, true),
   localAmort:    num(36, 1, 240, true),
@@ -58,7 +58,7 @@ const SEAT_FIELDS = {
   localMaxUsers: num(100, 1, 20000, true),
 };
 const AGENT_FIELDS = {
-  model:     { def: 'OpenAI GPT-6 Luna', type: 'model' },
+  model:     { def: 'OpenAI GPT-6.1 Sol', type: 'model' },
   runs:      num(2000, 0, 1e7, true),
   steps:     num(6, 1, 200, true),
   inTok:     num(4000, 0, 1e6, true),

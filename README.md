@@ -95,7 +95,7 @@ Wzory (miesięcznie):
 | `plan` | ChatGPT Business (lub inny plan z listy, lub własna cena `customUsd` = 30 USD) |
 | `chatsPerDay` | 15 |
 | `inTok` / `outTok` | 3 000 / 700 tokenów na czat |
-| `model` | OpenAI GPT-6.1 Terra |
+| `model` | OpenAI GPT-6.1 Sol |
 | `uiOps` | 500 PLN / mies. (interfejs czatu przy API i lokalnie) |
 | `localCapex` / `localAmort` | 35 000 PLN / 36 mies. |
 | `localPower` / `kwh` | 240 W / 1,00 PLN za kWh |
@@ -165,9 +165,9 @@ Wzory:
 - budżet (`agentBudgetRuns`): `floor((budget − platform) / perRun)`; 0, gdy
   budżet nie przekracza platformy; brak wyniku, gdy model jest niedostępny,
 - domyślnie (tryb `growing`): wejścia kroków 4 000, 5 000, …, 9 000 tokenów,
-  0,0709 PLN na uruchomienie, 441,85 PLN / mies., 5 302,21 PLN / rok, zakres
-  416,45–480,57 PLN / mies., budżet 1 000 PLN mieści 9 869 uruchomień;
-  w trybie `flat` 0,0648 PLN i 429,54 PLN / mies.,
+  model GPT-6.1 Sol, 0,4685 PLN na uruchomienie, 1 237,01 PLN / mies.,
+  14 844,14 PLN / rok, zakres 728,99–2 011,36 PLN / mies., budżet 1 000 PLN
+  mieści 1 494 uruchomienia; w trybie `flat` 0,3454 PLN i 990,83 PLN / mies.,
 - strona opisuje w pięciu krokach, co agent robi w jednym uruchomieniu, a
   zaraz potem tabela „Kroki jednego uruchomienia” podaje liczby (przy
   ponad 12 krokach widać kroki 1–5, „…” i ostatnie 3; suma obejmuje wszystkie).
@@ -177,7 +177,7 @@ raport sprzedaży 20 / 12, faktury 800 / 5.
 
 | Parametr | Domyślnie |
 | --- | --- |
-| `model` | OpenAI GPT-6 Luna |
+| `model` | OpenAI GPT-6.1 Sol |
 | `runs` | 2 000 zadań / mies. |
 | `steps` | 6 kroków na zadanie |
 | `contextMode` | `growing` |
@@ -583,8 +583,8 @@ RAG software layer (SaaS 5,000 PLN per month with API/cloud;
 a 150,000 PLN licence with a 20,000 PLN yearly support contract on hardware).
 It is an estimate, not a quote or a capacity guarantee. Open `index.html` directly or
 serve the directory with Python. Prices were checked on 6 Nov 2026 at the model
-creators' own pricing pages (default models: GPT-6.1 Terra for RAG and seats,
-GPT-6 Luna for the agent); token
+creators' own pricing pages (default models: GPT-6.1 Terra for RAG,
+GPT-6.1 Sol for seats and the agent); token
 factors are illustrative and hardware throughput is not production-verified.
 On desktop, editable inputs live in a left settings sidebar; on small screens,
 use the Settings button and close it with the close control, backdrop, or

@@ -27,12 +27,12 @@ assert.equal(st.plan, 'chatgpt-business');
 assert.deepEqual({ ...C.loadState(schemas, 'garbage', MODELS) }, { ...C.defaultsOf(...schemas) });
 assert.equal(C.loadState(schemas, { model: 'DeepSeek V4.1 Flash' }, MODELS).model, 'DeepSeek V4.1 Flash');
 assert.ok(MODELS.some((m) => m.name === SEAT_FIELDS.model.def) && MODELS.some((m) => m.name === AGENT_FIELDS.model.def), 'default models exist');
-assert.equal(SEAT_FIELDS.model.def, 'OpenAI GPT-6.1 Terra');
-assert.equal(AGENT_FIELDS.model.def, 'OpenAI GPT-6 Luna');
+assert.equal(SEAT_FIELDS.model.def, 'OpenAI GPT-6.1 Sol');
+assert.equal(AGENT_FIELDS.model.def, 'OpenAI GPT-6.1 Sol');
 // Saves from before 2026-11-06 name models that are no longer listed: they load with the default model.
-assert.equal(C.loadState(schemas, { model: 'OpenAI GPT-5.6 Terra', users: 7 }, MODELS).model, 'OpenAI GPT-6.1 Terra');
+assert.equal(C.loadState(schemas, { model: 'OpenAI GPT-5.6 Terra', users: 7 }, MODELS).model, 'OpenAI GPT-6.1 Sol');
 assert.equal(C.loadState(schemas, { model: 'OpenAI GPT-5.6 Terra', users: 7 }, MODELS).users, 7);
-assert.equal(C.loadState([SHARED_FIELDS, AGENT_FIELDS], { model: 'Anthropic Claude Haiku 4.5', runs: 9 }, MODELS).model, 'OpenAI GPT-6 Luna');
+assert.equal(C.loadState([SHARED_FIELDS, AGENT_FIELDS], { model: 'Anthropic Claude Haiku 4.5', runs: 9 }, MODELS).model, 'OpenAI GPT-6.1 Sol');
 ['OpenAI GPT-5.6 Luna', 'OpenAI GPT-5.6 Terra', 'OpenAI GPT-5.6 Sol', 'Anthropic Claude Haiku 4.5', 'Anthropic Claude Sonnet 5', 'Anthropic Claude Opus 5']
   .forEach((name) => assert.ok(!MODELS.some((m) => m.name === name), name + ' is no longer built in'));
 assert.equal(MODELS.length, 11);
@@ -65,12 +65,12 @@ const seatBase = () => ({ ...C.defaultsOf(SHARED_FIELDS, SEAT_FIELDS) });
   const r = C.computeSeatResults(seatBase(), MODELS);
   assert.ok(near(r.sub.monthly, 1865, 0.01));
   assert.ok(near(r.sub.perUser, 93.25, 0.01));
-  assert.ok(near(r.api.monthly, 651.53, 0.01));
+  assert.ok(near(r.api.monthly, 803.06, 0.01));
   assert.equal(r.local.units, 1);
   assert.ok(near(r.local.monthly, 1647.33, 0.01));
   assert.equal(r.winner, 'api');
-  assert.ok(near(r.breakEvenChats, 135.12, 0.01));
-  assert.equal(r.model, terra);
+  assert.ok(near(r.breakEvenChats, 67.56, 0.01));
+  assert.equal(r.model, find('GPT-6.1 Sol'));
   assert.equal(r.plan.id, 'chatgpt-business');
   noNaN(r);
   const z = C.computeSeatResults({ ...seatBase(), chatsPerDay: 0 }, MODELS);
@@ -98,7 +98,7 @@ const seatBase = () => ({ ...C.defaultsOf(SHARED_FIELDS, SEAT_FIELDS) });
   // defaults: seats beat the API from ~135 chats per person per day
   const def = C.computeSeatResults(seatBase(), MODELS);
   assert.equal(def.breakEven.kind, 'from');
-  assert.ok(near(def.breakEven.value, 135.12, 0.01));
+  assert.ok(near(def.breakEven.value, 67.56, 0.01));
   assert.equal(def.breakEven.value, def.breakEvenChats);
   // 3 users: the chat upkeep per person exceeds the seat price, so seats win at any usage
   const three = C.computeSeatResults({ ...seatBase(), users: 3 }, MODELS);
@@ -134,13 +134,13 @@ const agentBase = () => ({ ...C.defaultsOf(SHARED_FIELDS, AGENT_FIELDS) });
 const flatBase = () => ({ ...agentBase(), contextMode: 'flat' });
 {
   const r = C.computeAgentResults(flatBase(), MODELS);
-  assert.equal(r.model, find('Luna'));
-  assert.ok(near(r.perStep, 0.002238, 1e-7));
-  assert.ok(near(r.llmPerRun, 0.0147708, 1e-7));
+  assert.equal(r.model, find('GPT-6.1 Sol'));
+  assert.ok(near(r.perStep, 0.04476, 1e-7));
+  assert.ok(near(r.llmPerRun, 0.295416, 1e-7));
   assert.equal(r.toolsPerRun, 0.05);
-  assert.ok(near(r.perRun, 0.0647708, 1e-7), 'perRun = LLM + tools');
+  assert.ok(near(r.perRun, 0.345416, 1e-7), 'perRun = LLM + tools');
   assert.equal(r.perRun, r.llmPerRun + r.toolsPerRun);
-  assert.ok(near(r.monthly, 429.54, 0.01), 'monthly = runs x perRun + platform');
+  assert.ok(near(r.monthly, 990.83, 0.01), 'monthly = runs x perRun + platform');
   assert.equal(r.monthly, 2000 * r.perRun + 300);
   assert.deepEqual(Object.keys(r), ['model', 'perStep', 'llmPerRun', 'toolsPerRun', 'perRun', 'monthly', 'eligible', 'reason',
     'steps', 'inPerRun', 'outPerRun', 'retryPerRun', 'annual', 'breakdown'], 'no labour-cost results');
@@ -182,7 +182,7 @@ const flatBase = () => ({ ...agentBase(), contextMode: 'flat' });
   assert.equal(st2.toolOutTok, 600);
   assert.equal(st2.budget, 1000);
   const ar = C.computeAgentResults({ ...st2, contextMode: 'flat' }, MODELS);
-  assert.ok(near(ar.monthly, 500 * 0.0647708 + 300, 1e-6));
+  assert.ok(near(ar.monthly, 500 * 0.345416 + 300, 1e-6));
   noNaN(ar);
   const seatState = C.loadState([SHARED_FIELDS, SEAT_FIELDS], old, MODELS);
   gone.forEach((id) => assert.ok(!Object.prototype.hasOwnProperty.call(seatState, id), 'seats: old key ' + id + ' is not restored'));
@@ -202,7 +202,7 @@ const flatBase = () => ({ ...agentBase(), contextMode: 'flat' });
   // flat: every step reads inTok; the internal sums hold
   const f = C.computeAgentResults(flatBase(), MODELS);
   assert.equal(f.steps.length, 6);
-  f.steps.forEach((st, i) => { assert.equal(st.k, i + 1); assert.equal(st.inTok, 4000); assert.equal(st.outTok, 400); assert.ok(near(st.cost, 0.002238, 1e-12)); });
+  f.steps.forEach((st, i) => { assert.equal(st.k, i + 1); assert.equal(st.inTok, 4000); assert.equal(st.outTok, 400); assert.ok(near(st.cost, 0.04476, 1e-12)); });
   assert.ok(near(f.llmPerRun, (f.inPerRun + f.outPerRun) * 1.1, 1e-15));
   assert.ok(near(f.retryPerRun, (f.inPerRun + f.outPerRun) * 0.1, 1e-15));
   assert.equal(f.perRun, f.llmPerRun + f.toolsPerRun);
@@ -212,15 +212,15 @@ const flatBase = () => ({ ...agentBase(), contextMode: 'flat' });
   const g = C.computeAgentResults(agentBase(), MODELS);
   assert.deepEqual([...g.steps.map((st) => st.inTok)], [4000, 5000, 6000, 7000, 8000, 9000]);
   assert.ok(g.steps.every((st) => st.outTok === 400));
-  // hand check, step 3: (6000 x 0.1 + 400 x 0.5) / 1e6 x 3.73 = 0.002984
-  assert.ok(near(g.steps[2].cost, 0.002984, 1e-12));
-  assert.ok(near(g.inPerRun, 39000 * 0.1 / 1e6 * 3.73, 1e-12));
-  assert.ok(near(g.outPerRun, 2400 * 0.5 / 1e6 * 3.73, 1e-12));
-  // per run: (39 000 x 0.1 + 2 400 x 0.5) / 1e6 x 3.73 = 0.019023, x 1.1 retries = 0.0209253, + 0.05 tools = 0.0709253
-  assert.ok(near(g.llmPerRun, 0.0209253, 1e-10));
-  assert.ok(near(g.perRun, 0.0709253, 1e-10));
-  assert.ok(near(g.monthly, 441.8506, 1e-7));
-  assert.ok(near(g.annual, 5302.2072, 1e-6));
+  // hand check, step 3: (6000 x 2 + 400 x 10) / 1e6 x 3.73 = 0.05968
+  assert.ok(near(g.steps[2].cost, 0.05968, 1e-12));
+  assert.ok(near(g.inPerRun, 39000 * 2 / 1e6 * 3.73, 1e-12));
+  assert.ok(near(g.outPerRun, 2400 * 10 / 1e6 * 3.73, 1e-12));
+  // per run: (39 000 x 2 + 2 400 x 10) / 1e6 x 3.73 = 0.38046, x 1.1 retries = 0.418506, + 0.05 tools = 0.468506
+  assert.ok(near(g.llmPerRun, 0.418506, 1e-10));
+  assert.ok(near(g.perRun, 0.468506, 1e-10));
+  assert.ok(near(g.monthly, 1237.012, 1e-7));
+  assert.ok(near(g.annual, 14844.144, 1e-6));
   assert.ok(near(g.perStep, (g.inPerRun + g.outPerRun) / 6, 1e-15));
   assert.ok(near(g.steps.reduce((a, st) => a + st.cost, 0), g.inPerRun + g.outPerRun, 1e-15));
   assert.equal(g.eligible, true);
@@ -293,7 +293,7 @@ const flatBase = () => ({ ...agentBase(), contextMode: 'flat' });
   assert.deepEqual([...Object.keys(mt[0])], ['name', 'perRun', 'monthly', 'eligible', 'reason']);
   assert.ok(mt.every((row) => row.eligible));
   for (let i = 1; i < mt.length; i += 1) assert.ok(mt[i - 1].monthly <= mt[i].monthly, 'sorted by monthly');
-  assert.equal(mt.find((row) => row.name === luna.name).monthly, g.monthly);
+  assert.equal(mt.find((row) => row.name === AGENT_FIELDS.model.def).monthly, g.monthly);
   const mtBig = C.agentModelTable({ ...agentBase(), inTok: 800000 }, MODELS);
   const firstBad = mtBig.findIndex((row) => !row.eligible);
   assert.ok(firstBad > 0, 'some models stay eligible');
@@ -320,7 +320,7 @@ const flatBase = () => ({ ...agentBase(), contextMode: 'flat' });
 
   // budget: floor((budget - platform) / perRun)
   assert.equal(C.agentBudgetRuns(agentBase(), MODELS), Math.floor(700 / g.perRun));
-  assert.equal(C.agentBudgetRuns(agentBase(), MODELS), 9869);
+  assert.equal(C.agentBudgetRuns(agentBase(), MODELS), 1494);
   assert.equal(C.agentBudgetRuns({ ...agentBase(), budget: 300 }, MODELS), 0, 'budget = platform');
   assert.equal(C.agentBudgetRuns({ ...agentBase(), budget: 100 }, MODELS), 0, 'budget below platform');
   assert.equal(C.agentBudgetRuns(ctxS, MODELS), null, 'ineligible model');
