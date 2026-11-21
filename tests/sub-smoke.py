@@ -123,13 +123,20 @@ SEATS_FLOW = r"""
     const winners = cards.querySelectorAll('[data-win="true"]');
     expect(winners.length === 1 && winners[0].dataset.option === want.winner, `winner ${winners[0] && winners[0].dataset.option}, expected ${want.winner}`);
     expect(near(card('api').dataset.monthly, want.api.monthly) && near(card('sub').dataset.monthly, want.sub.monthly), 'card amounts differ from core');
-    // every bar must stand out from its track (WCAG 3:1 for graphics), not only the winner
+    // every bar must stand out from its track (WCAG 3:1 for graphics) by its fill or its outline, each in its own colour
     const lum = (c) => { const [r, g, b] = c.match(/[\d.]+/g).slice(0, 3).map((v) => { v /= 255; return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
     const contrast = (a, b) => { const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x); return (hi + 0.05) / (lo + 0.05); };
+    const barColours = new Set();
     document.querySelectorAll('.seat-bar-row').forEach((row) => {
-      const c = contrast(getComputedStyle(row.querySelector('.seat-bar-fill')).backgroundColor, getComputedStyle(row.querySelector('.seat-bar-track')).backgroundColor);
-      expect(c >= 3, `bar ${row.dataset.bar} fill has contrast ${c.toFixed(2)} against its track`);
+      const fill = getComputedStyle(row.querySelector('.seat-bar-fill'));
+      const track = getComputedStyle(row.querySelector('.seat-bar-track')).backgroundColor;
+      const outlined = parseFloat(fill.borderTopWidth) >= 1 && fill.borderTopStyle === 'solid' && contrast(fill.borderTopColor, track) >= 3;
+      const c = contrast(fill.backgroundColor, track);
+      expect(c >= 3 || outlined, `bar ${row.dataset.bar} fill has contrast ${c.toFixed(2)} against its track and no visible outline`);
+      expect(contrast(fill.backgroundColor, track) > 1.2, `bar ${row.dataset.bar} fill is nearly the track colour`);
+      barColours.add(fill.backgroundColor);
     });
+    expect(barColours.size === 3, `bars use ${barColours.size} colours, expected one per option`);
     // ineligible API option: the warning must be readable
     setField('inTok', 800000);
     setField('model', 'Anthropic Claude Haiku 5.5');
