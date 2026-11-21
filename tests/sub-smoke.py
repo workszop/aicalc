@@ -123,6 +123,13 @@ SEATS_FLOW = r"""
     const winners = cards.querySelectorAll('[data-win="true"]');
     expect(winners.length === 1 && winners[0].dataset.option === want.winner, `winner ${winners[0] && winners[0].dataset.option}, expected ${want.winner}`);
     expect(near(card('api').dataset.monthly, want.api.monthly) && near(card('sub').dataset.monthly, want.sub.monthly), 'card amounts differ from core');
+    // every bar must stand out from its track (WCAG 3:1 for graphics), not only the winner
+    const lum = (c) => { const [r, g, b] = c.match(/[\d.]+/g).slice(0, 3).map((v) => { v /= 255; return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+    const contrast = (a, b) => { const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x); return (hi + 0.05) / (lo + 0.05); };
+    document.querySelectorAll('.seat-bar-row').forEach((row) => {
+      const c = contrast(getComputedStyle(row.querySelector('.seat-bar-fill')).backgroundColor, getComputedStyle(row.querySelector('.seat-bar-track')).backgroundColor);
+      expect(c >= 3, `bar ${row.dataset.bar} fill has contrast ${c.toFixed(2)} against its track`);
+    });
     // ineligible API option: the warning must be readable
     setField('inTok', 800000);
     setField('model', 'Anthropic Claude Haiku 5.5');

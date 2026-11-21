@@ -285,7 +285,7 @@ details.panel[open] { padding-bottom: 16px; }
 .seat-bar-row { display: grid; grid-template-columns: minmax(110px, 190px) minmax(0, 1fr) minmax(90px, auto); align-items: center; gap: var(--sp-3); margin-bottom: var(--sp-2); font-size: var(--body-sm); }
 .seat-bar-label { color: var(--ink-2); font-weight: 600; }
 .seat-bar-track { display: block; height: 18px; background: var(--paper-2); border-radius: var(--r-sm); overflow: hidden; }
-.seat-bar-fill { display: block; height: 100%; background: var(--paper-3); }
+.seat-bar-fill { display: block; height: 100%; background: var(--line-strong); }
 .seat-bar-row[data-win="true"] .seat-bar-fill { background: var(--blue); }
 .seat-bar-value { font-family: var(--font-mono); font-weight: 500; text-align: right; color: var(--ink); }
 @media (max-width: 1200px) { .seat-cards { grid-template-columns: minmax(0, 1fr); } }
